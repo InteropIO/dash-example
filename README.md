@@ -4,19 +4,31 @@ This repository contains examples of how to use the Glue42-Dash library. For con
 
 ## Quickstart
 
-1. Setup the Python environment (more detailed instructions of how to setup Dash can be found here - https://dash.plotly.com/installation )
+1. Make sure that you use the latest python 3 (3.8.4 as of this writing). On Windows 10, the installation from the Microsoft Store works. Setup the Python environment (more detailed instructions of how to setup Dash can be found here - https://dash.plotly.com/installation )
 
 ```sh
 python -m virtualenv venv
+
+# Unix
 source venv/bin/activate
+# Windows
+.\venv\Scripts\activate.bat
+
 pip install -r requirements.txt
+# local package - dash glue is not published yet
 pip install dash_glue-0.0.1.tar.gz
 ```
 
 Start the Flask server containing two Dash apps and the index for Glue42 Core:
 
 ```sh
-uwsgi --http 0.0.0.0:5000 --processes 4 --wsgi-file run.py
+
+# Unix
+export FLASK_APP=run.py
+# Windows
+set FLASK_APP=run.py
+
+python -m flask run
 ```
 
 ### Glue42 Core 
