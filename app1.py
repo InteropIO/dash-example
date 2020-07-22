@@ -4,6 +4,7 @@ from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
 from server import server
+from dash.exceptions import PreventUpdate
 
 app = dash.Dash(__name__, server=server, 
     routes_pathname_prefix='/app1/'
@@ -15,8 +16,34 @@ app.layout = dash_glue.glue42(id='glue42', children = [
     dash_glue.context(id="my-context"),
     html.Hr(),
     html.Button(id='open-window', n_clicks = 0, children =  'Open Window' ),
-    html.Button(id='raise-notification', n_clicks = 0, children =  'Raise Notification' )
+    html.Button(id='raise-notification', n_clicks = 0, children =  'Raise Notification' ),
+
+    html.Hr(),
+
+    # Interop methods example.
+    dash_glue.methodInvoke(id="interop-method-invocation"),
+
+    html.Div([dcc.Input(id='number-a', type='text', value=37), dcc.Input(id='number-b', type='text', value=5)]),
+
+    html.Button(id='sum-numbers', n_clicks = 0, children = 'Sum' ),
+    html.Span(id='sum-numbers-result')
 ])
+
+# Interop methods example.
+# Callback that triggers "Sum" invocation.
+@app.callback(Output('interop-method-invocation', 'outgoing'), [Input('sum-numbers', 'n_clicks')], [State('number-a', 'value'), State('number-b', 'value')])
+def sum_numbers(n_clicks, a, b):
+    if n_clicks != 0:
+        return { "invocationId": 1, "methodDefinition": { "name": "Sum" }, "argumentObj": { "a": a, "b": b } }
+
+# Interop methods example.
+# Callback that handles "Sum" results.
+@app.callback(Output('sum-numbers-result', 'children'), [Input('interop-method-invocation', 'incoming')])
+def result12(value):
+    if value is not None:
+        return value["invocationResult"]["returned"]["sum"]
+    else:
+        return PreventUpdate
 
 @app.callback(Output('my-context', 'outgoing'), [Input('RIC', 'value')])
 def update_context(value):
