@@ -19,7 +19,7 @@ pip install -r requirements.txt
 pip install dash_glue-0.0.1.tar.gz
 ```
 
-Start the Flask server containing two Dash apps and the index for Glue42 Core:
+Start the Flask server containing two Dash and one JavaScript and the index for Glue42 Core:
 
 ```sh
 
@@ -37,7 +37,7 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ### Glue42 Enterprise
 
-To run the two applications in a Glue42 Enterprise environment, make sure to have Glue42 3.9 (or later) installed. Then, add the following entry to your application configuration ([read this document](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) if you have not done it before):
+To run the three applications in a Glue42 Enterprise environment, make sure to have Glue42 3.9 (or later) installed. Then, add the following entry to your application configuration ([read this document](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) if you have not done it before):
 
 ```json
 [
@@ -70,7 +70,7 @@ To run the two applications in a Glue42 Enterprise environment, make sure to hav
     {
         "title": "JS App 3",
         "type": "window",
-        "name": "js-app-3",
+        "name": "JSApp3",
         "hidden": false,
         "details": {
             "url": "http://0.0.0.0:5000/app3/",
