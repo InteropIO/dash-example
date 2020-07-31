@@ -16,7 +16,7 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 # local package - dash glue is not published yet
-pip install dash_glue-0.0.1.tar.gz
+pip install dash_glue-0.0.2.tar.gz
 ```
 
 Start the Flask server containing two Dash and one JavaScript and the index for Glue42 Core:
