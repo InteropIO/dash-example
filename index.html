@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <title>Python Dash Apps Integrated With Glue42 Core</title>
+    <title>Python Dash Apps and JavaScript App Integrated With Glue42 Core</title>
     <style type="text/css" media="screen">
       iframe {
         flex-grow: 1;
@@ -12,21 +12,23 @@
     </style>
   </head>
   <body>
-    <h1>Python Dash Apps Integrated With Glue42 Core</h1>
+    <h1>Python Dash Apps and JavaScript App Integrated With Glue42 Core</h1>
     <p>
-      This demo shows two Dash applications connected with Glue42 Core. The two apps are loaded side by side in the frames below. <br />
+      This demo shows two Dash and one JavaScript applications connected with Glue42 Core. The three apps are loaded side by side in the frames below. <br />
       They can also be open in separate windows, by clicking the links below. 
     </p>
     <ul>
       <li><a href="/app1" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open App 1</a></li>
       <li><a href="/app2" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open App 2</a></li>
+      <li><a href="/app3" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open App 3</a></li>
     </ul>
 
-    <p>The two apps exchange messages through Glue42, passing the communication through the server-side Python code. Check the source code in <code>app1.py</code> and <code>app2.py</code> for details.</p>
+    <p>The three apps exchange messages through Glue42, passing the communication through the server-side Python code. Check the source code in <code>app1.py</code> and <code>app2.py</code> for details.</p>
 
     <div style="display: flex">
     <iframe src="/app1" style="height: 600px"></iframe>
     <iframe src="/app2" style="height: 600px"></iframe>
+    <iframe src="/app3" style="height: 600px"></iframe>
     </div>
   </body>
 </html>
