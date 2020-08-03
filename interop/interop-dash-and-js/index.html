@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Interoperability between Dash and JavaScript</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Basic Interoperability between Dash and JavaScript</h3>
+    <p>
+        The applications demonstrate interoperability between a Dash and JavaScript applications. A Dash application invokes an interop method registered in a JavaScript application.
+    </p>
+    <p>
+        On load, Application B (the JavaScript application) registers a method called "SendMessage" which accepts one parameter "message". Click the "Send" button in Application A (the Dash application) to invoke this method. The value in the input field labeled "Enter a message" will be printed in Application B.
+    </p>
+    
+    <ul>
+        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application A</a></li>
+        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application B</a></li>
+      </ul>
+
+    <div style="display: flex">
+        <iframe src="/app-a" style="height: 600px"></iframe>
+        <iframe src="/app-b" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>

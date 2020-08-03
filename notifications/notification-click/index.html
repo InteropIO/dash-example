@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Notification Click</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Notification Click</h3>
+    <p>
+        The applications below demonstrates handling an interop method invocation when a notification is clicked.
+    </p>
+
+    <p>
+        On load, Application B registers an interop method called "HandleNotificationClick". 
+        Use the input field in Application A to enter a message that will be set as "HandleNotificationClick" method's argument. Click "Raise Notification" button. When the notification appears, click on it. The message entered in the input field will be displayed in Application B.
+    </p>
+    
+    <ul>
+        <li><a href="/notification-click/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application A</a></li>
+        <li><a href="/notification-click/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application B</a></li>
+      </ul>
+
+    <div style="display: flex">
+        <iframe src="notification-click/app-a" style="height: 600px"></iframe>
+        <iframe src="notification-click/app-b" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>

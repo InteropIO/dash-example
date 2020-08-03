@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html class="light">
+
+<head>
+  <link rel="shortcut icon" type="image/x-icon" href="assets/favicon.ico" />
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>
+    <!-- Dynamically set -->
+  </title>
+  <meta name="description" content="" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="lib/web.umd.min.js"></script>
+</head>
+
+<body>
+  <nav>
+    <h2 id="appNameHeading">
+      <!-- App name is displayed here -->
+    </h2>
+  </nav>
+  <div>
+    <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+    <span id="glueSpan">Disconnected</span>
+  </div>
+
+  <p>The texts below are received as "SendMessage" method's argument:</p>
+  <div>
+    <ul id="logs-list"></ul>
+  </div>
+
+  <script src="scripts/utils.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>

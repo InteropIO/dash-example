@@ -1,0 +1,28 @@
+[
+    {
+        "title": "App A (notification actions)",
+        "type": "window",
+        "name": "app-a",
+        "hidden": false,
+        "details": {
+            "url": "http://0.0.0.0:5000/notification-actions/app-a",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    },
+    {
+        "title": "App B (notification actions)",
+        "type": "window",
+        "name": "app-b",
+        "hidden": false,
+        "details": {
+            "url": "http://0.0.0.0:5000/notification-actions/app-b",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    }
+]

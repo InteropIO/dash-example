@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Correlating Invocation Result</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Correlating a Result with an Invocation</h3>
+    <p>
+        The applications demonstrate how to assign an invocation ID to correlate a method invocation with the returned result (sharing data between the callback that triggers the invocation and the callback that handles the returned result).
+    </p>
+
+    <p>
+        On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates their total and returns the result. Click the "Sum" button in Application A to invoke this method and print the result from invocation.
+    </p>
+    <p>
+        When invoking the method, Application A sets an invocation ID and uses dcc.Store component to store the time when the method is called. When the result is returned, the handler callback calculates the time it takes since the invocation is made is the result is returned.
+    </p>
+    
+    <ul>
+        <li><a href="/correlating-invocation-result/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application A</a></li>
+        <li><a href="/correlating-invocation-result/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application B</a></li>
+      </ul>
+
+    <div style="display: flex">
+        <iframe src="correlating-invocation-result/app-a" style="height: 600px"></iframe>
+        <iframe src="correlating-invocation-result/app-b" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>
