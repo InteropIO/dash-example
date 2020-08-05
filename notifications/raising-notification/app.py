@@ -5,19 +5,29 @@ import dash_core_components as dcc
 import dash_glue
 from run import server
 
-app = dash.Dash(__name__, server=server, 
-    routes_pathname_prefix='/app/'
-)
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app/')
 
 app.layout = dash_glue.glue42(id='glue42', children=[
-    html.Div('Enter a notification title:'),
+    html.H3('Raising Notification'),
+    html.Hr(),
+
+    html.H4('Enter a notification details below:'),
     html.Div(
         [
-            dcc.Input(id='notification-title', type='text', value="Critical alert"),
-            dcc.Input(id='notification-body', type='text', value="Your computer will be restarted in 30 seconds"),
-            html.Button(id='raise-notification', n_clicks = 0, children = 'Raise Notification')
+            html.Label("Title: "),
+            dcc.Input(id='notification-title', type='text', value="Alert")
         ]
-    )
+    ),
+
+    html.Div(
+        [
+            html.Label("Body: "),
+            dcc.Input(id='notification-body', type='text', value="Send daily report"),
+
+        ]
+    ),
+    
+    html.Button(id='raise-notification', n_clicks = 0, children = 'Raise Notification')
 ])
 
 @app.callback(

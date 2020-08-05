@@ -6,7 +6,6 @@ server = Flask(__name__, template_folder = ".", static_url_path = "/")
 import app_a
 
 @server.route("/")
-@server.route("/interop-with-js")
 def index():
     return render_template('index.html')
 
@@ -17,7 +16,7 @@ def glue_configs(filename):
 
     return send_from_directory(glue_dir, filename)
 
-# JS App 3
+# Serving the JavaScript Application
 app_b_blueprint = Blueprint('app-b', __name__, template_folder='', static_folder='app-b/', static_url_path='/app-b/')
 
 @app_b_blueprint.route("/app-b/")

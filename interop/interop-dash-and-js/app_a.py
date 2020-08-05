@@ -11,10 +11,13 @@ app.layout = dash_glue.glue42(id='glue42', children=[
     # A component which is responsible to invoke the "SendMessage" interop method.
     dash_glue.methodInvoke(id="invoke-send-message"),
 
-    html.Div('Enter a message:'),
+    html.H3('Application A (Interoperability between Dash and JavaScript)'),
+    html.Hr(),
+
     html.Div(
         [
-            dcc.Input(id='message', type='text', value="Hello from Application A!"),
+            html.Div('Message: '),
+            dcc.Input(id='message', type='text', value="Send you daily report!"),
             html.Button(id='send-message', n_clicks = 0, children = 'Send')
         ]
     )

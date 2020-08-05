@@ -2,13 +2,12 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
-import dash_glue
 import uuid
-# from datetime import datetime as dt
 import time
+import dash_glue
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/correlating-invocation-result/app-a/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
 
 app.layout = dash_glue.glue42(id='glue42', children=[
     # A component which is responsible to invoke the "Sum" interop method.
@@ -17,7 +16,8 @@ app.layout = dash_glue.glue42(id='glue42', children=[
     # We will use the Store to share data between the callback that triggers "Sum" invocation and the callback handling "Sum" results.
     dcc.Store('invocation-time-store', data={}),
 
-    html.H2("Application A"),
+    html.H3('Application A (Correlating an Invocation with a Returned Result)'),
+    html.Hr(),
 
     html.Div([
         dcc.Input(id='number-a', type='text', value=37),

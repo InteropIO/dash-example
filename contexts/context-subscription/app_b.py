@@ -1,27 +1,29 @@
-import dash_glue
 import dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_glue
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/context-subscription/app-b/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-b/')
 
 app.layout = dash_glue.glue42(id='glue42', children = [
-    dash_glue.context(id="G42Core"),
-    
-    html.H2("Application B"),
+    dash_glue.context(id="app-styling"),
+
+    html.Div(id ="app-wrapper", children = [
+        html.H3('Application B (Context Subscription)'),
+        html.Hr(),
         
-    html.H4("The text below is received through \"G42Core\" context"),
-    html.Div(id='G42Core-data'),
+        html.H4("The background color is received through the \"app-styling\" context.")
+    ])
 ])
 
-@app.callback(Output('G42Core-data', 'children'), [Input('G42Core', 'incoming')])
-def display_context(value):
-    if value is not None:
-        return 'Received data: {}'.format(value['data']['RIC'])
-    else:
-        return 'No data'
+@app.callback(Output('app-wrapper', 'style'), [Input('app-styling', 'incoming')])
+def app_styling_context_changed_handler(context):
+    if context is not None:
+        bg_color = context['data']['backgroundColor']
+
+        return { "backgroundColor": bg_color }
     
 if __name__ == '__main__':
     app.run_server(debug=True, host='localhost', port='8051')

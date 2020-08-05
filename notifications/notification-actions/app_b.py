@@ -1,27 +1,29 @@
-import dash_glue
 import dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_glue
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/notification-actions/app-b/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-b/')
 
 app.layout = dash_glue.glue42(id='glue42', children = [
-    html.H2("Application B"),
-    
-    html.H4("The text below is received when a notification action is clicked:"),
-    html.Div(id='notification-message'),
 
-    dash_glue.methodRegister(id="handle-notification-click", definition = { 'name': 'HandleNotificationClick' }, returns=False)
+    dash_glue.methodRegister(id="review-message-method", definition = { 'name': 'ReviewMessage' }, returns=False),
+
+    html.H3('Application B (Notification Actions)'),
+    html.Hr(),
+    
+    html.H4("The text below is received when a notification action button is clicked:"),
+    html.Div(id='message'),
+
 ])
 
-@app.callback(Output('notification-message', 'children'), [Input('handle-notification-click', 'call')])
-def sum_handler(call):
+@app.callback(Output('message', 'children'), [Input('review-message-method', 'call')])
+def review_message_handler(call):
     if call is not None:
-        invocationId = call["invocationId"]
-        args = call["args"]
-        message = args["message"]
+        # Get the new message from method's arguments
+        message = call["args"]["message"]
 
         return message
     

@@ -11,13 +11,15 @@ def is_number(s):
     except ValueError:
         return False
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/correlating-invocation-result/app-b/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-b/')
 
 app.layout = dash_glue.glue42(id='glue42', children = [
     # Registering a method that returns a result.
     dash_glue.methodRegister(id="sum-method", definition = { 'name': 'Sum' }, returns=True),
 
-    html.H2("Application B"),
+    html.H3('Application B (Correlating an Invocation with a Returned Result)'),
+    html.Hr(),
+
     html.P("Method \"Sum\" registered."),
 ])
 

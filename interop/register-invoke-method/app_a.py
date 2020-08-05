@@ -5,7 +5,7 @@ import dash_core_components as dcc
 import dash_glue
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/register-invoke/app-a/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
 
 app.layout = dash_glue.glue42(id='glue42', children=[
     # A component which is responsible to invoke the "Sum" interop method.
@@ -14,7 +14,8 @@ app.layout = dash_glue.glue42(id='glue42', children=[
     # A component which is responsible to invoke the "SendMessage" interop method.
     dash_glue.methodInvoke(id="invoke-send-message"),
 
-    html.H2("Application A"),
+    html.H3('Application A (Registering and Invoking Methods)'),
+    html.Hr(),
 
     html.Div([
         dcc.Input(id='number-a', type='text', value=37), 
@@ -25,10 +26,10 @@ app.layout = dash_glue.glue42(id='glue42', children=[
 
     html.Hr(),
 
-    html.Div('Enter a message:'),
     html.Div(
         [
-            dcc.Input(id='message', type='text', value="Hello from Application A!"),
+            html.Label('Message: '),
+            dcc.Input(id='message', type='text', value="Send you daily report!"),
             html.Button(id='send-message', n_clicks = 0, children = 'Send')
         ]
     )

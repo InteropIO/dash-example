@@ -14,26 +14,39 @@
 </head>
 
 <body>
-    <h3>Correlating a Result with an Invocation</h3>
+    <h3>Correlating an Invocation with a Result</h3>
     <p>
-        The applications demonstrate how to assign an invocation ID to correlate a method invocation with the returned result (sharing data between the callback that triggers the invocation and the callback that handles the returned result).
+        Python Dash applications integrated with Glue42. The applications demonstrate how to assign a unique invocation
+        ID and to make a correlation between a returned result and some data stored when the method is called (sharing
+        data between the callback that triggers the invocation and the callback that handles the returned result).
     </p>
 
     <p>
-        On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates their total and returns the result. Click the "Sum" button in Application A to invoke this method and print the result from invocation.
+        On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates their
+        total and returns the result. Click the "Sum" button in Application A to invoke this method and print the result
+        from invocation.
     </p>
     <p>
-        When invoking the method, Application A sets an invocation ID and uses dcc.Store component to store the time when the method is called. When the result is returned, the handler callback calculates the time it takes since the invocation is made is the result is returned.
+        When invoking the method, Application A sets a unique invocation ID and uses dcc.Store component to share the
+        start time of invocation with the callback that handles the returned result. When the "Sum" returns, along with
+        the result the handler callback also receives the invocation ID. As a result, we get the start time of
+        invocation from dcc.Store and calculate the elapsed time for execution.
     </p>
-    
+    <p>
+        Checkout the source code in `app_a.py` and `app_b.py` for details.
+    </p>
     <ul>
-        <li><a href="/correlating-invocation-result/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application A</a></li>
-        <li><a href="/correlating-invocation-result/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application B</a></li>
-      </ul>
+        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
+                Application A</a>
+        </li>
+        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
+                Application B</a>
+        </li>
+    </ul>
 
     <div style="display: flex">
-        <iframe src="correlating-invocation-result/app-a" style="height: 600px"></iframe>
-        <iframe src="correlating-invocation-result/app-b" style="height: 600px"></iframe>
+        <iframe src="/app-a" style="height: 600px"></iframe>
+        <iframe src="/app-b" style="height: 600px"></iframe>
     </div>
 </body>
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <title>Notification Click</title>
+    <title>Registering and Invoking Methods</title>
     <style type="text/css" media="screen">
         iframe {
             flex-grow: 1;
@@ -14,19 +14,22 @@
 </head>
 
 <body>
-    <h3>Notification Click</h3>
+    <h3>Registering and Invoking Methods</h3>
     <p>
-        Python Dash applications integrated with Glue42. The applications demonstrate how to specify an Interop method
-        that will be invoked when the user clicks on the notification.
+        Python Dash applications integrated with Glue42. The applications demonstrate how to register and invoke Interop
+        methods.
     </p>
+
     <p>
-        On load, Application B registers an Interop method called "HandleNotificationClick". Use the input field in
-        Application A to enter a message that will be set as "HandleNotificationClick" method's argument.
-        Click "Raise Notification" button. When the notification appears, click on it. The message entered in the input
-        field will be displayed in Application B.
+        On load, Application B registers a method called "Sum", which accepts two numbers, calculates their total and
+        returns the result. Click the "Sum" button in Application A to invoke this method and print the result from
+        invocation.
     </p>
+
     <p>
-        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+        Also, Application B registers a method called "SendMessage", which is a <b>void</b> method and does not return a
+        result. It accepts one parameter "message". Click the "Send" button in Application A to invoke this method. The
+        value in the input field labeled "Message" will be printed in Application B.
     </p>
 
     <ul>

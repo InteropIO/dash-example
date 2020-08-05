@@ -1,6 +1,6 @@
 [
     {
-        "title": "Application A (Notification Actions)",
+        "title": "Application A (Correlating Invocation Result)",
         "type": "window",
         "name": "app-a",
         "hidden": false,
@@ -13,7 +13,7 @@
         }
     },
     {
-        "title": "Application B (Notification Actions)",
+        "title": "Application B (Correlating Invocation Result)",
         "type": "window",
         "name": "app-b",
         "hidden": false,
