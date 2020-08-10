@@ -8,5 +8,37 @@
     },
     "gateway": {
         "location": "./gateway.js"
-    }
+    },
+    "channels": [
+        {
+            "name": "Red",
+            "meta": {
+                "color": "red"
+            },
+            "data": {
+                "clientId": "VVDvc6i99J",
+                "clientName": "Vernon Mullen"
+            }
+        },
+        {
+            "name": "Green",
+            "meta": {
+                "color": "green"
+            },
+            "data": {
+                "clientId": "SGvc6a87J",
+                "clientName": "Sutton Edwards"
+            }
+        },
+        {
+            "name": "Blue",
+            "meta": {
+                "color": "#66ABFF"
+            },
+            "data": {
+                "clientId": "xZvXP2i93P",
+                "clientName": "Alan Muller"
+            }
+        }
+    ]
 }
