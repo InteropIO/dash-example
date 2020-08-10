@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Opening Windows</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Opening Windows</h3>
+    <p>
+        Python Dash application integrated with Glue42. The application demonstrates opening a new window with basic
+        configuration (width and height).
+    </p>
+    <p>
+        Use the input fields to set the window context and size. Click the "Open Window" button to open a new window.
+    </p>
+
+    <p>
+        Checkout the source code in <code>app.py</code> for details.
+    </p>
+
+    <a href="/app" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">
+        Open App
+    </a>
+
+    <div style="display: flex">
+        <iframe src="/app" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>
