@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Raising Notification</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Raising Notification</h3>
+    <p>
+        Python Dash application integrated with Glue42. The application demonstrates how to raise notifications. When
+        the application runs in a browser (Glue42 Core) then a browser notification appears. When the application runs
+        in Glue42 Enterprise then a Glue42 Notification appears.
+    </p>
+    <p>
+        Use the input fields to assign a title and body to the notification. Click "Raise Notification" button to raise
+        a new notification.
+    </p>
+    <p>
+        Checkout the source code in <code>app.py</code> for details.
+    </p>
+
+    <a href="/app" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">
+        Open App
+    </a>
+
+    <div style="display: flex">
+        <iframe src="/app" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>

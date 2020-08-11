@@ -1,0 +1,16 @@
+[
+    {
+        "title": "Application (Discover and Navigate)",
+        "type": "window",
+        "name": "app",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/app",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400,
+            "allowChannels": true
+        }
+    }
+]

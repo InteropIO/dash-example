@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Context Subscription</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Context Subscription</h3>
+    <p>
+        Python Dash applications integrated with Glue42. The applications demonstrate how to update a shared context object and how to subscribe for updates of a context.
+    </p>
+
+    <p>
+        On load, both Application A and Application B subscribe for updates of the "app-styling" context. Use the input field in Application A to enter a color and change the applications' background color. Every time the input changes a new value will be set to "app-styling" context.
+    </p>
+    <p>
+        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+    </p>
+    
+    <ul>
+        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application A</a></li>
+        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open Application B</a></li>
+      </ul>
+
+    <div style="display: flex">
+        <iframe src="/app-a" style="height: 600px"></iframe>
+        <iframe src="/app-b" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>

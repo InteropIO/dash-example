@@ -1,0 +1,28 @@
+[
+    {
+        "title": "Application A (Correlating Invocation Result)",
+        "type": "window",
+        "name": "app-a",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/app-a",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    },
+    {
+        "title": "Application B (Correlating Invocation Result)",
+        "type": "window",
+        "name": "app-b",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/app-b",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    }
+]

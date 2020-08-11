@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Notification Actions</title>
+    <style type="text/css" media="screen">
+        iframe {
+            flex-grow: 1;
+            margin: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Notification Actions</h3>
+    <p>
+        Python Dash applications integrated with Glue42. The applications demonstrate how to specify an Interop method
+        that will be invoked when the user clicks an action button in the notification.
+    </p>
+    <p>
+        On load, Application B registers an Interop method called "ReviewMessage". Use the input field in Application A
+        to enter a message that will be set as "ReviewMessage" method's argument.
+        Click "Raise Notification" button. When the notification appears, click the "Review" button in the notification.
+        The message entered in the input field will be displayed in Application B.
+    </p>
+    <p>
+        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+    </p>
+
+    <ul>
+        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
+                Application A</a>
+        </li>
+        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
+                Application B</a>
+        </li>
+    </ul>
+
+    <div style="display: flex">
+        <iframe src="/app-a" style="height: 600px"></iframe>
+        <iframe src="/app-b" style="height: 600px"></iframe>
+    </div>
+</body>
+
+</html>

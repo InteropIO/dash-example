@@ -1,6 +1,8 @@
 # What is this
 
-This repository contains examples of how to use the Glue42-Dash library. For convenience, the setup is created with pure python. 
+This repository contains examples of how to use the Glue42-Dash library. For convenience, the setup is created with pure python.
+
+Each example is individually separated in a folder and logically grouped under `/interop`, `/contexts` or `/notifications` folders.
 
 ## Quickstart
 
@@ -19,7 +21,7 @@ pip install -r requirements.txt
 pip install dash_glue-0.0.2.tar.gz
 ```
 
-Start the Flask server containing two Dash and one JavaScript and the index for Glue42 Core:
+2. Start a Flask server to host the applications of an example. Each example contains one or more Dash or JavaScript applications. There is also an index.html to help preview the applications in Glue42 Core. Go to an example folder (e.g. `/interop/register-invoke-method`) and run the following:
 
 ```sh
 
@@ -37,51 +39,4 @@ Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ### Glue42 Enterprise
 
-To run the three applications in a Glue42 Enterprise environment, make sure to have Glue42 3.9 (or later) installed. Then, add the following entry to your application configuration ([read this document](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) if you have not done it before):
-
-```json
-[
-    {
-        "title": "Dash App 1",
-        "type": "window",
-        "name": "dash1",
-        "hidden": false,
-        "details": {
-            "url": "http://0.0.0.0:5000/app1/",
-            "top": 25,
-            "left": 800,
-            "height": 400,
-            "width": 400
-        }
-    },
-    {
-        "title": "Dash App 2",
-        "type": "window",
-        "name": "dash2",
-        "hidden": false,
-        "details": {
-            "url": "http://0.0.0.0:5000/app2/",
-            "top": 25,
-            "left": 0,
-            "height": 400,
-            "width": 400
-        }
-    },
-    {
-        "title": "JS App 3",
-        "type": "window",
-        "name": "JSApp3",
-        "hidden": false,
-        "details": {
-            "url": "http://0.0.0.0:5000/app3/",
-            "top": 25,
-            "left": 0,
-            "height": 400,
-            "width": 400
-        }
-    }
-]
-```
-
-Afterwards, you can launch the three applications (Dash App 1, Dash App 2 and JS App) from the Glue42 toolbar.
-
+To run the applications of an example in a Glue42 Enterprise environment, make sure to have Glue42 3.9 (or later) installed. Then, add the content of `apps-config.json` (each example folder contains one) to your application configuration ([read this document](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) if you have not done it before). Afterwards, you can launch the applications from the Glue42 toolbar. See the applications title to know what to search for (e.g. in `/interop/register-invoke-method` there is an application with a title *Application A (Register/Invoke Methods)*).
