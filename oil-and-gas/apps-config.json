@@ -1,0 +1,32 @@
+[
+    {
+        "title": "New York Oil and Gas",
+        "type": "window",
+        "name": "oil-and-gas",
+        "details": {
+            "url": "http://127.0.0.1:5000/oil-and-gas",
+            "width": 914,
+            "height": 639,
+            "minHeight": 400,
+            "minWidth": 500,
+            "allowCollapse": false,
+            "startLocation": "center"
+        },
+        "allowMultiple": false
+    },
+    {
+        "title": "Outlook Contacts",
+        "type": "window",
+        "name": "outlook-contacts",
+        "details": {
+            "url": "http://127.0.0.1:5000/outlook-contacts",
+            "width": 914,
+            "height": 639,
+            "minHeight": 400,
+            "minWidth": 500,
+            "allowCollapse": false,
+            "startLocation": "center"
+        },
+        "allowMultiple": false
+    }
+]
