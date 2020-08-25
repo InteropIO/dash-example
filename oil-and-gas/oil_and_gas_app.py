@@ -10,6 +10,7 @@ from dash.dependencies import Input, Output, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_glue
+from dash.exceptions import PreventUpdate
 from run import server
 from glue_helpers import create_outlook_meeting, show_outlook_item, create_outlook_email
 
@@ -75,16 +76,25 @@ layout = dict(
     ),
 )
 
+send_meeting_automatically = "send_meeting_automatically"
+send_email_automatically = "send_email_automatically"
+
 # Create app layout
 app.layout = html.Div(
     [
         # Create an instance of Glue42.
         dash_glue.glue42(id="glue42", children=[
-            # Outlook meetings.
-            dash_glue.methodInvoke(id="invoke-new-meeting"), 
+            # Creating Outlook meetings.
+            dash_glue.methodInvoke(id="invoke-create-meeting"),
             
-            # Outlook emails.
-            dash_glue.methodInvoke(id="invoke-new-email"),
+            # Showing/Sending Outlook meetings.
+            dash_glue.methodInvoke(id="invoke-show-meeting"), 
+            
+            # Creating Outlook emails.
+            dash_glue.methodInvoke(id="invoke-create-email"),
+            
+            # Showing/Sending Outlook emails.
+            dash_glue.methodInvoke(id="invoke-show-email"),
 
             # A shared context named "contacts" will be used to get the meeting/email recipients.
             dash_glue.context(id="contacts")       
@@ -142,8 +152,17 @@ app.layout = html.Div(
             style={"margin-bottom": "25px"},
         ),
         html.Div([
+            dcc.Checklist(
+                id="outlook-checkbox",
+                options=[
+                    { 'label': 'Create meeting automatically', 'value': send_meeting_automatically },
+                    { 'label': 'Send email automatically', 'value': send_email_automatically }
+                ],
+                value=[],
+                labelStyle={'display': 'inline-block'}
+            ),
             html.Button(id="create-meeting-button", n_clicks = 0, children="Create Meeting"),
-            html.Button(id="send-email-button", n_clicks = 0, children="Send Email"),
+            html.Button(id="send-email-button", n_clicks = 0, children="Send Email")
         ]),
         html.Div(
             [
@@ -293,57 +312,82 @@ Water: ${water} bbl
 
 # Callback that will create a meeting in Outlook via Glue42 Outlook Add-in.
 @app.callback(
-    Output('invoke-new-meeting', 'call'), 
-    [Input('create-meeting-button', 'n_clicks'), Input('invoke-new-meeting', 'result')],
-    [State("aggregate_data", "data"), State("contacts", "incoming")]
+    Output('invoke-create-meeting', 'call'), 
+    [Input('create-meeting-button', 'n_clicks')],
+    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
 )
-def create_meeting(n_clicks, result, data, contactsContext):
-    ctx = dash.callback_context
+def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
+    if (n_clicks != 0) and (data is not None):
+        meeting_subject = "New York Oil and Gas"
+        meeting_body = format_email_body(data)
+        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
 
-    if ctx.triggered and data is not None:
-        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        # First, we need to create an item of type "meeting" in Outlook.
+        call = create_outlook_meeting(meeting_subject, meeting_body, recipients)
+        return call
 
-        if trigger_id == "create-meeting-button" and n_clicks != 0:
+# Callback that will show or send a meeting item created in Outlook via Glue42 Outlook Add-in.
+@app.callback(
+    Output('invoke-show-meeting', 'call'), 
+    [Input('invoke-create-meeting', 'result')],
+    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+)
+def show_meeting(result, data, contactsContext, outlook_automatic):
+    if result is None:
+        raise PreventUpdate
 
-            meeting_subject = "New York Oil and Gas"
-            meeting_body = format_email_body(data)
-            recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+    error = result.get("error")
+    has_error = error is not None
+    if has_error:
+        print('An error occurred when creating a meeting.', error)
+    else:
+        # Once the "meeting" item is created, we can show the Outlook "Meeting" window or send automatically the meeting.
+        item = result["invocationResult"]["returned"]
+        item_id = item.get("ItemID")
+        send_automatically = True if (send_meeting_automatically in outlook_automatic) else False
 
-            # First, we need to create an item of type "meeting" in Outlook.
-            call = create_outlook_meeting(meeting_subject, meeting_body, recipients)
-            return call
-        elif trigger_id == "invoke-new-meeting":
-
-            # Once the "meeting" item is created, we can show the Outlook "Meeting" window, which allows the user to send the meeting to recipients.
-            call = show_outlook_item(result["invocationResult"]["returned"])
-            return call
+        call = show_outlook_item(item_id, send_automatically)
+        return call
 
 # Callback that will create an email in Outlook via Glue42 Outlook Add-in.
 @app.callback(
-    Output('invoke-new-email', 'call'), 
-    [Input('send-email-button', 'n_clicks'), Input('invoke-new-email', 'result')],
+    Output('invoke-create-email', 'call'), 
+    [Input('send-email-button', 'n_clicks')],
     [State("aggregate_data", "data"), State("contacts", "incoming")]
 )
-def create_email(n_clicks, result, data, contactsContext):
-    ctx = dash.callback_context
-    
-    if ctx.triggered and data is not None:
-        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+def create_email(n_clicks, data, contactsContext):
+    if (n_clicks != 0) and (data is not None):
+        email_subject = "New York Oil and Gas"
+        email_body = format_email_body(data)
 
-        if trigger_id == "send-email-button" and n_clicks != 0:
-            email_subject = "New York Oil and Gas"
-            email_body = format_email_body(data)
+        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
 
-            recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+        # First, we need to create an item of type "email" in Outlook.
+        call = create_outlook_email(email_subject, email_body, recipients)
+        return call
 
-            # First, we need to create an item of type "email" in Outlook.
-            call = create_outlook_email(email_subject, email_body, recipients)
-            return call
-        elif trigger_id == "invoke-new-email":
-            
-            # Once the "email" item is created, we can show the Outlook "Message" window, which allows the user to actually send the email to recipients.
-            call = show_outlook_item(result["invocationResult"]["returned"])
-            return call
+# Callback that will show or send an email item created in Outlook via Glue42 Outlook Add-in.
+@app.callback(
+    Output('invoke-show-email', 'call'), 
+    [Input('invoke-create-email', 'result')],
+    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+)
+def show_email(result, data, contactsContext, outlook_automatic):
+    if result is None:
+        raise PreventUpdate
+
+    error = result.get("error")
+    has_error = error is not None
+    if has_error:
+        print('An error occurred when creating an email.', error)
+    else:
+        # Once an "email" item is created, we can show the Outlook "Message" window or send it automatically.
+        item = result["invocationResult"]["returned"]
+        item_id = item.get("ItemID")
+        send_automatically = True if (send_email_automatically in outlook_automatic) else False
+
+        call = show_outlook_item(item_id, send_automatically)
+        return call
 
 # Helper functions
 def human_format(num):
