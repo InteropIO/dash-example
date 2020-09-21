@@ -1,0 +1,272 @@
+[
+    {
+        "id": "5e1df23dbec6ee48dfb55600",
+        "source": "SA News",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae9c081a05fabc4fbf",
+                "5e1dfcae56cff5a0aa3c956e",
+                "5e1dfcae6aa3d8007271cbfe",
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcae6c6823f7fd7eed61"
+            ],
+            "stockSymbols": [
+                "AAPL",
+                "AMZN",
+                "BAC",
+                "MSFT",
+                "WMT"
+            ]
+        },
+        "elapsedTime": {
+            "value": 40,
+            "period": "h"
+        },
+        "title": "Analyst Sees Upside Potential For Canopy Growth, Upgrades Stock",
+        "content": "The analysts believe the value-priced brands have seen better sales in the last quarter of 2019, and Canopy was among the companies that launched and/or sold more value-priced brands in the last couple of months. 'In addition, while value-priced products are lower margin, we believe this should be largely offset by further reduction in costs from underutilized assets,' the analysrts wrote.\r\n",
+        "image": "canopy.jpg"
+    },
+    {
+        "id": "5e1df23db7c6d4fb5f714240",
+        "source": "CNN",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae7cccdac118c91748",
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcae92e52850a39d309f",
+                "5e1dfcaef74b976a3cf03d08",
+                "5e1dfcae56cff5a0aa3c956e"
+            ],
+            "stockSymbols": [
+                "GPRO",
+                "AMZN",
+                "MSFT",
+                "FB",
+                "TSLA"
+            ]
+        },
+        "elapsedTime": {
+            "value": 26,
+            "period": "h"
+        },
+        "title": "Blink and you miss it: The U.S. yield curve inverts again",
+        "content": "An inverted yield curve has historically been an indicator of looming recession as it tends to reflect worries over future growth among bond investors. “The state of the U.S. economy seems to be steady as she goes,” said Michael Lorizio, senior fixed income trader at Manulife Asset Management. Various portions of the Treasury yield curve inverted in 2019 for the first time in years, sparking concerns that a recession may be looming.\r\n",
+        "image": "yield.jpg"
+    },
+    {
+        "id": "5e1df23d626bf685d41aad5f",
+        "source": "Amazon.com, Inc",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae6c6823f7fd7eed61",
+                "5e1dfcae6aa3d8007271cbfe",
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae9c081a05fabc4fbf"
+            ],
+            "stockSymbols": [
+                "BAC",
+                "MSFT",
+                "WMT",
+                "AAPL",
+                "GPRO"
+            ]
+        },
+        "elapsedTime": {
+            "value": 35,
+            "period": "w"
+        },
+        "title": "China virus turns Macau into gambling ghost town",
+        "content": "The Chinese territory of Macau has become a near-ghost town during what is typically the busiest time of year in the world's biggest casino hub, after authorities announced a raft of measures to keep visitors away and contain the new coronavirus. The local government late on Tuesday said it would curb its individual visit scheme through which visitors gain entry from mainland China, days after it suspended inbound package tours. The steps come as deaths from the coronavirus reached 132 in China on Wednesday with 1,500 new cases.\r\n",
+        "image": "macau1.jpg"
+    },
+    {
+        "id": "5e1df23dddfd9ac0a9621404",
+        "source": "SA News",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae9c081a05fabc4fbf",
+                "5e1dfcaef74b976a3cf03d08",
+                "5e1dfcae92e52850a39d309f",
+                "5e1dfcae7cccdac118c91748",
+                "5e1dfcae6c6823f7fd7eed61"
+            ],
+            "stockSymbols": [
+                "GPRO",
+                "WMT",
+                "TWTR",
+                "DIS",
+                "AMZN"
+            ]
+        },
+        "elapsedTime": {
+            "value": 40,
+            "period": "h"
+        },
+        "title": "Beyond Meat Products Pulled From Tim Hortons Canada Shops",
+        "content": "Tim Hortons restaurants have stopped selling Beyond Meat products at its coffee and donut shops across two of Canada’s biggest provinces.The chain had been serving the Beyond Burger and a Beyond Meat breakfast sandwich made with the company’s imitation sausage products. After an initial launch starting in June at nearly 4,000 Canadian locations, the items were scaled back to the provinces of Ontario and British Columbia in September.“We introduced Beyond Meat as a limited time offer. We are always listening to our guests and testing new products that align to our core menu offerings. We may offer Beyond Meat again in the future,” Tim Hortons said in an e-mailed statement.Beyond shares sank as much as 3.9% to $115.40 in early trading Wednesday after Bloomberg’s report. The stock had tumbled almost 4% in New York trading Tuesday after it was downgraded to neutral by JPMorgan. Beyond Meat has soared more than fourfold since it went public last year.The rollback marks a rare setback for the plant-based meat maker, which currently has partnerships with Carl’s Jr., Hardee’s and Dunkin’ Donuts in the U.S., and recently announced an expansion of its partnership with Subway in Canada to begin serving meatball subs nationwide.\r\n",
+        "image": "hortons.jpg"
+    },
+    {
+        "id": "5e1df23d17d10e558380226a",
+        "source": "CNN",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae7cccdac118c91748",
+                "5e1dfcae6aa3d8007271cbfe",
+                "5e1dfcaef74b976a3cf03d08",
+                "5e1dfcae92e52850a39d309f"
+            ],
+            "stockSymbols": [
+                "AMZN",
+                "FB",
+                "WMT",
+                "GPRO",
+                "AAPL"
+            ]
+        },
+        "elapsedTime": {
+            "value": 31,
+            "period": "w"
+        },
+        "title": "AT&T revenue falls short of estimates as satellite TV sheds subscribers",
+        "content": "AT&T has spent a combined $134 billion on DirecTV and Time Warner to transform itself into a media company, but is struggling to stem the loss of valuable satellite subscribers as audiences cut the cord and switch to streaming services.\r\n",
+        "image": "att.jpg"
+    },
+    {
+        "id": "5e1df23df3e97cbcf7800314",
+        "source": "Liz Kiesche",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae92e52850a39d309f",
+                "5e1dfcae56cff5a0aa3c956e",
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcae6d7e8e97278145d9",
+                "5e1dfcaef818fd5fbf4058b5"
+            ],
+            "stockSymbols": [
+                "GPRO",
+                "WMT",
+                "MSFT",
+                "DIS",
+                "BAC"
+            ]
+        },
+        "elapsedTime": {
+            "value": 34,
+            "period": "d"
+        },
+        "title": "Dr. Oz advises on the coronavirus outbreak",
+        "content": "TV doctor Mehmet Oz joined YFI PM to give his take on the coronavirus and how to keep yourself healthy.\r\n",
+        "image": "droz.jpg"
+    },
+    {
+        "id": "5e1df23da8dc7d3d71d76b17",
+        "source": "Oilprice.com",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae92e52850a39d309f",
+                "5e1dfcaef74b976a3cf03d08",
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae6d7e8e97278145d9",
+                "5e1dfcae6c6823f7fd7eed61"
+            ],
+            "stockSymbols": [
+                "WMT",
+                "TSLA",
+                "MSFT",
+                "DIS",
+                "AMZN"
+            ]
+        },
+        "elapsedTime": {
+            "value": 22,
+            "period": "h"
+        },
+        "title": "AMD stock slides as forecast, data-center segment come in lower than expected",
+        "content": "Advanced Micro Devices Inc. failed to live up to Wall Street’s high expectations Tuesday, damaging its highflying stock.\r\n",
+        "image": "amd.jpg"
+    },
+    {
+        "id": "5e1df23d2446f947ffa5645e",
+        "source": "CNN",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcae9c081a05fabc4fbf",
+                "5e1dfcae6d7e8e97278145d9",
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae7cccdac118c91748",
+                "5e1dfcae56cff5a0aa3c956e"
+            ],
+            "stockSymbols": [
+                "AMZN",
+                "BAC",
+                "AAPL",
+                "TWTR",
+                "DIS"
+            ]
+        },
+        "elapsedTime": {
+            "value": 33,
+            "period": "d"
+        },
+        "title": "Did Norfolk Southern's (NYSE:NSC) Share Price Deserve to Gain 91%?",
+        "content": "When we invest, we're generally looking for stocks that outperform the market average. And while active stock picking involves risks (and requires diversification) it can also provide excess returns. For example, the Norfolk Southern Corporation (NYSE:NSC) share price is up 91% in the last 5 years, clearly besting the market return of around 54% (ignoring dividends). On the other hand, the more recent gains haven't been so impressive, with shareholders gaining just 25% , including dividends.\r\n",
+        "image": "norfolk.jpg"
+    },
+    {
+        "id": "5e1df23d308a3c1fa6c2bfb4",
+        "source": "Amazon.com, Inc",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcaef74b976a3cf03d08",
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae6aa3d8007271cbfe",
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcae56cff5a0aa3c956e"
+            ],
+            "stockSymbols": [
+                "TWTR",
+                "AAPL",
+                "MSFT",
+                "AMZN",
+                "TSLA"
+            ]
+        },
+        "elapsedTime": {
+            "value": 28,
+            "period": "h"
+        },
+        "title": "Boeing Reports Stunning Q4 Loss As 737 Max Costs Double; Stock Jumps",
+        "content": "Estimates: Analysts see Boeing's earnings falling 68.4% to $1.73 per share with revenue down 23.5% to $21.67 billion. Earlier this month, Boeing announced it delivered just 79 commercial aircraft in Q4, down 67% from a year ago. Results: Core operating losses of $2.33 per share on revenue of $17.91 billion.\r\n",
+        "image": "boeing.jpg"
+    },
+    {
+        "id": "5e1df23daa209c32a8c413b8",
+        "source": "CNN",
+        "relatedTo": {
+            "clientIds": [
+                "5e1dfcaea6e5b3d3537972f6",
+                "5e1dfcae56cff5a0aa3c956e",
+                "5e1dfcae6d7e8e97278145d9",
+                "5e1dfcaef818fd5fbf4058b5",
+                "5e1dfcae7cccdac118c91748"
+            ],
+            "stockSymbols": [
+                "AAPL",
+                "BAC",
+                "WMT",
+                "TSLA",
+                "DIS"
+            ]
+        },
+        "elapsedTime": {
+            "value": 36,
+            "period": "w"
+        },
+        "title": "Typical Retirement Savings By Age Groups: Are Yours Bigger?",
+        "content": "Active savers — in this case, Americans who own an IRA and-or a 401(k) account in the custody of Fidelity Investments — had savings for retirement of $215,400 as of Sept. according to new data IBD has obtained from Fidelity. In contrast, the average for all working-age families is shockingly low.\r\n",
+        "image": "retire.jpg"
+    }
+]

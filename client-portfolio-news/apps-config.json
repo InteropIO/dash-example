@@ -1,0 +1,43 @@
+[
+    {
+        "title": "Clients",
+        "type": "window",
+        "name": "clients",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/clients/",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400,
+            "allowChannels": true
+        }
+    },
+    {
+        "title": "Portfolio",
+        "type": "window",
+        "name": "portfolio",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/stocks/",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400,
+            "allowChannels": true
+        }
+    },
+    {
+        "title": "News",
+        "type": "window",
+        "name": "news",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:5000/news/",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    }
+]

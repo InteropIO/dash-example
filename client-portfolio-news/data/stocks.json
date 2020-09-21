@@ -1,0 +1,192 @@
+[
+    {
+        "id": "5e1df62190184826ced8d972",
+        "name": "GoPro",
+        "symbol": "GPRO",
+        "lastClosePrice": 379.55,
+        "lastPrices": [
+            383.37,
+            394.92,
+            403.86,
+            418.83,
+            426.18,
+            420.96,
+            434.87,
+            456.21,
+            470.81,
+            464.49
+        ],
+        "about": "Tempor laboris sit reprehenderit ipsum culpa ipsum laborum ad ipsum in cupidatat deserunt. Lorem culpa deserunt laborum consectetur Lorem elit fugiat ad. Ipsum dolor laborum exercitation quis tempor in.\r\n"
+    },
+    {
+        "id": "5e1df621f2ac8aa27eda966a",
+        "name": "Microsoft",
+        "symbol": "MSFT",
+        "lastClosePrice": 87.96,
+        "lastPrices": [
+            85.94,
+            86.21,
+            85.11,
+            86.35,
+            83.51,
+            84.37,
+            83.87,
+            82.63,
+            84.1,
+            86.97
+        ],
+        "about": "Laboris magna incididunt qui Lorem sunt. Ut consequat non in ad adipisicing in magna dolor. Cillum consectetur mollit culpa quis esse Lorem tempor laboris commodo qui.\r\n"
+    },
+    {
+        "id": "5e1df6214f42cfc672add395",
+        "name": "Apple",
+        "symbol": "AAPL",
+        "lastClosePrice": 216.63,
+        "lastPrices": [
+            211.5,
+            217.86,
+            228.68,
+            235.95,
+            247.58,
+            258.6,
+            269.61,
+            257.55,
+            255.45,
+            257.6
+        ],
+        "about": "Officia irure eu dolore et. Consectetur anim voluptate nulla qui esse veniam nisi ea tempor est. Id consectetur fugiat aliqua eu. Sit aliqua reprehenderit sint magna duis pariatur cupidatat irure do ad. Eiusmod exercitation nulla velit non nulla. Occaecat velit dolore quis fugiat nisi ut dolore eiusmod aute ad cupidatat commodo eiusmod cillum. Voluptate dolore occaecat non laborum dolor cillum cupidatat ex qui fugiat.\r\n"
+    },
+    {
+        "id": "5e1df621b348a447efce1f15",
+        "name": "Disney",
+        "symbol": "DIS",
+        "lastClosePrice": 111.9,
+        "lastPrices": [
+            111.85,
+            113.82,
+            110.58,
+            110.21,
+            111.47,
+            110.48,
+            105.95,
+            104.27,
+            107.39,
+            105.56
+        ],
+        "about": "Ex veniam culpa veniam enim ex dolor est proident cupidatat adipisicing aliquip eu cillum. Cupidatat cillum id aliquip enim amet dolore. Eiusmod ex do cillum eiusmod ea ex non fugiat irure officia Lorem.\r\n"
+    },
+    {
+        "id": "5e1df621a0c10701b0ac2a2c",
+        "name": "Tesla",
+        "symbol": "TSLA",
+        "lastClosePrice": 49.58,
+        "lastPrices": [
+            47.6,
+            46.32,
+            47.73,
+            48.76,
+            51.14,
+            48.74,
+            49.79,
+            50.07,
+            47.69,
+            46.75
+        ],
+        "about": "Occaecat do ut velit Lorem incididunt id ullamco adipisicing nisi consectetur fugiat. Incididunt veniam exercitation consectetur duis ea culpa. Nostrud quis velit proident id voluptate cillum deserunt. Sit reprehenderit officia exercitation ipsum eu qui reprehenderit ea enim laboris ad eu sint. Fugiat occaecat nulla ipsum laboris incididunt deserunt labore sint ipsum duis officia. Anim tempor ex commodo ex excepteur sit et amet ex ea culpa et. Reprehenderit officia pariatur voluptate laboris ea dolor aute.\r\n"
+    },
+    {
+        "id": "5e1df6210f0a4765d3325e3d",
+        "name": "Facebook",
+        "symbol": "FB",
+        "lastClosePrice": 431.79,
+        "lastPrices": [
+            421.64,
+            401.09,
+            396.5,
+            407.31,
+            423.98,
+            443.56,
+            447.86,
+            465.51,
+            460.36,
+            473.27
+        ],
+        "about": "Aliqua laboris ipsum fugiat fugiat Lorem Lorem occaecat. Dolor fugiat minim cillum Lorem ea adipisicing esse incididunt amet nostrud consectetur. Labore in elit laboris quis ullamco est excepteur dolore. Ipsum adipisicing commodo duis ex eu proident irure laborum et proident tempor esse. Cupidatat commodo culpa labore proident veniam officia velit cillum esse ex excepteur.\r\n"
+    },
+    {
+        "id": "5e1df6215ffc1758755037a3",
+        "name": "Twitter",
+        "symbol": "TWTR",
+        "lastClosePrice": 452.74,
+        "lastPrices": [
+            473.08,
+            479.98,
+            493.33,
+            500.7,
+            517.75,
+            525.91,
+            541,
+            524.9,
+            506.28,
+            484.22
+        ],
+        "about": "Non esse ea ex nostrud id aliqua. Occaecat ipsum aliqua dolor sint Lorem culpa ex proident aliqua consequat. Sunt ad labore ullamco do proident veniam sint.\r\n"
+    },
+    {
+        "id": "5e1df621220af4d97157c06e",
+        "name": "Bank of America",
+        "symbol": "BAC",
+        "lastClosePrice": 265.73,
+        "lastPrices": [
+            257.94,
+            269.8,
+            266.85,
+            259.3,
+            269.76,
+            279.02,
+            276.43,
+            279.04,
+            276.32,
+            263.96
+        ],
+        "about": "Aliqua qui voluptate qui consectetur mollit quis ut do cupidatat sint nisi esse. Consequat excepteur do magna do dolore. Cupidatat nostrud excepteur enim anim labore minim pariatur ullamco labore quis consequat adipisicing eiusmod.\r\n"
+    },
+    {
+        "id": "5e1df621f5c164b43ebdc33b",
+        "name": "Amazon",
+        "symbol": "AMZN",
+        "lastClosePrice": 21.21,
+        "lastPrices": [
+            20.81,
+            20.72,
+            20.87,
+            21.03,
+            21.64,
+            21.35,
+            21.54,
+            21.42,
+            22.06,
+            22.32
+        ],
+        "about": "Esse elit eiusmod est proident. Veniam qui consectetur duis tempor dolore ut exercitation laboris enim. Ipsum duis deserunt nulla ad ex. Dolore id aliqua exercitation excepteur consequat non sit. Lorem Lorem sunt ipsum proident. Ut fugiat cillum eiusmod anim laboris sint et duis laboris voluptate est cupidatat et. Irure aliquip anim labore eiusmod in esse magna amet ea.\r\n"
+    },
+    {
+        "id": "5e1df621ee864f7e287c03e3",
+        "name": "Walmart",
+        "symbol": "WMT",
+        "lastClosePrice": 262.95,
+        "lastPrices": [
+            258.53,
+            262.8,
+            274.58,
+            283.34,
+            292.05,
+            300.12,
+            291.08,
+            284.84,
+            298.06,
+            310.44
+        ],
+        "about": "Cillum minim dolore et anim non. Sunt elit laborum mollit minim incididunt irure. Nostrud do ad minim anim amet deserunt. Consectetur eiusmod veniam labore laborum cillum deserunt.\r\n"
+    }
+]

@@ -1,0 +1,51 @@
+<div class="container-fluid sticky-top py-3 border-bottom">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between">
+
+        <div class="d-flex justify-content-center align-items-center h-100">
+          <div class="text-left pl-1" *ngIf="relevantTo">
+            <small class="text-muted text-uppercase mb-1">
+              News relevant to:
+            </small>
+            <p class="card-title font-weight-bold mb-0">
+              {{relevantTo}}
+            </p>
+          </div>
+          <div class="text-left pl-1" *ngIf="!relevantTo">
+            <p class="card-title font-weight-bold mb-0">
+              All News
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="container-fluid my-3">
+  <div class="row">
+    <main class="col-12">
+      <ng-container *ngFor="let n of news">
+        <div>
+          <div class="card card-news border-bottom" (click)="handleNewsCardClicked(n.id)">
+            <div class="d-flex justify-content-center h-100">
+              <div class="card-body pl-1">
+                <div class="d-flex justify-content-between">
+                  <p class="card-title mb-1">{{ n.title }}</p>
+                  <p class="card-date text-muted text-right mb-1 ml-2">
+                    {{ n.elapsedTime.value }}{{ n.elapsedTime.period }} ago</p>
+                </div>
+                <p class="card-text text-muted font-weight-bold mb-0" *ngIf="selectedNewsId === n.id">
+                  {{ n.content }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</div>
