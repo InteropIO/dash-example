@@ -5,40 +5,45 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Notification Click</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
     <h3>Notification Click</h3>
-    <p>
-        Python Dash applications integrated with Glue42. The applications demonstrate how to specify an Interop method
-        that will be invoked when the user clicks on the notification.
-    </p>
-    <p>
-        On load, Application B registers an Interop method called "ReviewMessage". Use the input field in
-        Application A to enter a message that will be set as "ReviewMessage" method's argument.
-        Click "Raise Notification" button. When the notification appears, click on it. The message entered in the input
-        field will be displayed in Application B.
-    </p>
-    <p>
-        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
-    </p>
+    <div id="example-description">
+        <p>
+            Python Dash applications integrated with Glue42. The applications demonstrate how to specify an Interop
+            method
+            that will be invoked when the user clicks on the notification.
+        </p>
+        <p>
+            On load, Application B registers an Interop method called "ReviewMessage". Use the input field in
+            Application A to enter a message that will be set as "ReviewMessage" method's argument.
+            Click "Raise Notification" button. When the notification appears, click on it. The message entered in the
+            input
+            field will be displayed in Application B.
+        </p>
+        <p>
+            Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+        </p>
+    </div>
 
-    <ul>
-        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application A</a></li>
-        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application B</a></li>
-    </ul>
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+        </div>
 
-    <div style="display: flex">
-        <iframe src="/app-a" style="height: 600px"></iframe>
-        <iframe src="/app-b" style="height: 600px"></iframe>
+        <p>Start the applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 
