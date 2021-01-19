@@ -9,14 +9,40 @@ import app_a
 def index():
     return render_template('index.html')
 
+@server.route("/local/<path:filename>")
+def local_scripts(filename):
+    local_dir = path.dirname(path.realpath(__file__))
+
+    return send_from_directory(local_dir, filename)
+
+@server.route("/scripts/<path:filename>")
+def shared_scripts(filename):
+    shared_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../../")),
+        'static/scripts'
+    )
+
+    return send_from_directory(shared_dir, filename)
+
 @server.route("/glue/<path:filename>")
-def glue_configs(filename):
-    d = path.abspath(path.join(__file__ ,"../../../"))
-    glue_dir = path.join(d, 'static\glue')
+def static_glue(filename):
+    glue_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../../")),
+        'static/glue'
+    )
 
     return send_from_directory(glue_dir, filename)
 
-# Serving the JavaScript Application
+@server.route("/assets/<path:filename>")
+def static_assets(filename):
+    assets_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../../")),
+        'static/assets'
+    )
+
+    return send_from_directory(assets_dir, filename)
+
+# Serving the Angular application
 app_b_blueprint = Blueprint('app-b', __name__, template_folder='', static_folder='app-b/dist/', static_url_path='/app-b/dist/')
 
 @app_b_blueprint.route("/app-b/")

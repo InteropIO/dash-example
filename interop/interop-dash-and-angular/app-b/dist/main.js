@@ -7,7 +7,7 @@
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Workspace\Tick42-Glue-Desktop\GlueDash\glue-dash-example\interop\interop-dash-and-ng\app-b\src\main.ts */"zUnb");
+module.exports = __webpack_require__(/*! C:\Workspace\Tick42-Glue-Desktop\GlueDash\glue-dash-example\interop\interop-dash-and-angular\app-b\src\main.ts */"zUnb");
 
 
 /***/ }),
@@ -140,11 +140,9 @@ AppModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineNgModule
 AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector"]({ factory: function AppModule_Factory(t) { return new (t || AppModule)(); }, providers: [_glue42_service__WEBPACK_IMPORTED_MODULE_5__["Glue42Service"]], imports: [[
             _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
             _glue42_ng__WEBPACK_IMPORTED_MODULE_4__["Glue42Ng"].forRoot({
-                factory: _glue42_web__WEBPACK_IMPORTED_MODULE_3__["default"],
                 holdInit: true,
-                config: {
-                    appManager: 'full',
-                    application: 'app-b'
+                web: {
+                    factory: _glue42_web__WEBPACK_IMPORTED_MODULE_3__["default"]
                 }
             })
         ]] });
@@ -158,11 +156,9 @@ AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector
                 imports: [
                     _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
                     _glue42_ng__WEBPACK_IMPORTED_MODULE_4__["Glue42Ng"].forRoot({
-                        factory: _glue42_web__WEBPACK_IMPORTED_MODULE_3__["default"],
                         holdInit: true,
-                        config: {
-                            appManager: 'full',
-                            application: 'app-b'
+                        web: {
+                            factory: _glue42_web__WEBPACK_IMPORTED_MODULE_3__["default"]
                         }
                     })
                 ],
@@ -194,13 +190,13 @@ class Glue42Service {
         this.glueStore = glueStore;
     }
     get glueAvailable() {
-        return !this.glueStore.initError;
+        return !this.glueStore.getInitError();
     }
     registerMethod(methodDefinition, callback) {
         if (!this.glueAvailable) {
             return Promise.reject('Glue42 was not initialized.');
         }
-        return this.glueStore.glue.interop.register(methodDefinition, callback);
+        return this.glueStore.getGlue().interop.register(methodDefinition, callback);
     }
 }
 Glue42Service.ɵfac = function Glue42Service_Factory(t) { return new (t || Glue42Service)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_glue42_ng__WEBPACK_IMPORTED_MODULE_1__["Glue42Store"])); };
@@ -209,25 +205,6 @@ Glue42Service.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefineInj
         type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"]
     }], function () { return [{ type: _glue42_ng__WEBPACK_IMPORTED_MODULE_1__["Glue42Store"] }]; }, null); })();
 
-
-/***/ }),
-
-/***/ "fStp":
-/*!********************************************!*\
-  !*** ./node_modules/@glue42/web/dist sync ***!
-  \********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = function() { return []; };
-webpackEmptyContext.resolve = webpackEmptyContext;
-module.exports = webpackEmptyContext;
-webpackEmptyContext.id = "fStp";
 
 /***/ }),
 

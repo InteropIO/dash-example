@@ -7,7 +7,7 @@ export class Glue42Service {
   constructor(private readonly glueStore: Glue42Store) { }
 
   public get glueAvailable(): boolean {
-    return !this.glueStore.initError;
+    return !this.glueStore.getInitError();
   }
 
   public registerMethod(
@@ -18,6 +18,6 @@ export class Glue42Service {
       return Promise.reject('Glue42 was not initialized.');
     }
 
-    return this.glueStore.glue.interop.register(methodDefinition, callback);
+    return this.glueStore.getGlue().interop.register(methodDefinition, callback);
   }
 }

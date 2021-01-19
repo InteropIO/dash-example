@@ -14,11 +14,9 @@ import { Glue42Service } from './glue42.service';
     BrowserModule,
 
     Glue42Ng.forRoot({
-      factory: GlueWeb,
       holdInit: true,
-      config: {
-        appManager: 'full',
-        application: 'app-b'
+      web: {
+        factory: GlueWeb
       }
     })
   ],

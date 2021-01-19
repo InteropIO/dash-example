@@ -2491,14 +2491,17 @@ const isArray = (() => Array.isArray || ((x) => x && typeof x.length === 'number
 /*!*************************************************************************!*\
   !*** ./node_modules/@glue42/ng/__ivy_ngcc__/dist/fesm2015/glue42-ng.js ***!
   \*************************************************************************/
-/*! exports provided: Glue42Ng, Glue42Store, ɵa */
+/*! exports provided: Glue42Ng, Glue42Store, initFactory, ɵa, ɵb, ɵc */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Glue42Ng", function() { return Glue42Ng; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Glue42Store", function() { return Glue42Store; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "initFactory", function() { return initFactory; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵa", function() { return Glue42Initializer; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵb", function() { return GlueConfigService; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵc", function() { return CONFIG_TOKEN; });
 /* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! tslib */ "mrSG");
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/core */ "fXoL");
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs */ "qCKp");
@@ -2507,36 +2510,84 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+const CONFIG_TOKEN = new _angular_core__WEBPACK_IMPORTED_MODULE_1__["InjectionToken"]("CONFIG_TOKEN");
+
+let GlueConfigService = class GlueConfigService {
+    constructor(userSettings) {
+        this._userSettings = Object.assign({ holdInit: true }, userSettings);
+        this.isEnterprise = typeof window.glue42gd !== "undefined";
+    }
+    getSettings() {
+        return this._userSettings;
+    }
+    verifyConfig() {
+        if (this._userSettings.web && this._userSettings.webPlatform) {
+            throw new Error("Cannot initialize, because the config is over-specified: it contains settings for both web and webPlatform. Please set one or the other");
+        }
+    }
+    getFactory() {
+        var _a, _b, _c, _d, _e;
+        if (this.isEnterprise) {
+            return ((_a = this._userSettings.desktop) === null || _a === void 0 ? void 0 : _a.factory) || ((_b = this._userSettings.web) === null || _b === void 0 ? void 0 : _b.factory) || ((_c = this._userSettings.webPlatform) === null || _c === void 0 ? void 0 : _c.factory) ||
+                window.Glue;
+        }
+        return ((_d = this._userSettings.web) === null || _d === void 0 ? void 0 : _d.factory) || ((_e = this._userSettings.webPlatform) === null || _e === void 0 ? void 0 : _e.factory) || window.GlueWeb || window.GlueWebPlatform;
+    }
+    getConfig() {
+        var _a, _b, _c, _d, _e;
+        if (this.isEnterprise) {
+            return ((_a = this._userSettings.desktop) === null || _a === void 0 ? void 0 : _a.config) || ((_b = this._userSettings.web) === null || _b === void 0 ? void 0 : _b.config) || ((_c = this._userSettings.webPlatform) === null || _c === void 0 ? void 0 : _c.config);
+        }
+        return ((_d = this._userSettings.web) === null || _d === void 0 ? void 0 : _d.config) || ((_e = this._userSettings.webPlatform) === null || _e === void 0 ? void 0 : _e.config);
+    }
+    getHoldInit() {
+        return this._userSettings.holdInit;
+    }
+};
+GlueConfigService.ɵfac = function GlueConfigService_Factory(t) { return new (t || GlueConfigService)(_angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵinject"](CONFIG_TOKEN)); };
+GlueConfigService.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjectable"]({ token: GlueConfigService, factory: function (t) { return GlueConfigService.ɵfac(t); } });
+GlueConfigService.ctorParameters = () => [
+    { type: undefined, decorators: [{ type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["Inject"], args: [CONFIG_TOKEN,] }] }
+];
+GlueConfigService = Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"])([ Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__param"])(0, Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Inject"])(CONFIG_TOKEN))
+], GlueConfigService);
+
 let Glue42Initializer = class Glue42Initializer {
-    constructor() {
+    constructor(configService) {
+        this.configService = configService;
         this.defaultInitTimeoutMilliseconds = 3000;
         this.initializationSource = new rxjs__WEBPACK_IMPORTED_MODULE_2__["Subject"]();
     }
-    start(config, factory) {
-        return Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__awaiter"])(this, void 0, void 0, function* () {
-            const glueFactory = factory || this.getGlueFactory();
-            if (!glueFactory) {
-                const errorMessage = "Initialization failed, because no Glue Factory function was found. Please provide a factory function when importing the Glue42Ng module. Alternatively make sure there is a GlueWeb or Glue function attached to the global window object";
-                this.initializationSource.next({ error: { message: errorMessage } });
-                this.initializationSource.complete();
-                return;
-            }
-            try {
-                const glueInstance = yield this.safeCallFactory(config, glueFactory, this.defaultInitTimeoutMilliseconds, `Glue factory timeout hit. Set at: ${this.defaultInitTimeoutMilliseconds} milliseconds`);
-                this.initializationSource.next({ glueInstance });
-                this.initializationSource.complete();
-            }
-            catch (error) {
-                this.initializationSource.next({ error });
-                this.initializationSource.complete();
-            }
+    start() {
+        try {
+            this.configService.verifyConfig();
+        }
+        catch (error) {
+            this.initializationSource.next({ error: { message: error.message } });
+            this.initializationSource.complete();
+            return Promise.resolve();
+        }
+        const config = this.configService.getConfig();
+        const factory = this.configService.getFactory();
+        if (!factory) {
+            const errorMessage = "Initialization failed, because no Glue Factory function was found. Please provide a factory function when importing the Glue42Ng module. Alternatively make sure there is a GlueWeb or Glue or GlueWebPlatform function attached to the global window object";
+            this.initializationSource.next({ error: { message: errorMessage } });
+            this.initializationSource.complete();
+            return Promise.resolve();
+        }
+        const gluePromise = this.safeCallFactory(config, factory, this.defaultInitTimeoutMilliseconds, `Glue factory timeout hit. Set at: ${this.defaultInitTimeoutMilliseconds} milliseconds`)
+            .then((glueResult) => {
+            this.initializationSource.next({ glueInstance: glueResult.glue });
+            this.initializationSource.complete();
+        })
+            .catch((error) => {
+            this.initializationSource.next({ error });
+            this.initializationSource.complete();
         });
+        return this.configService.getSettings().holdInit ? gluePromise : Promise.resolve();
     }
     onState() {
         return this.initializationSource.asObservable();
-    }
-    getGlueFactory() {
-        return window.GlueWeb || window.Glue;
     }
     safeCallFactory(config, factory, timeoutMilliseconds, timeoutMessage) {
         return new Promise((resolve, reject) => {
@@ -2550,7 +2601,8 @@ let Glue42Initializer = class Glue42Initializer {
                 .then((result) => {
                 if (!timeoutHit) {
                     clearTimeout(timeout);
-                    resolve(result);
+                    const glue = result.glue || result;
+                    resolve({ glue });
                 }
             })
                 .catch((error) => {
@@ -2562,8 +2614,11 @@ let Glue42Initializer = class Glue42Initializer {
         });
     }
 };
-Glue42Initializer.ɵfac = function Glue42Initializer_Factory(t) { return new (t || Glue42Initializer)(); };
+Glue42Initializer.ɵfac = function Glue42Initializer_Factory(t) { return new (t || Glue42Initializer)(_angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵinject"](GlueConfigService)); };
 Glue42Initializer.ɵprov = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjectable"]({ token: Glue42Initializer, factory: function (t) { return Glue42Initializer.ɵfac(t); } });
+Glue42Initializer.ctorParameters = () => [
+    { type: GlueConfigService }
+];
 
 let Glue42Store = class Glue42Store {
     constructor(initializer) {
@@ -2574,10 +2629,10 @@ let Glue42Store = class Glue42Store {
     ready() {
         return this.readySource.asObservable();
     }
-    get initError() {
+    getInitError() {
         return this._initError;
     }
-    get glue() {
+    getGlue() {
         if (!this.glueInstance) {
             throw new Error("Accessing uninitialized glue. This might happen, because Glue is not initialized yet or because there was an error during Glue initialization. Please check the initError object or subscribe to the ready observable.");
         }
@@ -2591,7 +2646,7 @@ let Glue42Store = class Glue42Store {
         }
         if (result.error) {
             this._initError = result.error;
-            this.readySource.next({ error: this.initError });
+            this.readySource.next({ error: this.getInitError() });
             return;
         }
     }
@@ -2603,6 +2658,7 @@ Glue42Store.ctorParameters = () => [
 ];
 
 var Glue42Ng_1;
+const initFactory = (initializer) => () => initializer.start();
 let Glue42Ng = Glue42Ng_1 = class Glue42Ng {
     constructor(parentModule) {
         if (parentModule) {
@@ -2610,19 +2666,20 @@ let Glue42Ng = Glue42Ng_1 = class Glue42Ng {
         }
     }
     static forRoot(settings) {
-        settings = Object.assign({ holdInit: true }, settings);
-        const initializerFactory = settings.holdInit ?
-            (initializer) => () => initializer.start(settings.config, settings.factory) :
-            (initializer) => () => { initializer.start(settings.config, settings.factory); };
         return {
             ngModule: Glue42Ng_1,
             providers: [
                 {
                     provide: _angular_core__WEBPACK_IMPORTED_MODULE_1__["APP_INITIALIZER"],
-                    useFactory: initializerFactory,
+                    useFactory: initFactory,
                     multi: true,
-                    deps: [Glue42Initializer, Glue42Store]
+                    deps: [Glue42Initializer, GlueConfigService, Glue42Store]
                 },
+                {
+                    provide: CONFIG_TOKEN,
+                    useValue: settings
+                },
+                GlueConfigService,
                 Glue42Store,
                 Glue42Initializer
             ]
@@ -2636,9 +2693,15 @@ Glue42Ng.ctorParameters = () => [
 ];
 Glue42Ng = Glue42Ng_1 = Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"])([ Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__param"])(0, Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Optional"])()), Object(tslib__WEBPACK_IMPORTED_MODULE_0__["__param"])(0, Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["SkipSelf"])())
 ], Glue42Ng);
+/*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵsetClassMetadata"](GlueConfigService, [{
+        type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["Injectable"]
+    }], function () { return [{ type: undefined, decorators: [{
+                type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["Inject"],
+                args: [CONFIG_TOKEN]
+            }] }]; }, null); })();
 /*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵsetClassMetadata"](Glue42Initializer, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["Injectable"]
-    }], function () { return []; }, null); })();
+    }], function () { return [{ type: GlueConfigService }]; }, null); })();
 /*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵsetClassMetadata"](Glue42Store, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["Injectable"]
     }], function () { return [{ type: Glue42Initializer }]; }, null); })();
@@ -7465,6 +7528,26 @@ function concat(...observables) {
 
 /***/ }),
 
+/***/ "f3NI":
+/*!************************************!*\
+  !*** ./node_modules/ws/browser.js ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function() {
+  throw new Error(
+    'ws does not work in the browser. Browser clients must use the native ' +
+      'WebSocket object'
+  );
+};
+
+
+/***/ }),
+
 /***/ "fFD9":
 /*!************************************************************************!*\
   !*** ./node_modules/rxjs/_esm2015/internal/operators/combineLatest.js ***!
@@ -7500,7 +7583,7 @@ function combineLatest(...observables) {
 /*!******************************************************************!*\
   !*** ./node_modules/@angular/core/__ivy_ngcc__/fesm2015/core.js ***!
   \******************************************************************/
-/*! exports provided: ANALYZE_FOR_ENTRY_COMPONENTS, APP_BOOTSTRAP_LISTENER, APP_ID, APP_INITIALIZER, ApplicationInitStatus, ApplicationModule, ApplicationRef, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, DEFAULT_CURRENCY_CODE, DebugElement, DebugEventListener, DebugNode, DefaultIterableDiffer, Directive, ElementRef, EmbeddedViewRef, ErrorHandler, EventEmitter, Host, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, InjectionToken, Injector, Input, IterableDiffers, KeyValueDiffers, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleFactoryLoader, NgModuleRef, NgProbeToken, NgZone, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_ID, PLATFORM_INITIALIZER, Pipe, PlatformRef, Query, QueryList, ReflectiveInjector, ReflectiveKey, Renderer2, RendererFactory2, RendererStyleFlags2, ResolvedReflectiveFactory, Sanitizer, SecurityContext, Self, SimpleChange, SkipSelf, SystemJsNgModuleLoader, SystemJsNgModuleLoaderConfig, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Testability, TestabilityRegistry, Type, VERSION, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, ViewRef, WrappedValue, asNativeElements, assertPlatform, createPlatform, createPlatformFactory, defineInjectable, destroyPlatform, enableProdMode, forwardRef, getDebugNode, getModuleFactory, getPlatform, inject, isDevMode, platformCore, resolveForwardRef, setTestabilityGetter, ɵ0, ɵ1, ɵALLOW_MULTIPLE_PLATFORMS, ɵAPP_ID_RANDOM_PROVIDER, ɵChangeDetectorStatus, ɵCodegenComponentFactoryResolver, ɵCompiler_compileModuleAndAllComponentsAsync__POST_R3__, ɵCompiler_compileModuleAndAllComponentsSync__POST_R3__, ɵCompiler_compileModuleAsync__POST_R3__, ɵCompiler_compileModuleSync__POST_R3__, ɵComponentFactory, ɵConsole, ɵDEFAULT_LOCALE_ID, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵINJECTOR_IMPL__POST_R3__, ɵINJECTOR_SCOPE, ɵLifecycleHooksFeature, ɵLocaleDataIndex, ɵNG_COMP_DEF, ɵNG_DIR_DEF, ɵNG_ELEMENT_ID, ɵNG_INJ_DEF, ɵNG_MOD_DEF, ɵNG_PIPE_DEF, ɵNG_PROV_DEF, ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR, ɵNO_CHANGE, ɵNgModuleFactory, ɵNoopNgZone, ɵReflectionCapabilities, ɵRender3ComponentFactory, ɵRender3ComponentRef, ɵRender3NgModuleRef, ɵSWITCH_CHANGE_DETECTOR_REF_FACTORY__POST_R3__, ɵSWITCH_COMPILE_COMPONENT__POST_R3__, ɵSWITCH_COMPILE_DIRECTIVE__POST_R3__, ɵSWITCH_COMPILE_INJECTABLE__POST_R3__, ɵSWITCH_COMPILE_NGMODULE__POST_R3__, ɵSWITCH_COMPILE_PIPE__POST_R3__, ɵSWITCH_ELEMENT_REF_FACTORY__POST_R3__, ɵSWITCH_IVY_ENABLED__POST_R3__, ɵSWITCH_RENDERER2_FACTORY__POST_R3__, ɵSWITCH_TEMPLATE_REF_FACTORY__POST_R3__, ɵSWITCH_VIEW_CONTAINER_REF_FACTORY__POST_R3__, ɵ_sanitizeHtml, ɵ_sanitizeUrl, ɵallowSanitizationBypassAndThrow, ɵand, ɵangular_packages_core_core_a, ɵangular_packages_core_core_b, ɵangular_packages_core_core_ba, ɵangular_packages_core_core_bb, ɵangular_packages_core_core_bc, ɵangular_packages_core_core_bd, ɵangular_packages_core_core_be, ɵangular_packages_core_core_bg, ɵangular_packages_core_core_bh, ɵangular_packages_core_core_bi, ɵangular_packages_core_core_bj, ɵangular_packages_core_core_bk, ɵangular_packages_core_core_bl, ɵangular_packages_core_core_bm, ɵangular_packages_core_core_bn, ɵangular_packages_core_core_bo, ɵangular_packages_core_core_bq, ɵangular_packages_core_core_br, ɵangular_packages_core_core_c, ɵangular_packages_core_core_d, ɵangular_packages_core_core_e, ɵangular_packages_core_core_f, ɵangular_packages_core_core_g, ɵangular_packages_core_core_h, ɵangular_packages_core_core_i, ɵangular_packages_core_core_j, ɵangular_packages_core_core_k, ɵangular_packages_core_core_l, ɵangular_packages_core_core_m, ɵangular_packages_core_core_n, ɵangular_packages_core_core_o, ɵangular_packages_core_core_p, ɵangular_packages_core_core_q, ɵangular_packages_core_core_r, ɵangular_packages_core_core_s, ɵangular_packages_core_core_t, ɵangular_packages_core_core_u, ɵangular_packages_core_core_v, ɵangular_packages_core_core_w, ɵangular_packages_core_core_x, ɵangular_packages_core_core_y, ɵangular_packages_core_core_z, ɵbypassSanitizationTrustHtml, ɵbypassSanitizationTrustResourceUrl, ɵbypassSanitizationTrustScript, ɵbypassSanitizationTrustStyle, ɵbypassSanitizationTrustUrl, ɵccf, ɵclearOverrides, ɵclearResolutionOfComponentResourcesQueue, ɵcmf, ɵcompileComponent, ɵcompileDirective, ɵcompileNgModule, ɵcompileNgModuleDefs, ɵcompileNgModuleFactory__POST_R3__, ɵcompilePipe, ɵcreateInjector, ɵcrt, ɵdefaultIterableDiffers, ɵdefaultKeyValueDiffers, ɵdetectChanges, ɵdevModeEqual, ɵdid, ɵeld, ɵfindLocaleData, ɵflushModuleScopingQueueAsMuchAsPossible, ɵgetComponentViewDefinitionFactory, ɵgetDebugNodeR2, ɵgetDebugNode__POST_R3__, ɵgetDirectives, ɵgetHostElement, ɵgetInjectableDef, ɵgetLContext, ɵgetLocaleCurrencyCode, ɵgetLocalePluralCase, ɵgetModuleFactory__POST_R3__, ɵgetSanitizationBypassType, ɵglobal, ɵinitServicesIfNeeded, ɵinlineInterpolate, ɵinterpolate, ɵisBoundToModule__POST_R3__, ɵisDefaultChangeDetectionStrategy, ɵisListLikeIterable, ɵisObservable, ɵisPromise, ɵivyEnabled, ɵmakeDecorator, ɵmarkDirty, ɵmod, ɵmpd, ɵncd, ɵnoSideEffects, ɵnov, ɵoverrideComponentView, ɵoverrideProvider, ɵpad, ɵpatchComponentDefWithScope, ɵpid, ɵpod, ɵppd, ɵprd, ɵpublishDefaultGlobalUtils, ɵpublishGlobalUtil, ɵqud, ɵregisterLocaleData, ɵregisterModuleFactory, ɵregisterNgModuleType, ɵrenderComponent, ɵresetCompiledComponents, ɵresetJitOptions, ɵresolveComponentResources, ɵsetClassMetadata, ɵsetCurrentInjector, ɵsetDocument, ɵsetLocaleId, ɵstore, ɵstringify, ɵted, ɵtransitiveScopesFor, ɵunregisterLocaleData, ɵunv, ɵunwrapSafeValue, ɵvid, ɵwhenRendered, ɵɵCopyDefinitionFeature, ɵɵInheritDefinitionFeature, ɵɵNgOnChangesFeature, ɵɵProvidersFeature, ɵɵadvance, ɵɵattribute, ɵɵattributeInterpolate1, ɵɵattributeInterpolate2, ɵɵattributeInterpolate3, ɵɵattributeInterpolate4, ɵɵattributeInterpolate5, ɵɵattributeInterpolate6, ɵɵattributeInterpolate7, ɵɵattributeInterpolate8, ɵɵattributeInterpolateV, ɵɵclassMap, ɵɵclassMapInterpolate1, ɵɵclassMapInterpolate2, ɵɵclassMapInterpolate3, ɵɵclassMapInterpolate4, ɵɵclassMapInterpolate5, ɵɵclassMapInterpolate6, ɵɵclassMapInterpolate7, ɵɵclassMapInterpolate8, ɵɵclassMapInterpolateV, ɵɵclassProp, ɵɵcontentQuery, ɵɵdefineComponent, ɵɵdefineDirective, ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵdefineNgModule, ɵɵdefinePipe, ɵɵdirectiveInject, ɵɵdisableBindings, ɵɵelement, ɵɵelementContainer, ɵɵelementContainerEnd, ɵɵelementContainerStart, ɵɵelementEnd, ɵɵelementStart, ɵɵenableBindings, ɵɵgetCurrentView, ɵɵgetFactoryOf, ɵɵgetInheritedFactory, ɵɵhostProperty, ɵɵi18n, ɵɵi18nApply, ɵɵi18nAttributes, ɵɵi18nEnd, ɵɵi18nExp, ɵɵi18nPostprocess, ɵɵi18nStart, ɵɵinject, ɵɵinjectAttribute, ɵɵinjectPipeChangeDetectorRef, ɵɵinvalidFactory, ɵɵinvalidFactoryDep, ɵɵlistener, ɵɵloadQuery, ɵɵnamespaceHTML, ɵɵnamespaceMathML, ɵɵnamespaceSVG, ɵɵnextContext, ɵɵpipe, ɵɵpipeBind1, ɵɵpipeBind2, ɵɵpipeBind3, ɵɵpipeBind4, ɵɵpipeBindV, ɵɵprojection, ɵɵprojectionDef, ɵɵproperty, ɵɵpropertyInterpolate, ɵɵpropertyInterpolate1, ɵɵpropertyInterpolate2, ɵɵpropertyInterpolate3, ɵɵpropertyInterpolate4, ɵɵpropertyInterpolate5, ɵɵpropertyInterpolate6, ɵɵpropertyInterpolate7, ɵɵpropertyInterpolate8, ɵɵpropertyInterpolateV, ɵɵpureFunction0, ɵɵpureFunction1, ɵɵpureFunction2, ɵɵpureFunction3, ɵɵpureFunction4, ɵɵpureFunction5, ɵɵpureFunction6, ɵɵpureFunction7, ɵɵpureFunction8, ɵɵpureFunctionV, ɵɵqueryRefresh, ɵɵreference, ɵɵresolveBody, ɵɵresolveDocument, ɵɵresolveWindow, ɵɵrestoreView, ɵɵsanitizeHtml, ɵɵsanitizeResourceUrl, ɵɵsanitizeScript, ɵɵsanitizeStyle, ɵɵsanitizeUrl, ɵɵsanitizeUrlOrResourceUrl, ɵɵsetComponentScope, ɵɵsetNgModuleScope, ɵɵstaticContentQuery, ɵɵstaticViewQuery, ɵɵstyleMap, ɵɵstyleMapInterpolate1, ɵɵstyleMapInterpolate2, ɵɵstyleMapInterpolate3, ɵɵstyleMapInterpolate4, ɵɵstyleMapInterpolate5, ɵɵstyleMapInterpolate6, ɵɵstyleMapInterpolate7, ɵɵstyleMapInterpolate8, ɵɵstyleMapInterpolateV, ɵɵstyleProp, ɵɵstylePropInterpolate1, ɵɵstylePropInterpolate2, ɵɵstylePropInterpolate3, ɵɵstylePropInterpolate4, ɵɵstylePropInterpolate5, ɵɵstylePropInterpolate6, ɵɵstylePropInterpolate7, ɵɵstylePropInterpolate8, ɵɵstylePropInterpolateV, ɵɵsyntheticHostListener, ɵɵsyntheticHostProperty, ɵɵtemplate, ɵɵtemplateRefExtractor, ɵɵtext, ɵɵtextInterpolate, ɵɵtextInterpolate1, ɵɵtextInterpolate2, ɵɵtextInterpolate3, ɵɵtextInterpolate4, ɵɵtextInterpolate5, ɵɵtextInterpolate6, ɵɵtextInterpolate7, ɵɵtextInterpolate8, ɵɵtextInterpolateV, ɵɵviewQuery */
+/*! exports provided: ANALYZE_FOR_ENTRY_COMPONENTS, APP_BOOTSTRAP_LISTENER, APP_ID, APP_INITIALIZER, ApplicationInitStatus, ApplicationModule, ApplicationRef, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, DEFAULT_CURRENCY_CODE, DebugElement, DebugEventListener, DebugNode, DefaultIterableDiffer, Directive, ElementRef, EmbeddedViewRef, ErrorHandler, EventEmitter, Host, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, InjectionToken, Injector, Input, IterableDiffers, KeyValueDiffers, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleFactoryLoader, NgModuleRef, NgProbeToken, NgZone, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_ID, PLATFORM_INITIALIZER, Pipe, PlatformRef, Query, QueryList, ReflectiveInjector, ReflectiveKey, Renderer2, RendererFactory2, RendererStyleFlags2, ResolvedReflectiveFactory, Sanitizer, SecurityContext, Self, SimpleChange, SkipSelf, SystemJsNgModuleLoader, SystemJsNgModuleLoaderConfig, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Testability, TestabilityRegistry, Type, VERSION, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, ViewRef, WrappedValue, asNativeElements, assertPlatform, createPlatform, createPlatformFactory, defineInjectable, destroyPlatform, enableProdMode, forwardRef, getDebugNode, getModuleFactory, getPlatform, inject, isDevMode, platformCore, resolveForwardRef, setTestabilityGetter, ɵ0, ɵ1, ɵALLOW_MULTIPLE_PLATFORMS, ɵAPP_ID_RANDOM_PROVIDER, ɵChangeDetectorStatus, ɵCodegenComponentFactoryResolver, ɵCompiler_compileModuleAndAllComponentsAsync__POST_R3__, ɵCompiler_compileModuleAndAllComponentsSync__POST_R3__, ɵCompiler_compileModuleAsync__POST_R3__, ɵCompiler_compileModuleSync__POST_R3__, ɵComponentFactory, ɵConsole, ɵDEFAULT_LOCALE_ID, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵINJECTOR_IMPL__POST_R3__, ɵINJECTOR_SCOPE, ɵLifecycleHooksFeature, ɵLocaleDataIndex, ɵNG_COMP_DEF, ɵNG_DIR_DEF, ɵNG_ELEMENT_ID, ɵNG_INJ_DEF, ɵNG_MOD_DEF, ɵNG_PIPE_DEF, ɵNG_PROV_DEF, ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR, ɵNO_CHANGE, ɵNgModuleFactory, ɵNoopNgZone, ɵReflectionCapabilities, ɵRender3ComponentFactory, ɵRender3ComponentRef, ɵRender3NgModuleRef, ɵSWITCH_CHANGE_DETECTOR_REF_FACTORY__POST_R3__, ɵSWITCH_COMPILE_COMPONENT__POST_R3__, ɵSWITCH_COMPILE_DIRECTIVE__POST_R3__, ɵSWITCH_COMPILE_INJECTABLE__POST_R3__, ɵSWITCH_COMPILE_NGMODULE__POST_R3__, ɵSWITCH_COMPILE_PIPE__POST_R3__, ɵSWITCH_ELEMENT_REF_FACTORY__POST_R3__, ɵSWITCH_IVY_ENABLED__POST_R3__, ɵSWITCH_RENDERER2_FACTORY__POST_R3__, ɵSWITCH_TEMPLATE_REF_FACTORY__POST_R3__, ɵSWITCH_VIEW_CONTAINER_REF_FACTORY__POST_R3__, ɵ_sanitizeHtml, ɵ_sanitizeUrl, ɵallowSanitizationBypassAndThrow, ɵand, ɵangular_packages_core_core_a, ɵangular_packages_core_core_b, ɵangular_packages_core_core_ba, ɵangular_packages_core_core_bb, ɵangular_packages_core_core_bc, ɵangular_packages_core_core_bd, ɵangular_packages_core_core_bf, ɵangular_packages_core_core_bg, ɵangular_packages_core_core_bh, ɵangular_packages_core_core_bi, ɵangular_packages_core_core_bj, ɵangular_packages_core_core_bk, ɵangular_packages_core_core_bl, ɵangular_packages_core_core_bm, ɵangular_packages_core_core_bn, ɵangular_packages_core_core_bp, ɵangular_packages_core_core_bq, ɵangular_packages_core_core_c, ɵangular_packages_core_core_d, ɵangular_packages_core_core_e, ɵangular_packages_core_core_f, ɵangular_packages_core_core_g, ɵangular_packages_core_core_h, ɵangular_packages_core_core_i, ɵangular_packages_core_core_j, ɵangular_packages_core_core_k, ɵangular_packages_core_core_l, ɵangular_packages_core_core_m, ɵangular_packages_core_core_n, ɵangular_packages_core_core_o, ɵangular_packages_core_core_p, ɵangular_packages_core_core_q, ɵangular_packages_core_core_r, ɵangular_packages_core_core_s, ɵangular_packages_core_core_t, ɵangular_packages_core_core_u, ɵangular_packages_core_core_v, ɵangular_packages_core_core_w, ɵangular_packages_core_core_x, ɵangular_packages_core_core_y, ɵangular_packages_core_core_z, ɵbypassSanitizationTrustHtml, ɵbypassSanitizationTrustResourceUrl, ɵbypassSanitizationTrustScript, ɵbypassSanitizationTrustStyle, ɵbypassSanitizationTrustUrl, ɵccf, ɵclearOverrides, ɵclearResolutionOfComponentResourcesQueue, ɵcmf, ɵcompileComponent, ɵcompileDirective, ɵcompileNgModule, ɵcompileNgModuleDefs, ɵcompileNgModuleFactory__POST_R3__, ɵcompilePipe, ɵcreateInjector, ɵcrt, ɵdefaultIterableDiffers, ɵdefaultKeyValueDiffers, ɵdetectChanges, ɵdevModeEqual, ɵdid, ɵeld, ɵfindLocaleData, ɵflushModuleScopingQueueAsMuchAsPossible, ɵgetComponentViewDefinitionFactory, ɵgetDebugNodeR2, ɵgetDebugNode__POST_R3__, ɵgetDirectives, ɵgetHostElement, ɵgetInjectableDef, ɵgetLContext, ɵgetLocaleCurrencyCode, ɵgetLocalePluralCase, ɵgetModuleFactory__POST_R3__, ɵgetSanitizationBypassType, ɵglobal, ɵinitServicesIfNeeded, ɵinlineInterpolate, ɵinterpolate, ɵisBoundToModule__POST_R3__, ɵisDefaultChangeDetectionStrategy, ɵisListLikeIterable, ɵisObservable, ɵisPromise, ɵivyEnabled, ɵmakeDecorator, ɵmarkDirty, ɵmod, ɵmpd, ɵncd, ɵnoSideEffects, ɵnov, ɵoverrideComponentView, ɵoverrideProvider, ɵpad, ɵpatchComponentDefWithScope, ɵpid, ɵpod, ɵppd, ɵprd, ɵpublishDefaultGlobalUtils, ɵpublishGlobalUtil, ɵqud, ɵregisterLocaleData, ɵregisterModuleFactory, ɵregisterNgModuleType, ɵrenderComponent, ɵresetCompiledComponents, ɵresetJitOptions, ɵresolveComponentResources, ɵsetClassMetadata, ɵsetCurrentInjector, ɵsetDocument, ɵsetLocaleId, ɵstore, ɵstringify, ɵted, ɵtransitiveScopesFor, ɵunregisterLocaleData, ɵunv, ɵunwrapSafeValue, ɵvid, ɵwhenRendered, ɵɵCopyDefinitionFeature, ɵɵInheritDefinitionFeature, ɵɵNgOnChangesFeature, ɵɵProvidersFeature, ɵɵadvance, ɵɵattribute, ɵɵattributeInterpolate1, ɵɵattributeInterpolate2, ɵɵattributeInterpolate3, ɵɵattributeInterpolate4, ɵɵattributeInterpolate5, ɵɵattributeInterpolate6, ɵɵattributeInterpolate7, ɵɵattributeInterpolate8, ɵɵattributeInterpolateV, ɵɵclassMap, ɵɵclassMapInterpolate1, ɵɵclassMapInterpolate2, ɵɵclassMapInterpolate3, ɵɵclassMapInterpolate4, ɵɵclassMapInterpolate5, ɵɵclassMapInterpolate6, ɵɵclassMapInterpolate7, ɵɵclassMapInterpolate8, ɵɵclassMapInterpolateV, ɵɵclassProp, ɵɵcontentQuery, ɵɵdefineComponent, ɵɵdefineDirective, ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵdefineNgModule, ɵɵdefinePipe, ɵɵdirectiveInject, ɵɵdisableBindings, ɵɵelement, ɵɵelementContainer, ɵɵelementContainerEnd, ɵɵelementContainerStart, ɵɵelementEnd, ɵɵelementStart, ɵɵenableBindings, ɵɵgetCurrentView, ɵɵgetFactoryOf, ɵɵgetInheritedFactory, ɵɵhostProperty, ɵɵi18n, ɵɵi18nApply, ɵɵi18nAttributes, ɵɵi18nEnd, ɵɵi18nExp, ɵɵi18nPostprocess, ɵɵi18nStart, ɵɵinject, ɵɵinjectAttribute, ɵɵinjectPipeChangeDetectorRef, ɵɵinvalidFactory, ɵɵinvalidFactoryDep, ɵɵlistener, ɵɵloadQuery, ɵɵnamespaceHTML, ɵɵnamespaceMathML, ɵɵnamespaceSVG, ɵɵnextContext, ɵɵpipe, ɵɵpipeBind1, ɵɵpipeBind2, ɵɵpipeBind3, ɵɵpipeBind4, ɵɵpipeBindV, ɵɵprojection, ɵɵprojectionDef, ɵɵproperty, ɵɵpropertyInterpolate, ɵɵpropertyInterpolate1, ɵɵpropertyInterpolate2, ɵɵpropertyInterpolate3, ɵɵpropertyInterpolate4, ɵɵpropertyInterpolate5, ɵɵpropertyInterpolate6, ɵɵpropertyInterpolate7, ɵɵpropertyInterpolate8, ɵɵpropertyInterpolateV, ɵɵpureFunction0, ɵɵpureFunction1, ɵɵpureFunction2, ɵɵpureFunction3, ɵɵpureFunction4, ɵɵpureFunction5, ɵɵpureFunction6, ɵɵpureFunction7, ɵɵpureFunction8, ɵɵpureFunctionV, ɵɵqueryRefresh, ɵɵreference, ɵɵresolveBody, ɵɵresolveDocument, ɵɵresolveWindow, ɵɵrestoreView, ɵɵsanitizeHtml, ɵɵsanitizeResourceUrl, ɵɵsanitizeScript, ɵɵsanitizeStyle, ɵɵsanitizeUrl, ɵɵsanitizeUrlOrResourceUrl, ɵɵsetComponentScope, ɵɵsetNgModuleScope, ɵɵstaticContentQuery, ɵɵstaticViewQuery, ɵɵstyleMap, ɵɵstyleMapInterpolate1, ɵɵstyleMapInterpolate2, ɵɵstyleMapInterpolate3, ɵɵstyleMapInterpolate4, ɵɵstyleMapInterpolate5, ɵɵstyleMapInterpolate6, ɵɵstyleMapInterpolate7, ɵɵstyleMapInterpolate8, ɵɵstyleMapInterpolateV, ɵɵstyleProp, ɵɵstylePropInterpolate1, ɵɵstylePropInterpolate2, ɵɵstylePropInterpolate3, ɵɵstylePropInterpolate4, ɵɵstylePropInterpolate5, ɵɵstylePropInterpolate6, ɵɵstylePropInterpolate7, ɵɵstylePropInterpolate8, ɵɵstylePropInterpolateV, ɵɵsyntheticHostListener, ɵɵsyntheticHostProperty, ɵɵtemplate, ɵɵtemplateRefExtractor, ɵɵtext, ɵɵtextInterpolate, ɵɵtextInterpolate1, ɵɵtextInterpolate2, ɵɵtextInterpolate3, ɵɵtextInterpolate4, ɵɵtextInterpolate5, ɵɵtextInterpolate6, ɵɵtextInterpolate7, ɵɵtextInterpolate8, ɵɵtextInterpolateV, ɵɵviewQuery */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -7662,20 +7745,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_b", function() { return injectInjectorOnly; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_ba", function() { return instructionState; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bb", function() { return getLView; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bc", function() { return getPreviousOrParentTNode; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bd", function() { return getBindingRoot; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_be", function() { return nextContextImpl; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bg", function() { return pureFunction1Internal; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bh", function() { return pureFunction2Internal; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bi", function() { return pureFunction3Internal; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bj", function() { return pureFunction4Internal; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bk", function() { return pureFunctionVInternal; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bl", function() { return getUrlSanitizer; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bm", function() { return makeParamDecorator; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bn", function() { return makePropDecorator; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bo", function() { return getClosureSafeProperty; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bq", function() { return getRootContext; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_br", function() { return i18nPostprocess; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bc", function() { return getBindingRoot; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bd", function() { return nextContextImpl; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bf", function() { return pureFunction1Internal; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bg", function() { return pureFunction2Internal; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bh", function() { return pureFunction3Internal; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bi", function() { return pureFunction4Internal; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bj", function() { return pureFunctionVInternal; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bk", function() { return getUrlSanitizer; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bl", function() { return makeParamDecorator; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bm", function() { return makePropDecorator; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bn", function() { return getClosureSafeProperty; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bp", function() { return getRootContext; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_bq", function() { return i18nPostprocess; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_c", function() { return NullInjector; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_d", function() { return ReflectiveInjector_; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵangular_packages_core_core_e", function() { return ReflectiveDependency; });
@@ -7932,7 +8014,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! rxjs */ "qCKp");
 /* harmony import */ var rxjs_operators__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! rxjs/operators */ "kU1M");
 /**
- * @license Angular v10.1.1
+ * @license Angular v10.1.6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8602,6 +8684,93 @@ function initNgDevMode() {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+function assertNumber(actual, msg) {
+    if (!(typeof actual === 'number')) {
+        throwError(msg, typeof actual, 'number', '===');
+    }
+}
+function assertNumberInRange(actual, minInclusive, maxInclusive) {
+    assertNumber(actual, 'Expected a number');
+    assertLessThanOrEqual(actual, maxInclusive, 'Expected number to be less than or equal to');
+    assertGreaterThanOrEqual(actual, minInclusive, 'Expected number to be greater than or equal to');
+}
+function assertString(actual, msg) {
+    if (!(typeof actual === 'string')) {
+        throwError(msg, actual === null ? 'null' : typeof actual, 'string', '===');
+    }
+}
+function assertEqual(actual, expected, msg) {
+    if (!(actual == expected)) {
+        throwError(msg, actual, expected, '==');
+    }
+}
+function assertNotEqual(actual, expected, msg) {
+    if (!(actual != expected)) {
+        throwError(msg, actual, expected, '!=');
+    }
+}
+function assertSame(actual, expected, msg) {
+    if (!(actual === expected)) {
+        throwError(msg, actual, expected, '===');
+    }
+}
+function assertNotSame(actual, expected, msg) {
+    if (!(actual !== expected)) {
+        throwError(msg, actual, expected, '!==');
+    }
+}
+function assertLessThan(actual, expected, msg) {
+    if (!(actual < expected)) {
+        throwError(msg, actual, expected, '<');
+    }
+}
+function assertLessThanOrEqual(actual, expected, msg) {
+    if (!(actual <= expected)) {
+        throwError(msg, actual, expected, '<=');
+    }
+}
+function assertGreaterThan(actual, expected, msg) {
+    if (!(actual > expected)) {
+        throwError(msg, actual, expected, '>');
+    }
+}
+function assertGreaterThanOrEqual(actual, expected, msg) {
+    if (!(actual >= expected)) {
+        throwError(msg, actual, expected, '>=');
+    }
+}
+function assertNotDefined(actual, msg) {
+    if (actual != null) {
+        throwError(msg, actual, null, '==');
+    }
+}
+function assertDefined(actual, msg) {
+    if (actual == null) {
+        throwError(msg, actual, null, '!=');
+    }
+}
+function throwError(msg, actual, expected, comparison) {
+    throw new Error(`ASSERTION ERROR: ${msg}` +
+        (comparison == null ? '' : ` [Expected=> ${expected} ${comparison} ${actual} <=Actual]`));
+}
+function assertDomNode(node) {
+    // If we're in a worker, `Node` will not be defined.
+    assertEqual((typeof Node !== 'undefined' && node instanceof Node) ||
+        (typeof node === 'object' && node != null &&
+            node.constructor.name === 'WebWorkerRenderNode'), true, `The provided value must be an instance of a DOM Node but got ${stringify(node)}`);
+}
+function assertIndexInRange(arr, index) {
+    const maxLen = arr ? arr.length : 0;
+    assertLessThan(index, maxLen, `Index expected to be less than ${maxLen} but got ${index}`);
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * Creates a token that can be used in a DI Provider.
  *
@@ -8722,6 +8891,17 @@ function setInjectImplementation(impl) {
     const previous = _injectImplementation;
     _injectImplementation = impl;
     return previous;
+}
+/**
+ * Assert that `_injectImplementation` is not `fn`.
+ *
+ * This is useful, to prevent infinite recursion.
+ *
+ * @param fn Function which it should not equal to
+ */
+function assertInjectImplementationNot(fn) {
+    ngDevMode &&
+        assertNotEqual(_injectImplementation, fn, 'Calling ɵɵinject would cause infinite recursion');
 }
 function injectInjectorOnly(token, flags = InjectFlags.Default) {
     if (_currentInjector === undefined) {
@@ -8934,93 +9114,6 @@ class NgModuleRef {
  * @publicApi
  */
 class NgModuleFactory {
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function assertNumber(actual, msg) {
-    if (!(typeof actual === 'number')) {
-        throwError(msg, typeof actual, 'number', '===');
-    }
-}
-function assertNumberInRange(actual, minInclusive, maxInclusive) {
-    assertNumber(actual, 'Expected a number');
-    assertLessThanOrEqual(actual, maxInclusive, 'Expected number to be less than or equal to');
-    assertGreaterThanOrEqual(actual, minInclusive, 'Expected number to be greater than or equal to');
-}
-function assertString(actual, msg) {
-    if (!(typeof actual === 'string')) {
-        throwError(msg, actual === null ? 'null' : typeof actual, 'string', '===');
-    }
-}
-function assertEqual(actual, expected, msg) {
-    if (!(actual == expected)) {
-        throwError(msg, actual, expected, '==');
-    }
-}
-function assertNotEqual(actual, expected, msg) {
-    if (!(actual != expected)) {
-        throwError(msg, actual, expected, '!=');
-    }
-}
-function assertSame(actual, expected, msg) {
-    if (!(actual === expected)) {
-        throwError(msg, actual, expected, '===');
-    }
-}
-function assertNotSame(actual, expected, msg) {
-    if (!(actual !== expected)) {
-        throwError(msg, actual, expected, '!==');
-    }
-}
-function assertLessThan(actual, expected, msg) {
-    if (!(actual < expected)) {
-        throwError(msg, actual, expected, '<');
-    }
-}
-function assertLessThanOrEqual(actual, expected, msg) {
-    if (!(actual <= expected)) {
-        throwError(msg, actual, expected, '<=');
-    }
-}
-function assertGreaterThan(actual, expected, msg) {
-    if (!(actual > expected)) {
-        throwError(msg, actual, expected, '>');
-    }
-}
-function assertGreaterThanOrEqual(actual, expected, msg) {
-    if (!(actual >= expected)) {
-        throwError(msg, actual, expected, '>=');
-    }
-}
-function assertNotDefined(actual, msg) {
-    if (actual != null) {
-        throwError(msg, actual, null, '==');
-    }
-}
-function assertDefined(actual, msg) {
-    if (actual == null) {
-        throwError(msg, actual, null, '!=');
-    }
-}
-function throwError(msg, actual, expected, comparison) {
-    throw new Error(`ASSERTION ERROR: ${msg}` +
-        (comparison == null ? '' : ` [Expected=> ${expected} ${comparison} ${actual} <=Actual]`));
-}
-function assertDomNode(node) {
-    // If we're in a worker, `Node` will not be defined.
-    assertEqual((typeof Node !== 'undefined' && node instanceof Node) ||
-        (typeof node === 'object' && node != null &&
-            node.constructor.name === 'WebWorkerRenderNode'), true, `The provided value must be an instance of a DOM Node but got ${stringify(node)}`);
-}
-function assertIndexInRange(arr, index) {
-    const maxLen = arr ? arr.length : 0;
-    assertLessThan(index, maxLen, `Index expected to be less than ${maxLen} but got ${index}`);
 }
 
 /**
@@ -9807,6 +9900,7 @@ const RENDERER = 11;
 const SANITIZER = 12;
 const CHILD_HEAD = 13;
 const CHILD_TAIL = 14;
+// FIXME(misko): Investigate if the three declarations aren't all same thing.
 const DECLARATION_VIEW = 15;
 const DECLARATION_COMPONENT_VIEW = 16;
 const DECLARATION_LCONTAINER = 17;
@@ -9814,6 +9908,15 @@ const PREORDER_HOOK_FLAGS = 18;
 const QUERIES = 19;
 /** Size of LView's header. Necessary to adjust for it when setting slots.  */
 const HEADER_OFFSET = 20;
+/**
+ * Converts `TViewType` into human readable text.
+ * Make sure this matches with `TViewType`
+ */
+const TViewTypeAsString = [
+    'Root',
+    'Component',
+    'Embedded',
+];
 // Note: This hack is necessary so we don't erroneously get a circular dependency
 // failure based on types.
 const unusedValueExportToPlacateAjd = 1;
@@ -9910,8 +10013,12 @@ function isRootView(target) {
 // [Assert functions do not constraint type when they are guarded by a truthy
 // expression.](https://github.com/microsoft/TypeScript/issues/37295)
 function assertTNodeForLView(tNode, lView) {
+    assertTNodeForTView(tNode, lView[TVIEW]);
+}
+function assertTNodeForTView(tNode, tView) {
+    assertDefined(tNode, 'TNode must be defined');
     tNode.hasOwnProperty('tView_') &&
-        assertEqual(tNode.tView_, lView[TVIEW], 'This TNode does not belong to this LView.');
+        assertEqual(tNode.tView_, tView, 'This TNode does not belong to this TView.');
 }
 function assertComponentType(actual, msg = 'Type passed in is not ComponentType, it does not have \'ɵcmp\' property.') {
     if (!getComponentDef(actual)) {
@@ -9923,12 +10030,12 @@ function assertNgModuleType(actual, msg = 'Type passed in is not NgModuleType, i
         throwError(msg);
     }
 }
-function assertPreviousIsParent(isParent) {
-    assertEqual(isParent, true, 'previousOrParentTNode should be a parent');
+function assertCurrentTNodeIsParent(isParent) {
+    assertEqual(isParent, true, 'currentTNode should be a parent');
 }
 function assertHasParent(tNode) {
-    assertDefined(tNode, 'previousOrParentTNode should exist!');
-    assertDefined(tNode.parent, 'previousOrParentTNode should have a parent');
+    assertDefined(tNode, 'currentTNode should exist!');
+    assertDefined(tNode.parent, 'currentTNode should have a parent');
 }
 function assertDataNext(lView, index, arr) {
     if (arr == null)
@@ -9960,6 +10067,47 @@ function assertDirectiveDef(obj) {
     if (obj.type === undefined || obj.selectors == undefined || obj.inputs === undefined) {
         throwError(`Expected a DirectiveDef/ComponentDef and this object does not seem to have the expected shape.`);
     }
+}
+function assertIndexInDeclRange(lView, index) {
+    const tView = lView[1];
+    assertBetween(HEADER_OFFSET, tView.bindingStartIndex, index);
+}
+function assertIndexInVarsRange(lView, index) {
+    const tView = lView[1];
+    assertBetween(tView.bindingStartIndex, tView.i18nStartIndex, index);
+}
+function assertIndexInI18nRange(lView, index) {
+    const tView = lView[1];
+    assertBetween(tView.i18nStartIndex, tView.expandoStartIndex, index);
+}
+function assertIndexInExpandoRange(lView, index) {
+    const tView = lView[1];
+    assertBetween(tView.expandoStartIndex, lView.length, index);
+}
+function assertBetween(lower, upper, index) {
+    if (!(lower <= index && index < upper)) {
+        throwError(`Index out of range (expecting ${lower} <= ${index} < ${upper})`);
+    }
+}
+/**
+ * This is a basic sanity check that the `injectorIndex` seems to point to what looks like a
+ * NodeInjector data structure.
+ *
+ * @param lView `LView` which should be checked.
+ * @param injectorIndex index into the `LView` where the `NodeInjector` is expected.
+ */
+function assertNodeInjector(lView, injectorIndex) {
+    assertIndexInExpandoRange(lView, injectorIndex);
+    assertIndexInExpandoRange(lView, injectorIndex + 8 /* PARENT */);
+    assertNumber(lView[injectorIndex + 0], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 1], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 2], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 3], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 4], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 5], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 6], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 7], 'injectorIndex should point to a bloom filter');
+    assertNumber(lView[injectorIndex + 8 /* PARENT */], 'injectorIndex should point to parent injector');
 }
 
 /**
@@ -10278,7 +10426,7 @@ function getNativeByTNode(tNode, lView) {
  * @param lView
  */
 function getNativeByTNodeOrNull(tNode, lView) {
-    const index = tNode.index;
+    const index = tNode === null ? -1 : tNode.index;
     if (index !== -1) {
         ngDevMode && assertTNodeForLView(tNode, lView);
         const node = unwrapRNode(lView[index]);
@@ -10461,20 +10609,21 @@ function getTView() {
 function ɵɵrestoreView(viewToRestore) {
     instructionState.lFrame.contextLView = viewToRestore;
 }
-function getPreviousOrParentTNode() {
-    return instructionState.lFrame.previousOrParentTNode;
+function getCurrentTNode() {
+    return instructionState.lFrame.currentTNode;
 }
-function setPreviousOrParentTNode(tNode, isParent) {
-    instructionState.lFrame.previousOrParentTNode = tNode;
+function setCurrentTNode(tNode, isParent) {
+    ngDevMode && assertTNodeForTView(tNode, instructionState.lFrame.tView);
+    instructionState.lFrame.currentTNode = tNode;
     instructionState.lFrame.isParent = isParent;
 }
-function getIsParent() {
+function isCurrentTNodeParent() {
     return instructionState.lFrame.isParent;
 }
-function setIsNotParent() {
+function setCurrentTNodeAsNotParent() {
     instructionState.lFrame.isParent = false;
 }
-function setIsParent() {
+function setCurrentTNodeAsParent() {
     instructionState.lFrame.isParent = true;
 }
 function getContextLView() {
@@ -10568,7 +10717,7 @@ function enterDI(newView, tNode) {
     ngDevMode && assertLViewOrUndefined(newView);
     const newLFrame = allocLFrame();
     instructionState.lFrame = newLFrame;
-    newLFrame.previousOrParentTNode = tNode;
+    newLFrame.currentTNode = tNode;
     newLFrame.lView = newView;
 }
 /**
@@ -10580,10 +10729,9 @@ function enterDI(newView, tNode) {
  * exited the state has to be restored
  *
  * @param newView New lView to become active
- * @param tNode Element to which the View is a child of
  * @returns the previously active lView;
  */
-function enterView(newView, tNode) {
+function enterView(newView) {
     ngDevMode && assertLViewOrUndefined(newView);
     const newLFrame = allocLFrame();
     if (ngDevMode) {
@@ -10599,7 +10747,8 @@ function enterView(newView, tNode) {
     }
     const tView = newView[TVIEW];
     instructionState.lFrame = newLFrame;
-    newLFrame.previousOrParentTNode = tNode;
+    ngDevMode && tView.firstChild && assertTNodeForTView(tView.firstChild, tView);
+    newLFrame.currentTNode = tView.firstChild;
     newLFrame.lView = newView;
     newLFrame.tView = tView;
     newLFrame.contextLView = newView;
@@ -10616,7 +10765,7 @@ function allocLFrame() {
 }
 function createLFrame(parent) {
     const lFrame = {
-        previousOrParentTNode: null,
+        currentTNode: null,
         isParent: true,
         lView: null,
         tView: null,
@@ -10637,7 +10786,7 @@ function createLFrame(parent) {
 /**
  * A lightweight version of leave which is used with DI.
  *
- * This function only resets `previousOrParentTNode` and `LView` as those are the only properties
+ * This function only resets `currentTNode` and `LView` as those are the only properties
  * used with DI (`enterDI()`).
  *
  * NOTE: This function is reexported as `leaveDI`. However `leaveDI` has return type of `void` where
@@ -10646,7 +10795,7 @@ function createLFrame(parent) {
 function leaveViewLight() {
     const oldLFrame = instructionState.lFrame;
     instructionState.lFrame = oldLFrame.parent;
-    oldLFrame.previousOrParentTNode = null;
+    oldLFrame.currentTNode = null;
     oldLFrame.lView = null;
     return oldLFrame;
 }
@@ -10983,9 +11132,6 @@ function callHook(currentView, initPhase, arr, i) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const TNODE = 8;
-const PARENT_INJECTOR = 8;
-const INJECTOR_BLOOM_PARENT_SIZE = 9;
 const NO_PARENT_INJECTOR = -1;
 /**
  * Each injector is saved in 9 contiguous slots in `LView` and 9 contiguous slots in
@@ -11097,6 +11243,8 @@ class NodeInjectorFactory {
          * Recursive loop causes an error to be displayed.
          */
         this.resolving = false;
+        ngDevMode && assertDefined(factory, 'Factory not specified');
+        ngDevMode && assertEqual(typeof factory, 'function', 'Expected factory function.');
         this.canSeeViewProviders = isViewProvider;
         this.injectImpl = injectImplementation;
     }
@@ -11107,6 +11255,69 @@ function isFactory(obj) {
 // Note: This hack is necessary so we don't erroneously get a circular dependency
 // failure based on types.
 const unusedValueExportToPlacateAjd$3 = 1;
+
+/**
+ * Converts `TNodeType` into human readable text.
+ * Make sure this matches with `TNodeType`
+ */
+const TNodeTypeAsString = [
+    'Container',
+    'Projection',
+    'Element',
+    'ElementContainer',
+    'IcuContainer' // 4
+];
+// Note: This hack is necessary so we don't erroneously get a circular dependency
+// failure based on types.
+const unusedValueExportToPlacateAjd$4 = 1;
+/**
+ * Returns `true` if the `TNode` has a directive which has `@Input()` for `class` binding.
+ *
+ * ```
+ * <div my-dir [class]="exp"></div>
+ * ```
+ * and
+ * ```
+ * @Directive({
+ * })
+ * class MyDirective {
+ *   @Input()
+ *   class: string;
+ * }
+ * ```
+ *
+ * In the above case it is necessary to write the reconciled styling information into the
+ * directive's input.
+ *
+ * @param tNode
+ */
+function hasClassInput(tNode) {
+    return (tNode.flags & 16 /* hasClassInput */) !== 0;
+}
+/**
+ * Returns `true` if the `TNode` has a directive which has `@Input()` for `style` binding.
+ *
+ * ```
+ * <div my-dir [style]="exp"></div>
+ * ```
+ * and
+ * ```
+ * @Directive({
+ * })
+ * class MyDirective {
+ *   @Input()
+ *   class: string;
+ * }
+ * ```
+ *
+ * In the above case it is necessary to write the reconciled styling information into the
+ * directive's input.
+ *
+ * @param tNode
+ */
+function hasStyleInput(tNode) {
+    return (tNode.flags & 32 /* hasStyleInput */) !== 0;
+}
 
 /**
  * @license
@@ -11130,19 +11341,7 @@ function assertNodeNotOfTypes(tNode, types, message) {
     assertEqual(found, false, message !== null && message !== void 0 ? message : `Should not be one of ${types.map(typeName).join(', ')} but got ${typeName(tNode.type)}`);
 }
 function typeName(type) {
-    if (type == 1 /* Projection */)
-        return 'Projection';
-    if (type == 0 /* Container */)
-        return 'Container';
-    if (type == 5 /* IcuContainer */)
-        return 'IcuContainer';
-    if (type == 2 /* View */)
-        return 'View';
-    if (type == 3 /* Element */)
-        return 'Element';
-    if (type == 4 /* ElementContainer */)
-        return 'ElementContainer';
-    return '<unknown>';
+    return TNodeTypeAsString[type] || '<unknown>';
 }
 
 /**
@@ -11364,6 +11563,11 @@ function hasParentInjector(parentLocation) {
     return parentLocation !== NO_PARENT_INJECTOR;
 }
 function getParentInjectorIndex(parentLocation) {
+    ngDevMode && assertNumber(parentLocation, 'Number expected');
+    ngDevMode && assertNotEqual(parentLocation, -1, 'Not a valid state.');
+    const parentInjectorIndex = parentLocation & 32767 /* InjectorIndexMask */;
+    ngDevMode &&
+        assertGreaterThan(parentInjectorIndex, HEADER_OFFSET, 'Parent injector must be pointing past HEADER_OFFSET.');
     return parentLocation & 32767 /* InjectorIndexMask */;
 }
 function getParentInjectorViewOffset(parentLocation) {
@@ -11584,52 +11788,53 @@ function bloomAdd(injectorIndex, tView, type) {
  * Creates (or gets an existing) injector for a given element or container.
  *
  * @param tNode for which an injector should be retrieved / created.
- * @param hostView View where the node is stored
+ * @param lView View where the node is stored
  * @returns Node injector
  */
-function getOrCreateNodeInjectorForNode(tNode, hostView) {
-    const existingInjectorIndex = getInjectorIndex(tNode, hostView);
+function getOrCreateNodeInjectorForNode(tNode, lView) {
+    const existingInjectorIndex = getInjectorIndex(tNode, lView);
     if (existingInjectorIndex !== -1) {
         return existingInjectorIndex;
     }
-    const tView = hostView[TVIEW];
+    const tView = lView[TVIEW];
     if (tView.firstCreatePass) {
-        tNode.injectorIndex = hostView.length;
+        tNode.injectorIndex = lView.length;
         insertBloom(tView.data, tNode); // foundation for node bloom
-        insertBloom(hostView, null); // foundation for cumulative bloom
+        insertBloom(lView, null); // foundation for cumulative bloom
         insertBloom(tView.blueprint, null);
     }
-    const parentLoc = getParentInjectorLocation(tNode, hostView);
+    const parentLoc = getParentInjectorLocation(tNode, lView);
     const injectorIndex = tNode.injectorIndex;
     // If a parent injector can't be found, its location is set to -1.
     // In that case, we don't need to set up a cumulative bloom
     if (hasParentInjector(parentLoc)) {
         const parentIndex = getParentInjectorIndex(parentLoc);
-        const parentLView = getParentInjectorView(parentLoc, hostView);
+        const parentLView = getParentInjectorView(parentLoc, lView);
         const parentData = parentLView[TVIEW].data;
         // Creates a cumulative bloom filter that merges the parent's bloom filter
         // and its own cumulative bloom (which contains tokens for all ancestors)
-        for (let i = 0; i < 8; i++) {
-            hostView[injectorIndex + i] = parentLView[parentIndex + i] | parentData[parentIndex + i];
+        for (let i = 0; i < 8 /* BLOOM_SIZE */; i++) {
+            lView[injectorIndex + i] = parentLView[parentIndex + i] | parentData[parentIndex + i];
         }
     }
-    hostView[injectorIndex + PARENT_INJECTOR] = parentLoc;
+    lView[injectorIndex + 8 /* PARENT */] = parentLoc;
     return injectorIndex;
 }
 function insertBloom(arr, footer) {
     arr.push(0, 0, 0, 0, 0, 0, 0, 0, footer);
 }
-function getInjectorIndex(tNode, hostView) {
+function getInjectorIndex(tNode, lView) {
     if (tNode.injectorIndex === -1 ||
         // If the injector index is the same as its parent's injector index, then the index has been
         // copied down from the parent node. No injector has been created yet on this node.
         (tNode.parent && tNode.parent.injectorIndex === tNode.injectorIndex) ||
         // After the first template pass, the injector index might exist but the parent values
         // might not have been calculated yet for this instance
-        hostView[tNode.injectorIndex + PARENT_INJECTOR] == null) {
+        lView[tNode.injectorIndex + 8 /* PARENT */] === null) {
         return -1;
     }
     else {
+        ngDevMode && assertIndexInRange(lView, tNode.injectorIndex);
         return tNode.injectorIndex;
     }
 }
@@ -11637,25 +11842,57 @@ function getInjectorIndex(tNode, hostView) {
  * Finds the index of the parent injector, with a view offset if applicable. Used to set the
  * parent injector initially.
  *
- * Returns a combination of number of `ViewData` we have to go up and index in that `Viewdata`
+ * @returns Returns a number that is the combination of the number of LViews that we have to go up
+ * to find the LView containing the parent inject AND the index of the injector within that LView.
  */
-function getParentInjectorLocation(tNode, view) {
+function getParentInjectorLocation(tNode, lView) {
     if (tNode.parent && tNode.parent.injectorIndex !== -1) {
+        // If we have a parent `TNode` and there is an injector associated with it we are done, because
+        // the parent injector is within the current `LView`.
         return tNode.parent.injectorIndex; // ViewOffset is 0
     }
-    // For most cases, the parent injector index can be found on the host node (e.g. for component
-    // or container), so this loop will be skipped, but we must keep the loop here to support
-    // the rarer case of deeply nested <ng-template> tags or inline views.
-    let hostTNode = view[T_HOST];
-    let viewOffset = 1;
-    while (hostTNode && hostTNode.injectorIndex === -1) {
-        view = view[DECLARATION_VIEW];
-        hostTNode = view ? view[T_HOST] : null;
-        viewOffset++;
+    // When parent injector location is computed it may be outside of the current view. (ie it could
+    // be pointing to a declared parent location). This variable stores number of declaration parents
+    // we need to walk up in order to find the parent injector location.
+    let declarationViewOffset = 0;
+    let parentTNode = null;
+    let lViewCursor = lView;
+    // The parent injector is not in the current `LView`. We will have to walk the declared parent
+    // `LView` hierarchy and look for it. If we walk of the top, that means that there is no parent
+    // `NodeInjector`.
+    while (lViewCursor !== null) {
+        // First determine the `parentTNode` location. The parent pointer differs based on `TView.type`.
+        const tView = lViewCursor[TVIEW];
+        const tViewType = tView.type;
+        if (tViewType === 2 /* Embedded */) {
+            ngDevMode &&
+                assertDefined(tView.declTNode, 'Embedded TNodes should have declaration parents.');
+            parentTNode = tView.declTNode;
+        }
+        else if (tViewType === 1 /* Component */) {
+            // Components don't have `TView.declTNode` because each instance of component could be
+            // inserted in different location, hence `TView.declTNode` is meaningless.
+            parentTNode = lViewCursor[T_HOST];
+        }
+        else {
+            ngDevMode && assertEqual(tView.type, 0 /* Root */, 'Root type expected');
+            parentTNode = null;
+        }
+        if (parentTNode === null) {
+            // If we have no parent, than we are done.
+            return NO_PARENT_INJECTOR;
+        }
+        ngDevMode && parentTNode && assertTNodeForLView(parentTNode, lViewCursor[DECLARATION_VIEW]);
+        // Every iteration of the loop requires that we go to the declared parent.
+        declarationViewOffset++;
+        lViewCursor = lViewCursor[DECLARATION_VIEW];
+        if (parentTNode.injectorIndex !== -1) {
+            // We found a NodeInjector which points to something.
+            return (parentTNode.injectorIndex |
+                (declarationViewOffset << 16 /* ViewOffsetShift */));
+        }
     }
-    return hostTNode ?
-        hostTNode.injectorIndex | (viewOffset << 16 /* ViewOffsetShift */) :
-        -1;
+    return NO_PARENT_INJECTOR;
 }
 /**
  * Makes a type or an injection token public to the DI system by adding it to an
@@ -11700,7 +11937,7 @@ function diPublicInInjector(injectorIndex, tView, token) {
  */
 function injectAttributeImpl(tNode, attrNameToInject) {
     ngDevMode &&
-        assertNodeOfPossibleTypes(tNode, [0 /* Container */, 3 /* Element */, 4 /* ElementContainer */]);
+        assertNodeOfPossibleTypes(tNode, [0 /* Container */, 2 /* Element */, 3 /* ElementContainer */]);
     ngDevMode && assertDefined(tNode, 'expecting tNode');
     if (attrNameToInject === 'class') {
         return tNode.classes;
@@ -11793,12 +12030,11 @@ function getOrCreateInjectable(tNode, lView, token, flags = InjectFlags.Default,
             let parentLocation = NO_PARENT_INJECTOR;
             let hostTElementNode = flags & InjectFlags.Host ? lView[DECLARATION_COMPONENT_VIEW][T_HOST] : null;
             // If we should skip this injector, or if there is no injector on this node, start by
-            // searching
-            // the parent injector.
+            // searching the parent injector.
             if (injectorIndex === -1 || flags & InjectFlags.SkipSelf) {
                 parentLocation = injectorIndex === -1 ? getParentInjectorLocation(tNode, lView) :
-                    lView[injectorIndex + PARENT_INJECTOR];
-                if (!shouldSearchParent(flags, false)) {
+                    lView[injectorIndex + 8 /* PARENT */];
+                if (parentLocation === NO_PARENT_INJECTOR || !shouldSearchParent(flags, false)) {
                     injectorIndex = -1;
                 }
                 else {
@@ -11810,9 +12046,11 @@ function getOrCreateInjectable(tNode, lView, token, flags = InjectFlags.Default,
             // Traverse up the injector tree until we find a potential match or until we know there
             // *isn't* a match.
             while (injectorIndex !== -1) {
-                parentLocation = lView[injectorIndex + PARENT_INJECTOR];
+                ngDevMode && assertNodeInjector(lView, injectorIndex);
                 // Check the current injector. If it matches, see if it contains token.
                 const tView = lView[TVIEW];
+                ngDevMode &&
+                    assertTNodeForLView(tView.data[injectorIndex + 8 /* TNODE */], lView);
                 if (bloomHasToken(bloomHash, injectorIndex, tView.data)) {
                     // At this point, we have an injector which *may* contain the token, so we step through
                     // the providers and directives associated with the injector's corresponding node to get
@@ -11822,7 +12060,9 @@ function getOrCreateInjectable(tNode, lView, token, flags = InjectFlags.Default,
                         return instance;
                     }
                 }
-                if (shouldSearchParent(flags, lView[TVIEW].data[injectorIndex + TNODE] === hostTElementNode) &&
+                parentLocation = lView[injectorIndex + 8 /* PARENT */];
+                if (parentLocation !== NO_PARENT_INJECTOR &&
+                    shouldSearchParent(flags, lView[TVIEW].data[injectorIndex + 8 /* TNODE */] === hostTElementNode) &&
                     bloomHasToken(bloomHash, injectorIndex, lView)) {
                     // The def wasn't found anywhere on this node, so it was a false positive.
                     // Traverse up the tree and continue searching.
@@ -11871,9 +12111,9 @@ function getOrCreateInjectable(tNode, lView, token, flags = InjectFlags.Default,
 const NOT_FOUND = {};
 function searchTokensOnInjector(injectorIndex, lView, token, previousTView, flags, hostTElementNode) {
     const currentTView = lView[TVIEW];
-    const tNode = currentTView.data[injectorIndex + TNODE];
+    const tNode = currentTView.data[injectorIndex + 8 /* TNODE */];
     // First, we need to determine if view providers can be accessed by the starting element.
-    // There are two possibities
+    // There are two possibilities
     const canAccessViewProviders = previousTView == null ?
         // 1) This is the first invocation `previousTView == null` which means that we are at the
         // `TNode` of where injector is starting to look. In such a case the only time we are allowed
@@ -11889,7 +12129,7 @@ function searchTokensOnInjector(injectorIndex, lView, token, previousTView, flag
         // - AND the parent TNode is an Element.
         // This means that we just came from the Component's View and therefore are allowed to see
         // into the ViewProviders.
-        (previousTView != currentTView && (tNode.type === 3 /* Element */));
+        (previousTView != currentTView && (tNode.type === 2 /* Element */));
     // This special case happens when there is a @host on the inject and when we are searching
     // on the host element node.
     const isHostSpecialCase = (flags & InjectFlags.Host) && hostTElementNode === tNode;
@@ -11953,10 +12193,7 @@ function getNodeInjectable(lView, tView, index, tNode) {
         }
         const previousIncludeViewProviders = setIncludeViewProviders(factory.canSeeViewProviders);
         factory.resolving = true;
-        let previousInjectImplementation;
-        if (factory.injectImpl) {
-            previousInjectImplementation = setInjectImplementation(factory.injectImpl);
-        }
+        const previousInjectImplementation = factory.injectImpl ? setInjectImplementation(factory.injectImpl) : null;
         enterDI(lView, tNode);
         try {
             value = lView[index] = factory.factory(undefined, tData, lView, tNode);
@@ -11972,7 +12209,7 @@ function getNodeInjectable(lView, tView, index, tNode) {
             }
         }
         finally {
-            if (factory.injectImpl)
+            previousInjectImplementation !== null &&
                 setInjectImplementation(previousInjectImplementation);
             setIncludeViewProviders(previousIncludeViewProviders);
             factory.resolving = false;
@@ -13249,13 +13486,11 @@ function isDirectiveInstance(instance) {
  * Locates the element within the given LView and returns the matching index
  */
 function findViaNativeElement(lView, target) {
-    let tNode = lView[TVIEW].firstChild;
-    while (tNode) {
-        const native = getNativeByTNodeOrNull(tNode, lView);
-        if (native === target) {
-            return tNode.index;
+    const tView = lView[TVIEW];
+    for (let i = HEADER_OFFSET; i < tView.bindingStartIndex; i++) {
+        if (unwrapRNode(lView[i]) === target) {
+            return i;
         }
-        tNode = traverseNextElement(tNode);
     }
     return -1;
 }
@@ -13263,7 +13498,11 @@ function findViaNativeElement(lView, target) {
  * Locates the next tNode (child, sibling or parent).
  */
 function traverseNextElement(tNode) {
-    if (tNode.child) {
+    if (tNode.child && tNode.child.parent === tNode) {
+        // FIXME(misko): checking if `tNode.child.parent === tNode` should not be necessary
+        // We have added it here because i18n creates TNode's which are not valid, so this is a work
+        // around. The i18n code will be refactored in #39003 and once it lands this extra check can be
+        // deleted.
         return tNode.child;
     }
     else if (tNode.next) {
@@ -13449,70 +13688,6 @@ function getExpressionChangedErrorDetails(lView, bindingIndex, oldValue, newValu
         }
     }
     return { propName: undefined, oldValue, newValue };
-}
-
-/**
- * Converts `TNodeType` into human readable text.
- * Make sure this matches with `TNodeType`
- */
-const TNodeTypeAsString = [
-    'Container',
-    'Projection',
-    'View',
-    'Element',
-    'ElementContainer',
-    'IcuContainer' // 5
-];
-// Note: This hack is necessary so we don't erroneously get a circular dependency
-// failure based on types.
-const unusedValueExportToPlacateAjd$4 = 1;
-/**
- * Returns `true` if the `TNode` has a directive which has `@Input()` for `class` binding.
- *
- * ```
- * <div my-dir [class]="exp"></div>
- * ```
- * and
- * ```
- * @Directive({
- * })
- * class MyDirective {
- *   @Input()
- *   class: string;
- * }
- * ```
- *
- * In the above case it is necessary to write the reconciled styling information into the
- * directive's input.
- *
- * @param tNode
- */
-function hasClassInput(tNode) {
-    return (tNode.flags & 16 /* hasClassInput */) !== 0;
-}
-/**
- * Returns `true` if the `TNode` has a directive which has `@Input()` for `style` binding.
- *
- * ```
- * <div my-dir [style]="exp"></div>
- * ```
- * and
- * ```
- * @Directive({
- * })
- * class MyDirective {
- *   @Input()
- *   class: string;
- * }
- * ```
- *
- * In the above case it is necessary to write the reconciled styling information into the
- * directive's input.
- *
- * @param tNode
- */
-function hasStyleInput(tNode) {
-    return (tNode.flags & 32 /* hasStyleInput */) !== 0;
 }
 
 /**
@@ -14297,12 +14472,11 @@ function nameSuffix(text) {
  */
 const TViewConstructor = class TView {
     constructor(type, //
-    id, //
     blueprint, //
     template, //
     queries, //
     viewQuery, //
-    node, //
+    declTNode, //
     data, //
     bindingStartIndex, //
     expandoStartIndex, //
@@ -14330,12 +14504,11 @@ const TViewConstructor = class TView {
     _decls, //
     _vars) {
         this.type = type;
-        this.id = id;
         this.blueprint = blueprint;
         this.template = template;
         this.queries = queries;
         this.viewQuery = viewQuery;
-        this.node = node;
+        this.declTNode = declTNode;
         this.data = data;
         this.bindingStartIndex = bindingStartIndex;
         this.expandoStartIndex = expandoStartIndex;
@@ -14367,6 +14540,12 @@ const TViewConstructor = class TView {
         const buf = [];
         processTNodeChildren(this.firstChild, buf);
         return buf.join('');
+    }
+    get type_() {
+        return TViewTypeAsString[this.type] || `TViewType.?${this.type}?`;
+    }
+    get i18nStartIndex() {
+        return HEADER_OFFSET + this._decls + this._vars;
     }
 };
 class TNode {
@@ -14433,23 +14612,39 @@ class TNode {
         this.classBindings = classBindings;
         this.styleBindings = styleBindings;
     }
-    get type_() {
-        switch (this.type) {
-            case 0 /* Container */:
-                return 'TNodeType.Container';
-            case 3 /* Element */:
-                return 'TNodeType.Element';
-            case 4 /* ElementContainer */:
-                return 'TNodeType.ElementContainer';
-            case 5 /* IcuContainer */:
-                return 'TNodeType.IcuContainer';
-            case 1 /* Projection */:
-                return 'TNodeType.Projection';
-            case 2 /* View */:
-                return 'TNodeType.View';
-            default:
-                return 'TNodeType.???';
+    /**
+     * Return a human debug version of the set of `NodeInjector`s which will be consulted when
+     * resolving tokens from this `TNode`.
+     *
+     * When debugging applications, it is often difficult to determine which `NodeInjector`s will be
+     * consulted. This method shows a list of `DebugNode`s representing the `TNode`s which will be
+     * consulted in order when resolving a token starting at this `TNode`.
+     *
+     * The original data is stored in `LView` and `TView` with a lot of offset indexes, and so it is
+     * difficult to reason about.
+     *
+     * @param lView The `LView` instance for this `TNode`.
+     */
+    debugNodeInjectorPath(lView) {
+        const path = [];
+        let injectorIndex = getInjectorIndex(this, lView);
+        ngDevMode && assertNodeInjector(lView, injectorIndex);
+        while (injectorIndex !== -1) {
+            const tNode = lView[TVIEW].data[injectorIndex + 8 /* TNODE */];
+            path.push(buildDebugNode(tNode, lView));
+            const parentLocation = lView[injectorIndex + 8 /* PARENT */];
+            if (parentLocation === NO_PARENT_INJECTOR) {
+                injectorIndex = -1;
+            }
+            else {
+                injectorIndex = getParentInjectorIndex(parentLocation);
+                lView = getParentInjectorView(parentLocation, lView);
+            }
         }
+        return path;
+    }
+    get type_() {
+        return TNodeTypeAsString[this.type] || `TNodeType.?${this.type}?`;
     }
     get flags_() {
         const flags = [];
@@ -14494,6 +14689,13 @@ class TNode {
     }
     get classBindings_() {
         return toDebugStyleBinding(this, true);
+    }
+    get providerIndexStart_() {
+        return this.providerIndexes & 1048575 /* ProvidersStartIndexMask */;
+    }
+    get providerIndexEnd_() {
+        return this.providerIndexStart_ +
+            (this.providerIndexes >>> 20 /* CptViewProvidersCountShift */);
     }
 }
 const TNodeDebug = TNode;
@@ -14679,19 +14881,15 @@ class LViewDebug {
         return this._raw_lView[T_HOST];
     }
     get decls() {
-        const tView = this.tView;
-        const start = HEADER_OFFSET;
-        return toLViewRange(this.tView, this._raw_lView, start, start + tView._decls);
+        return toLViewRange(this.tView, this._raw_lView, HEADER_OFFSET, this.tView.bindingStartIndex);
     }
     get vars() {
         const tView = this.tView;
-        const start = HEADER_OFFSET + tView._decls;
-        return toLViewRange(this.tView, this._raw_lView, start, start + tView._vars);
+        return toLViewRange(tView, this._raw_lView, tView.bindingStartIndex, tView.i18nStartIndex);
     }
     get i18n() {
         const tView = this.tView;
-        const start = HEADER_OFFSET + tView._decls + tView._vars;
-        return toLViewRange(this.tView, this._raw_lView, start, this.tView.expandoStartIndex);
+        return toLViewRange(tView, this._raw_lView, tView.i18nStartIndex, tView.expandoStartIndex);
     }
     get expando() {
         const tView = this.tView;
@@ -14728,7 +14926,7 @@ function toDebugNodes(tNode, lView) {
         const debugNodes = [];
         let tNodeCursor = tNode;
         while (tNodeCursor) {
-            debugNodes.push(buildDebugNode(tNodeCursor, lView, tNodeCursor.index));
+            debugNodes.push(buildDebugNode(tNodeCursor, lView));
             tNodeCursor = tNodeCursor.next;
         }
         return debugNodes;
@@ -14737,15 +14935,69 @@ function toDebugNodes(tNode, lView) {
         return [];
     }
 }
-function buildDebugNode(tNode, lView, nodeIndex) {
-    const rawValue = lView[nodeIndex];
+function buildDebugNode(tNode, lView) {
+    const rawValue = lView[tNode.index];
     const native = unwrapRNode(rawValue);
+    const factories = [];
+    const instances = [];
+    const tView = lView[TVIEW];
+    for (let i = tNode.directiveStart; i < tNode.directiveEnd; i++) {
+        const def = tView.data[i];
+        factories.push(def.type);
+        instances.push(lView[i]);
+    }
     return {
         html: toHtml(native),
         type: TNodeTypeAsString[tNode.type],
         native: native,
         children: toDebugNodes(tNode.child, lView),
+        factories,
+        instances,
+        injector: buildNodeInjectorDebug(tNode, tView, lView)
     };
+}
+function buildNodeInjectorDebug(tNode, tView, lView) {
+    const viewProviders = [];
+    for (let i = tNode.providerIndexStart_; i < tNode.providerIndexEnd_; i++) {
+        viewProviders.push(tView.data[i]);
+    }
+    const providers = [];
+    for (let i = tNode.providerIndexEnd_; i < tNode.directiveEnd; i++) {
+        providers.push(tView.data[i]);
+    }
+    const nodeInjectorDebug = {
+        bloom: toBloom(lView, tNode.injectorIndex),
+        cumulativeBloom: toBloom(tView.data, tNode.injectorIndex),
+        providers,
+        viewProviders,
+        parentInjectorIndex: lView[tNode.providerIndexStart_ - 1],
+    };
+    return nodeInjectorDebug;
+}
+/**
+ * Convert a number at `idx` location in `array` into binary representation.
+ *
+ * @param array
+ * @param idx
+ */
+function binary(array, idx) {
+    const value = array[idx];
+    // If not a number we print 8 `?` to retain alignment but let user know that it was called on
+    // wrong type.
+    if (typeof value !== 'number')
+        return '????????';
+    // We prefix 0s so that we have constant length number
+    const text = '00000000' + value.toString(2);
+    return text.substring(text.length - 8);
+}
+/**
+ * Convert a bloom filter at location `idx` in `array` into binary representation.
+ *
+ * @param array
+ * @param idx
+ */
+function toBloom(array, idx) {
+    return `${binary(array, idx + 7)}_${binary(array, idx + 6)}_${binary(array, idx + 5)}_${binary(array, idx + 4)}_${binary(array, idx + 3)}_${binary(array, idx + 2)}_${binary(array, idx + 1)}_${binary(array, idx + 0)}`;
 }
 class LContainerDebug {
     constructor(_raw_lContainer) {
@@ -14832,7 +15084,7 @@ function setHostBindingsByExecutingExpandoInstructions(tView, lView) {
                         setSelectedIndex(currentElementIndex);
                         // Injector block and providers are taken into account.
                         const providerCount = expandoInstructions[++i];
-                        bindingRootIndex += INJECTOR_BLOOM_PARENT_SIZE + providerCount;
+                        bindingRootIndex += 9 /* SIZE */ + providerCount;
                         currentDirectiveIndex = bindingRootIndex;
                     }
                     else {
@@ -14915,6 +15167,7 @@ function createLView(parentLView, tView, context, flags, host, tHostNode, render
     lView[HOST] = host;
     lView[FLAGS] = flags | 4 /* CreationMode */ | 128 /* Attached */ | 8 /* FirstLViewPass */;
     resetPreOrderHookFlags(lView);
+    ngDevMode && tView.declTNode && parentLView && assertTNodeForLView(tView.declTNode, parentLView);
     lView[PARENT] = lView[DECLARATION_VIEW] = parentLView;
     lView[CONTEXT] = context;
     lView[RENDERER_FACTORY] = (rendererFactory || parentLView && parentLView[RENDERER_FACTORY]);
@@ -14931,53 +15184,37 @@ function createLView(parentLView, tView, context, flags, host, tHostNode, render
     ngDevMode && attachLViewDebug(lView);
     return lView;
 }
-function getOrCreateTNode(tView, tHostNode, index, type, name, attrs) {
+function getOrCreateTNode(tView, index, type, name, attrs) {
     // Keep this function short, so that the VM will inline it.
     const adjustedIndex = index + HEADER_OFFSET;
     const tNode = tView.data[adjustedIndex] ||
-        createTNodeAtIndex(tView, tHostNode, adjustedIndex, type, name, attrs);
-    setPreviousOrParentTNode(tNode, true);
+        createTNodeAtIndex(tView, adjustedIndex, type, name, attrs);
+    setCurrentTNode(tNode, true);
     return tNode;
 }
-function createTNodeAtIndex(tView, tHostNode, adjustedIndex, type, name, attrs) {
-    const previousOrParentTNode = getPreviousOrParentTNode();
-    const isParent = getIsParent();
-    const parent = isParent ? previousOrParentTNode : previousOrParentTNode && previousOrParentTNode.parent;
-    // Parents cannot cross component boundaries because components will be used in multiple places,
-    // so it's only set if the view is the same.
-    const parentInSameView = parent && parent !== tHostNode;
-    const tParentNode = parentInSameView ? parent : null;
+function createTNodeAtIndex(tView, adjustedIndex, type, name, attrs) {
+    const currentTNode = getCurrentTNode();
+    const isParent = isCurrentTNodeParent();
+    const parent = isParent ? currentTNode : currentTNode && currentTNode.parent;
+    // Parents cannot cross component boundaries because components will be used in multiple places.
     const tNode = tView.data[adjustedIndex] =
-        createTNode(tView, tParentNode, type, adjustedIndex, name, attrs);
+        createTNode(tView, parent, type, adjustedIndex, name, attrs);
     // Assign a pointer to the first child node of a given view. The first node is not always the one
     // at index 0, in case of i18n, index 0 can be the instruction `i18nStart` and the first node has
     // the index 1 or more, so we can't just check node index.
     if (tView.firstChild === null) {
         tView.firstChild = tNode;
     }
-    if (previousOrParentTNode) {
-        if (isParent && previousOrParentTNode.child == null &&
-            (tNode.parent !== null || previousOrParentTNode.type === 2 /* View */)) {
+    if (currentTNode !== null) {
+        if (isParent && currentTNode.child == null && tNode.parent !== null) {
             // We are in the same view, which means we are adding content node to the parent view.
-            previousOrParentTNode.child = tNode;
+            currentTNode.child = tNode;
         }
         else if (!isParent) {
-            previousOrParentTNode.next = tNode;
+            currentTNode.next = tNode;
         }
     }
     return tNode;
-}
-function assignTViewNodeToLView(tView, tParentNode, index, lView) {
-    // View nodes are not stored in data because they can be added / removed at runtime (which
-    // would cause indices to change). Their TNodes are instead stored in tView.node.
-    let tNode = tView.node;
-    if (tNode == null) {
-        ngDevMode && tParentNode &&
-            assertNodeOfPossibleTypes(tParentNode, [3 /* Element */, 0 /* Container */]);
-        tView.node = tNode = createTNode(tView, tParentNode, //
-        2 /* View */, index, null, null);
-    }
-    lView[T_HOST] = tNode;
 }
 /**
  * When elements are created dynamically after a view blueprint is created (e.g. through
@@ -15023,7 +15260,7 @@ function allocExpando(tView, lView, numSlotsToAlloc) {
  */
 function renderView(tView, lView, context) {
     ngDevMode && assertEqual(isCreationMode(lView), true, 'Should be run in creation mode');
-    enterView(lView, lView[T_HOST]);
+    enterView(lView);
     try {
         const viewQuery = tView.viewQuery;
         if (viewQuery !== null) {
@@ -15087,7 +15324,7 @@ function refreshView(tView, lView, templateFn, context) {
     const flags = lView[FLAGS];
     if ((flags & 256 /* Destroyed */) === 256 /* Destroyed */)
         return;
-    enterView(lView, lView[T_HOST]);
+    enterView(lView);
     const checkNoChangesMode = getCheckNoChangesMode();
     try {
         resetPreOrderHookFlags(lView);
@@ -15283,16 +15520,20 @@ function saveResolvedLocalsInData(viewData, tNode, localRefExtractor = getNative
 function getOrCreateTComponentView(def) {
     const tView = def.tView;
     // Create a TView if there isn't one, or recreate it if the first create pass didn't
-    // complete successfuly since we can't know for sure whether it's in a usable shape.
+    // complete successfully since we can't know for sure whether it's in a usable shape.
     if (tView === null || tView.incompleteFirstPass) {
-        return def.tView = createTView(1 /* Component */, -1, def.template, def.decls, def.vars, def.directiveDefs, def.pipeDefs, def.viewQuery, def.schemas, def.consts);
+        // Declaration node here is null since this function is called when we dynamically create a
+        // component and hence there is no declaration.
+        const declTNode = null;
+        return def.tView = createTView(1 /* Component */, declTNode, def.template, def.decls, def.vars, def.directiveDefs, def.pipeDefs, def.viewQuery, def.schemas, def.consts);
     }
     return tView;
 }
 /**
  * Creates a TView instance
  *
- * @param viewIndex The viewBlockId for inline views, or -1 if it's a component/dynamic
+ * @param type Type of `TView`.
+ * @param declTNode Declaration location of this `TView`.
  * @param templateFn Template function
  * @param decls The number of nodes, local refs, and pipes in this template
  * @param directives Registry of directives for this view
@@ -15301,7 +15542,7 @@ function getOrCreateTComponentView(def) {
  * @param schemas Schemas for this view
  * @param consts Constants for this view
  */
-function createTView(type, viewIndex, templateFn, decls, vars, directives, pipes, viewQuery, schemas, constsOrFactory) {
+function createTView(type, declTNode, templateFn, decls, vars, directives, pipes, viewQuery, schemas, constsOrFactory) {
     ngDevMode && ngDevMode.tView++;
     const bindingStartIndex = HEADER_OFFSET + decls;
     // This length does not yet contain host bindings from child directives because at this point,
@@ -15311,12 +15552,11 @@ function createTView(type, viewIndex, templateFn, decls, vars, directives, pipes
     const blueprint = createViewBlueprint(bindingStartIndex, initialViewLength);
     const consts = typeof constsOrFactory === 'function' ? constsOrFactory() : constsOrFactory;
     const tView = blueprint[TVIEW] = ngDevMode ?
-        new TViewConstructor(type, viewIndex, // id: number,
-        blueprint, // blueprint: LView,
+        new TViewConstructor(type, blueprint, // blueprint: LView,
         templateFn, // template: ComponentTemplate<{}>|null,
         null, // queries: TQueries|null
         viewQuery, // viewQuery: ViewQueriesFunction<{}>|null,
-        null, // node: TViewNode|TElementNode|null,
+        declTNode, // declTNode: TNode|null,
         cloneToTViewData(blueprint).fill(null, bindingStartIndex), // data: TData,
         bindingStartIndex, // bindingStartIndex: number,
         initialViewLength, // expandoStartIndex: number,
@@ -15347,12 +15587,11 @@ function createTView(type, viewIndex, templateFn, decls, vars, directives, pipes
         vars) :
         {
             type: type,
-            id: viewIndex,
             blueprint: blueprint,
             template: templateFn,
             queries: null,
             viewQuery: viewQuery,
-            node: null,
+            declTNode: declTNode,
             data: blueprint.slice().fill(null, bindingStartIndex),
             bindingStartIndex: bindingStartIndex,
             expandoStartIndex: initialViewLength,
@@ -15444,17 +15683,6 @@ function storeCleanupWithContext(tView, lView, context, cleanupFn) {
         getTViewCleanup(tView).push(cleanupFn, lCleanup.length - 1);
     }
 }
-/**
- * Constructs a TNode object from the arguments.
- *
- * @param tView `TView` to which this `TNode` belongs (used only in `ngDevMode`)
- * @param type The type of the node
- * @param adjustedIndex The index of the TNode in TView.data, adjusted for HEADER_OFFSET
- * @param tagName The tag name of the node
- * @param attrs The attributes defined on this node
- * @param tViews Any TViews attached to this node
- * @returns the TNode object
- */
 function createTNode(tView, tParent, type, adjustedIndex, tagName, attrs) {
     ngDevMode && ngDevMode.tNode++;
     let injectorIndex = tParent ? tParent.injectorIndex : -1;
@@ -15622,7 +15850,7 @@ function elementPropertyInternal(tView, tNode, lView, propName, value, renderer,
             setNgReflectProperties(lView, element, tNode.type, dataValue, value);
         }
     }
-    else if (tNode.type === 3 /* Element */) {
+    else if (tNode.type === 2 /* Element */) {
         propName = mapPropName(propName);
         if (ngDevMode) {
             validateAgainstEventProperties(propName);
@@ -15644,7 +15872,7 @@ function elementPropertyInternal(tView, tNode, lView, propName, value, renderer,
                 element[propName] = value;
         }
     }
-    else if (tNode.type === 0 /* Container */ || tNode.type === 4 /* ElementContainer */) {
+    else if (tNode.type === 0 /* Container */ || tNode.type === 3 /* ElementContainer */) {
         // If the node is a container and the property didn't
         // match any of the inputs or schemas we should throw.
         if (ngDevMode && !matchingSchemas(tView, tNode.tagName)) {
@@ -15664,7 +15892,7 @@ function setNgReflectProperty(lView, element, type, attrName, value) {
     const renderer = lView[RENDERER];
     attrName = normalizeDebugBindingName(attrName);
     const debugValue = normalizeDebugBindingValue(value);
-    if (type === 3 /* Element */) {
+    if (type === 2 /* Element */) {
         if (value == null) {
             isProceduralRenderer(renderer) ? renderer.removeAttribute(element, attrName) :
                 element.removeAttribute(attrName);
@@ -15686,7 +15914,7 @@ function setNgReflectProperty(lView, element, type, attrName, value) {
     }
 }
 function setNgReflectProperties(lView, element, type, dataValue, value) {
-    if (type === 3 /* Element */ || type === 0 /* Container */) {
+    if (type === 2 /* Element */ || type === 0 /* Container */) {
         /**
          * dataValue is an array containing runtime input or output names for the directives:
          * i+0: directive instance index
@@ -15741,7 +15969,7 @@ function logUnknownPropertyError(propName, tNode) {
  * Instantiate a root component.
  */
 function instantiateRootComponent(tView, lView, def) {
-    const rootTNode = getPreviousOrParentTNode();
+    const rootTNode = getCurrentTNode();
     if (tView.firstCreatePass) {
         if (def.providersResolver)
             def.providersResolver(def);
@@ -15883,7 +16111,7 @@ function instantiateAllDirectives(tView, lView, tNode, native) {
         const def = tView.data[i];
         const isComponent = isComponentDef(def);
         if (isComponent) {
-            ngDevMode && assertNodeOfPossibleTypes(tNode, [3 /* Element */]);
+            ngDevMode && assertNodeOfPossibleTypes(tNode, [2 /* Element */]);
             addComponentLogic(lView, tNode, def);
         }
         const directive = getNodeInjectable(lView, tView, i, tNode);
@@ -15959,7 +16187,7 @@ function generateExpandoInstructionBlock(tView, tNode, directiveCount) {
 function findDirectiveDefMatches(tView, viewData, tNode) {
     ngDevMode && assertFirstCreatePass(tView);
     ngDevMode &&
-        assertNodeOfPossibleTypes(tNode, [3 /* Element */, 4 /* ElementContainer */, 0 /* Container */]);
+        assertNodeOfPossibleTypes(tNode, [2 /* Element */, 3 /* ElementContainer */, 0 /* Container */]);
     const registry = tView.directiveRegistry;
     let matches = null;
     if (registry) {
@@ -15970,7 +16198,7 @@ function findDirectiveDefMatches(tView, viewData, tNode) {
                 diPublicInInjector(getOrCreateNodeInjectorForNode(tNode, viewData), tView, def.type);
                 if (isComponentDef(def)) {
                     if (ngDevMode) {
-                        assertNodeOfPossibleTypes(tNode, [3 /* Element */], `"${tNode.tagName}" tags cannot be used as component hosts. ` +
+                        assertNodeOfPossibleTypes(tNode, [2 /* Element */], `"${tNode.tagName}" tags cannot be used as component hosts. ` +
                             `Please use a different tag to activate the ${stringify(def.type)} component.`);
                         if (tNode.flags & 2 /* isComponentHost */)
                             throwMultipleComponentError(tNode);
@@ -16055,7 +16283,7 @@ function addComponentLogic(lView, hostTNode, def) {
     // Only component views should be added to the view tree directly. Embedded views are
     // accessed through their containers because they may be removed / re-added later.
     const rendererFactory = lView[RENDERER_FACTORY];
-    const componentView = addToViewTree(lView, createLView(lView, tView, null, def.onPush ? 64 /* Dirty */ : 16 /* CheckAlways */, native, hostTNode, rendererFactory, rendererFactory.createRenderer(native, def)));
+    const componentView = addToViewTree(lView, createLView(lView, tView, null, def.onPush ? 64 /* Dirty */ : 16 /* CheckAlways */, native, hostTNode, rendererFactory, rendererFactory.createRenderer(native, def), null, null));
     // Component view will always be created before any injected LContainers,
     // so this is a regular element, wrap it with the component view
     lView[hostTNode.index] = componentView;
@@ -16064,7 +16292,7 @@ function elementAttributeInternal(tNode, lView, name, value, sanitizer, namespac
     if (ngDevMode) {
         assertNotSame(value, NO_CHANGE, 'Incoming value should never be NO_CHANGE.');
         validateAgainstEventAttributes(name);
-        assertNodeNotOfTypes(tNode, [0 /* Container */, 4 /* ElementContainer */], `Attempted to set attribute \`${name}\` on a container node. ` +
+        assertNodeNotOfTypes(tNode, [0 /* Container */, 3 /* ElementContainer */], `Attempted to set attribute \`${name}\` on a container node. ` +
             `Host bindings are not valid on ng-container or ng-template.`);
     }
     const element = getNativeByTNode(tNode, lView);
@@ -16596,28 +16824,6 @@ function textBindingInternal(lView, index, value) {
  * found in the LICENSE file at https://angular.io/license
  */
 const unusedValueToPlacateAjd$1 = unusedValueExportToPlacateAjd$1 + unusedValueExportToPlacateAjd$4 + unusedValueExportToPlacateAjd$5 + unusedValueExportToPlacateAjd$2 + unusedValueExportToPlacateAjd;
-function getLContainer(tNode, embeddedView) {
-    ngDevMode && assertLView(embeddedView);
-    const container = embeddedView[PARENT];
-    if (tNode.index === -1) {
-        // This is a dynamically created view inside a dynamic container.
-        // The parent isn't an LContainer if the embedded view hasn't been attached yet.
-        return isLContainer(container) ? container : null;
-    }
-    else {
-        ngDevMode && assertLContainer(container);
-        // This is a inline view node (e.g. embeddedViewStart)
-        return container;
-    }
-}
-/**
- * Retrieves render parent for a given view.
- * Might be null if a view is not yet attached to any container.
- */
-function getContainerRenderParent(tViewNode, view) {
-    const container = getLContainer(tViewNode, view);
-    return container ? nativeParentNode(view[RENDERER], container[NATIVE]) : null;
-}
 /**
  * NOTE: for performance reasons, the possible actions are inlined within the function instead of
  * being passed as an argument.
@@ -16672,14 +16878,40 @@ function createTextNode(value, renderer) {
     return isProceduralRenderer(renderer) ? renderer.createText(value) :
         renderer.createTextNode(value);
 }
-function addRemoveViewFromContainer(tView, lView, insertMode, beforeNode) {
-    const renderParent = getContainerRenderParent(tView.node, lView);
-    ngDevMode && assertNodeType(tView.node, 2 /* View */);
-    if (renderParent) {
-        const renderer = lView[RENDERER];
-        const action = insertMode ? 1 /* Insert */ : 2 /* Detach */;
-        applyView(tView, lView, renderer, action, renderParent, beforeNode);
-    }
+/**
+ * Removes all DOM elements associated with a view.
+ *
+ * Because some root nodes of the view may be containers, we sometimes need
+ * to propagate deeply into the nested containers to remove all elements in the
+ * views beneath it.
+ *
+ * @param tView The `TView' of the `LView` from which elements should be added or removed
+ * @param lView The view from which elements should be added or removed
+ */
+function removeViewFromContainer(tView, lView) {
+    const renderer = lView[RENDERER];
+    applyView(tView, lView, renderer, 2 /* Detach */, null, null);
+    lView[HOST] = null;
+    lView[T_HOST] = null;
+}
+/**
+ * Adds all DOM elements associated with a view.
+ *
+ * Because some root nodes of the view may be containers, we sometimes need
+ * to propagate deeply into the nested containers to add all elements in the
+ * views beneath it.
+ *
+ * @param tView The `TView' of the `LView` from which elements should be added or removed
+ * @param parentTNode The `TNode` where the `LView` should be attached to.
+ * @param renderer Current renderer to use for DOM manipulations.
+ * @param lView The view from which elements should be added or removed
+ * @param parentNativeNode The parent `RElement` where it should be inserted into.
+ * @param beforeNode The node before which elements should be added, if insert mode
+ */
+function addViewToContainer(tView, parentTNode, renderer, lView, parentNativeNode, beforeNode) {
+    lView[HOST] = parentNativeNode;
+    lView[T_HOST] = parentTNode;
+    applyView(tView, lView, renderer, 1 /* Insert */, parentNativeNode, beforeNode);
 }
 /**
  * Detach a `LView` from the DOM by detaching its nodes.
@@ -16726,12 +16958,16 @@ function destroyViewTree(rootView) {
             // Only clean up view when moving to the side or up, as destroy hooks
             // should be called in order from the bottom up.
             while (lViewOrLContainer && !lViewOrLContainer[NEXT] && lViewOrLContainer !== rootView) {
-                isLView(lViewOrLContainer) && cleanUpView(lViewOrLContainer[TVIEW], lViewOrLContainer);
-                lViewOrLContainer = getParentState(lViewOrLContainer, rootView);
+                if (isLView(lViewOrLContainer)) {
+                    cleanUpView(lViewOrLContainer[TVIEW], lViewOrLContainer);
+                }
+                lViewOrLContainer = lViewOrLContainer[PARENT];
             }
             if (lViewOrLContainer === null)
                 lViewOrLContainer = rootView;
-            isLView(lViewOrLContainer) && cleanUpView(lViewOrLContainer[TVIEW], lViewOrLContainer);
+            if (isLView(lViewOrLContainer)) {
+                cleanUpView(lViewOrLContainer[TVIEW], lViewOrLContainer);
+            }
             next = lViewOrLContainer && lViewOrLContainer[NEXT];
         }
         lViewOrLContainer = next;
@@ -16820,6 +17056,7 @@ function detachMovedView(declarationContainer, lView) {
     // would be cleared and the counter decremented), we need to decrement the view counter here
     // instead.
     if (lView[FLAGS] & 1024 /* RefreshTransplantedView */) {
+        lView[FLAGS] &= ~1024 /* RefreshTransplantedView */;
         updateTransplantedViewCount(insertionLContainer, -1);
     }
     movedViews.splice(declarationViewIndex, 1);
@@ -16848,7 +17085,7 @@ function detachView(lContainer, removeIndex) {
             lContainer[indexInContainer - 1][NEXT] = viewToDetach[NEXT];
         }
         const removedLView = removeFromArray(lContainer, CONTAINER_HEADER_OFFSET + removeIndex);
-        addRemoveViewFromContainer(viewToDetach[TVIEW], viewToDetach, false, null);
+        removeViewFromContainer(viewToDetach[TVIEW], viewToDetach);
         // notify query that a view has been removed
         const lQueries = removedLView[QUERIES];
         if (lQueries !== null) {
@@ -16878,31 +17115,6 @@ function destroyLView(tView, lView) {
     }
 }
 /**
- * Determines which LViewOrLContainer to jump to when traversing back up the
- * tree in destroyViewTree.
- *
- * Normally, the view's parent LView should be checked, but in the case of
- * embedded views, the container (which is the view node's parent, but not the
- * LView's parent) needs to be checked for a possible next property.
- *
- * @param lViewOrLContainer The LViewOrLContainer for which we need a parent state
- * @param rootView The rootView, so we don't propagate too far up the view tree
- * @returns The correct parent LViewOrLContainer
- */
-function getParentState(lViewOrLContainer, rootView) {
-    let tNode;
-    if (isLView(lViewOrLContainer) && (tNode = lViewOrLContainer[T_HOST]) &&
-        tNode.type === 2 /* View */) {
-        // if it's an embedded view, the state needs to go up to the container, in case the
-        // container has a next
-        return getLContainer(tNode, lViewOrLContainer);
-    }
-    else {
-        // otherwise, use parent view for containers or component views
-        return lViewOrLContainer[PARENT] === rootView ? null : lViewOrLContainer[PARENT];
-    }
-}
-/**
  * Calls onDestroys hooks for all directives and pipes in a given view and then removes all
  * listeners. Listeners are removed as the last step so events delivered in the onDestroys hooks
  * can be propagated to @Output listeners.
@@ -16923,10 +17135,8 @@ function cleanUpView(tView, lView) {
         lView[FLAGS] |= 256 /* Destroyed */;
         executeOnDestroys(tView, lView);
         removeListeners(tView, lView);
-        const hostTNode = lView[T_HOST];
-        // For component views only, the local renderer is destroyed as clean up time.
-        if (hostTNode && hostTNode.type === 3 /* Element */ &&
-            isProceduralRenderer(lView[RENDERER])) {
+        // For component views only, the local renderer is destroyed at clean up time.
+        if (lView[TVIEW].type === 1 /* Component */ && isProceduralRenderer(lView[RENDERER])) {
             ngDevMode && ngDevMode.rendererDestroy++;
             lView[RENDERER].destroy();
         }
@@ -17022,40 +17232,26 @@ function getRenderParent(tView, tNode, currentView) {
     // can't be used as a render parent.
     let parentTNode = tNode.parent;
     while (parentTNode != null &&
-        (parentTNode.type === 4 /* ElementContainer */ ||
-            parentTNode.type === 5 /* IcuContainer */)) {
+        (parentTNode.type === 3 /* ElementContainer */ ||
+            parentTNode.type === 4 /* IcuContainer */)) {
         tNode = parentTNode;
         parentTNode = tNode.parent;
     }
     // If the parent tNode is null, then we are inserting across views: either into an embedded view
     // or a component view.
-    if (parentTNode == null) {
-        const hostTNode = currentView[T_HOST];
-        if (hostTNode.type === 2 /* View */) {
-            // We are inserting a root element of an embedded view We might delay insertion of children
-            // for a given view if it is disconnected. This might happen for 2 main reasons:
-            // - view is not inserted into any container(view was created but not inserted yet)
-            // - view is inserted into a container but the container itself is not inserted into the DOM
-            // (container might be part of projection or child of a view that is not inserted yet).
-            // In other words we can insert children of a given view if this view was inserted into a
-            // container and the container itself has its render parent determined.
-            return getContainerRenderParent(hostTNode, currentView);
-        }
-        else {
-            // We are inserting a root element of the component view into the component host element and
-            // it should always be eager.
-            ngDevMode && assertNodeOfPossibleTypes(hostTNode, [3 /* Element */]);
-            return currentView[HOST];
-        }
+    if (parentTNode === null) {
+        // We are inserting a root element of the component view into the component host element and
+        // it should always be eager.
+        return currentView[HOST];
     }
     else {
-        const isIcuCase = tNode && tNode.type === 5 /* IcuContainer */;
+        const isIcuCase = tNode && tNode.type === 4 /* IcuContainer */;
         // If the parent of this node is an ICU container, then it is represented by comment node and we
         // need to use it as an anchor. If it is projected then it's direct parent node is the renderer.
         if (isIcuCase && tNode.flags & 4 /* isProjected */) {
             return getNativeByTNode(tNode, currentView).parentNode;
         }
-        ngDevMode && assertNodeType(parentTNode, 3 /* Element */);
+        ngDevMode && assertNodeType(parentTNode, 2 /* Element */);
         if (parentTNode.flags & 2 /* isComponentHost */) {
             const tData = tView.data;
             const tNode = tData[parentTNode.index];
@@ -17134,15 +17330,8 @@ function nativeNextSibling(renderer, node) {
  * @param lView
  */
 function getNativeAnchorNode(parentTNode, lView) {
-    if (parentTNode.type === 2 /* View */) {
-        const lContainer = getLContainer(parentTNode, lView);
-        if (lContainer === null)
-            return null;
-        const index = lContainer.indexOf(lView, CONTAINER_HEADER_OFFSET) - CONTAINER_HEADER_OFFSET;
-        return getBeforeNodeForView(index, lContainer);
-    }
-    else if (parentTNode.type === 4 /* ElementContainer */ ||
-        parentTNode.type === 5 /* IcuContainer */) {
+    if (parentTNode.type === 3 /* ElementContainer */ ||
+        parentTNode.type === 4 /* IcuContainer */) {
         return getNativeByTNode(parentTNode, lView);
     }
     return null;
@@ -17182,17 +17371,17 @@ function appendChild(tView, lView, childEl, childTNode) {
 function getFirstNativeNode(lView, tNode) {
     if (tNode !== null) {
         ngDevMode && assertNodeOfPossibleTypes(tNode, [
-            3 /* Element */, 0 /* Container */, 4 /* ElementContainer */, 5 /* IcuContainer */,
+            2 /* Element */, 0 /* Container */, 3 /* ElementContainer */, 4 /* IcuContainer */,
             1 /* Projection */
         ]);
         const tNodeType = tNode.type;
-        if (tNodeType === 3 /* Element */) {
+        if (tNodeType === 2 /* Element */) {
             return getNativeByTNode(tNode, lView);
         }
         else if (tNodeType === 0 /* Container */) {
             return getBeforeNodeForView(-1, lView[tNode.index]);
         }
-        else if (tNodeType === 4 /* ElementContainer */ || tNodeType === 5 /* IcuContainer */) {
+        else if (tNodeType === 3 /* ElementContainer */ || tNodeType === 4 /* IcuContainer */) {
             const elIcuContainerChild = tNode.child;
             if (elIcuContainerChild !== null) {
                 return getFirstNativeNode(lView, elIcuContainerChild);
@@ -17256,8 +17445,8 @@ function applyNodes(renderer, action, tNode, lView, renderParent, beforeNode, is
     while (tNode != null) {
         ngDevMode && assertTNodeForLView(tNode, lView);
         ngDevMode && assertNodeOfPossibleTypes(tNode, [
-            0 /* Container */, 3 /* Element */, 4 /* ElementContainer */, 1 /* Projection */,
-            5 /* IcuContainer */
+            0 /* Container */, 2 /* Element */, 3 /* ElementContainer */, 1 /* Projection */,
+            4 /* IcuContainer */
         ]);
         const rawSlotValue = lView[tNode.index];
         const tNodeType = tNode.type;
@@ -17268,7 +17457,7 @@ function applyNodes(renderer, action, tNode, lView, renderParent, beforeNode, is
             }
         }
         if ((tNode.flags & 64 /* isDetached */) !== 64 /* isDetached */) {
-            if (tNodeType === 4 /* ElementContainer */ || tNodeType === 5 /* IcuContainer */) {
+            if (tNodeType === 3 /* ElementContainer */ || tNodeType === 4 /* IcuContainer */) {
                 applyNodes(renderer, action, tNode.child, lView, renderParent, beforeNode, false);
                 applyToElementOrContainer(action, renderer, renderParent, rawSlotValue, beforeNode);
             }
@@ -17276,40 +17465,15 @@ function applyNodes(renderer, action, tNode, lView, renderParent, beforeNode, is
                 applyProjectionRecursive(renderer, action, lView, tNode, renderParent, beforeNode);
             }
             else {
-                ngDevMode && assertNodeOfPossibleTypes(tNode, [3 /* Element */, 0 /* Container */]);
+                ngDevMode && assertNodeOfPossibleTypes(tNode, [2 /* Element */, 0 /* Container */]);
                 applyToElementOrContainer(action, renderer, renderParent, rawSlotValue, beforeNode);
             }
         }
         tNode = isProjection ? tNode.projectionNext : tNode.next;
     }
 }
-/**
- * `applyView` performs operation on the view as specified in `action` (insert, detach, destroy)
- *
- * Inserting a view without projection or containers at top level is simple. Just iterate over the
- * root nodes of the View, and for each node perform the `action`.
- *
- * Things get more complicated with containers and projections. That is because coming across:
- * - Container: implies that we have to insert/remove/destroy the views of that container as well
- *              which in turn can have their own Containers at the View roots.
- * - Projection: implies that we have to insert/remove/destroy the nodes of the projection. The
- *               complication is that the nodes we are projecting can themselves have Containers
- *               or other Projections.
- *
- * As you can see this is a very recursive problem. Yes recursion is not most efficient but the
- * code is complicated enough that trying to implemented with recursion becomes unmaintainable.
- *
- * @param tView The `TView' which needs to be inserted, detached, destroyed
- * @param lView The LView which needs to be inserted, detached, destroyed.
- * @param renderer Renderer to use
- * @param action action to perform (insert, detach, destroy)
- * @param renderParent parent DOM element for insertion/removal.
- * @param beforeNode Before which node the insertions should happen.
- */
 function applyView(tView, lView, renderer, action, renderParent, beforeNode) {
-    ngDevMode && assertNodeType(tView.node, 2 /* View */);
-    const viewRootTNode = tView.node.child;
-    applyNodes(renderer, action, viewRootTNode, lView, renderParent, beforeNode, false);
+    applyNodes(renderer, action, tView.firstChild, lView, renderParent, beforeNode, false);
 }
 /**
  * `applyProjection` performs operation on the projection.
@@ -17513,50 +17677,6 @@ function writeDirectClass(renderer, element, newValue) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * If `startTNode.parent` exists and has an injector, returns TNode for that injector.
- * Otherwise, unwraps a parent injector location number to find the view offset from the current
- * injector, then walks up the declaration view tree until the TNode of the parent injector is
- * found.
- *
- * @param location The location of the parent injector, which contains the view offset
- * @param startView The LView instance from which to start walking up the view tree
- * @param startTNode The TNode instance of the starting element
- * @returns The TNode of the parent injector
- */
-function getParentInjectorTNode(location, startView, startTNode) {
-    // If there is an injector on the parent TNode, retrieve the TNode for that injector.
-    if (startTNode.parent && startTNode.parent.injectorIndex !== -1) {
-        // view offset is 0
-        const injectorIndex = startTNode.parent.injectorIndex;
-        let tNode = startTNode.parent;
-        // If tNode.injectorIndex === tNode.parent.injectorIndex, then the index belongs to a parent
-        // injector.
-        while (tNode.parent != null && injectorIndex == tNode.parent.injectorIndex) {
-            tNode = tNode.parent;
-        }
-        return tNode;
-    }
-    let viewOffset = getParentInjectorViewOffset(location);
-    // view offset is 1
-    let parentView = startView;
-    let parentTNode = startView[T_HOST];
-    // view offset is superior to 1
-    while (viewOffset > 1) {
-        parentView = parentView[DECLARATION_VIEW];
-        parentTNode = parentView[T_HOST];
-        viewOffset--;
-    }
-    return parentTNode;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 class ViewRef {
     constructor(
     /**
@@ -17585,11 +17705,8 @@ class ViewRef {
     }
     get rootNodes() {
         const lView = this._lView;
-        if (lView[HOST] == null) {
-            const hostTView = lView[T_HOST];
-            return collectNativeNodes(lView[TVIEW], lView, hostTView.child, []);
-        }
-        return [];
+        const tView = lView[TVIEW];
+        return collectNativeNodes(tView, lView, tView.firstChild, []);
     }
     get context() {
         return this._lView[CONTEXT];
@@ -17834,8 +17951,8 @@ class RootViewRef extends ViewRef {
 function collectNativeNodes(tView, lView, tNode, result, isProjection = false) {
     while (tNode !== null) {
         ngDevMode && assertNodeOfPossibleTypes(tNode, [
-            3 /* Element */, 0 /* Container */, 1 /* Projection */, 4 /* ElementContainer */,
-            5 /* IcuContainer */
+            2 /* Element */, 0 /* Container */, 1 /* Projection */, 3 /* ElementContainer */,
+            4 /* IcuContainer */
         ]);
         const lNode = lView[tNode.index];
         if (lNode !== null) {
@@ -17854,7 +17971,7 @@ function collectNativeNodes(tView, lView, tNode, result, isProjection = false) {
             }
         }
         const tNodeType = tNode.type;
-        if (tNodeType === 4 /* ElementContainer */ || tNodeType === 5 /* IcuContainer */) {
+        if (tNodeType === 3 /* ElementContainer */ || tNodeType === 4 /* IcuContainer */) {
             collectNativeNodes(tView, lView, tNode.child, result);
         }
         else if (tNodeType === 1 /* Projection */) {
@@ -17892,7 +18009,7 @@ function collectNativeNodes(tView, lView, tNode, result, isProjection = false) {
  * @returns The ElementRef instance to use
  */
 function injectElementRef(ElementRefToken) {
-    return createElementRef(ElementRefToken, getPreviousOrParentTNode(), getLView());
+    return createElementRef(ElementRefToken, getCurrentTNode(), getLView());
 }
 let R3ElementRef;
 /**
@@ -17917,7 +18034,7 @@ let R3TemplateRef;
  * @returns The TemplateRef instance to use
  */
 function injectTemplateRef(TemplateRefToken, ElementRefToken) {
-    return createTemplateRef(TemplateRefToken, ElementRefToken, getPreviousOrParentTNode(), getLView());
+    return createTemplateRef(TemplateRefToken, ElementRefToken, getCurrentTNode(), getLView());
 }
 /**
  * Creates a TemplateRef and stores it on the injector.
@@ -17939,7 +18056,7 @@ function createTemplateRef(TemplateRefToken, ElementRefToken, hostTNode, hostVie
             }
             createEmbeddedView(context) {
                 const embeddedTView = this._declarationTContainer.tViews;
-                const embeddedLView = createLView(this._declarationView, embeddedTView, context, 16 /* CheckAlways */, null, embeddedTView.node);
+                const embeddedLView = createLView(this._declarationView, embeddedTView, context, 16 /* CheckAlways */, null, embeddedTView.declTNode, null, null, null, null);
                 const declarationLContainer = this._declarationView[this._declarationTContainer.index];
                 ngDevMode && assertLContainer(declarationLContainer);
                 embeddedLView[DECLARATION_LCONTAINER] = declarationLContainer;
@@ -17968,7 +18085,7 @@ let R3ViewContainerRef;
  * @returns The ViewContainerRef instance to use
  */
 function injectViewContainerRef(ViewContainerRefToken, ElementRefToken) {
-    const previousTNode = getPreviousOrParentTNode();
+    const previousTNode = getCurrentTNode();
     return createContainerRef(ViewContainerRefToken, ElementRefToken, previousTNode, getLView());
 }
 /**
@@ -17998,11 +18115,16 @@ function createContainerRef(ViewContainerRefToken, ElementRefToken, hostTNode, h
             /** @deprecated No replacement */
             get parentInjector() {
                 const parentLocation = getParentInjectorLocation(this._hostTNode, this._hostView);
-                const parentView = getParentInjectorView(parentLocation, this._hostView);
-                const parentTNode = getParentInjectorTNode(parentLocation, this._hostView, this._hostTNode);
-                return !hasParentInjector(parentLocation) || parentTNode == null ?
-                    new NodeInjector(null, this._hostView) :
-                    new NodeInjector(parentTNode, parentView);
+                if (hasParentInjector(parentLocation)) {
+                    const parentView = getParentInjectorView(parentLocation, this._hostView);
+                    const injectorIndex = getParentInjectorIndex(parentLocation);
+                    ngDevMode && assertNodeInjector(parentView, injectorIndex);
+                    const parentTNode = parentView[TVIEW].data[injectorIndex + 8 /* TNODE */];
+                    return new NodeInjector(parentTNode, parentView);
+                }
+                else {
+                    return new NodeInjector(null, this._hostView);
+                }
             }
             clear() {
                 while (this.length > 0) {
@@ -18062,12 +18184,19 @@ function createContainerRef(ViewContainerRefToken, ElementRefToken, hostTNode, h
                         prevVCRef.detach(prevVCRef.indexOf(viewRef));
                     }
                 }
+                // Logical operation of adding `LView` to `LContainer`
                 const adjustedIdx = this._adjustIndex(index);
-                insertView(tView, lView, this._lContainer, adjustedIdx);
-                const beforeNode = getBeforeNodeForView(adjustedIdx, this._lContainer);
-                addRemoveViewFromContainer(tView, lView, true, beforeNode);
+                const lContainer = this._lContainer;
+                insertView(tView, lView, lContainer, adjustedIdx);
+                // Physical operation of adding the DOM nodes.
+                const beforeNode = getBeforeNodeForView(adjustedIdx, lContainer);
+                const renderer = lView[RENDERER];
+                const renderParent = nativeParentNode(renderer, lContainer[NATIVE]);
+                if (renderParent !== null) {
+                    addViewToContainer(tView, lContainer[T_HOST], renderer, lView, renderParent, beforeNode);
+                }
                 viewRef.attachToViewContainerRef(this);
-                addToArray(this._lContainer[VIEW_REFS], adjustedIdx, viewRef);
+                addToArray(lContainer[VIEW_REFS], adjustedIdx, viewRef);
                 return viewRef;
             }
             move(viewRef, newIndex) {
@@ -18121,7 +18250,7 @@ function createContainerRef(ViewContainerRefToken, ElementRefToken, hostTNode, h
         };
     }
     ngDevMode &&
-        assertNodeOfPossibleTypes(hostTNode, [0 /* Container */, 3 /* Element */, 4 /* ElementContainer */]);
+        assertNodeOfPossibleTypes(hostTNode, [0 /* Container */, 2 /* Element */, 3 /* ElementContainer */]);
     let lContainer;
     const slotValue = hostView[hostTNode.index];
     if (isLContainer(slotValue)) {
@@ -18134,7 +18263,7 @@ function createContainerRef(ViewContainerRefToken, ElementRefToken, hostTNode, h
         // comment and we can reuse that comment as anchor element for the new LContainer.
         // The comment node in question is already part of the DOM structure so we don't need to append
         // it again.
-        if (hostTNode.type === 4 /* ElementContainer */) {
+        if (hostTNode.type === 3 /* ElementContainer */) {
             commentNode = unwrapRNode(slotValue);
         }
         else {
@@ -18163,7 +18292,7 @@ function createContainerRef(ViewContainerRefToken, ElementRefToken, hostTNode, h
 }
 /** Returns a ChangeDetectorRef (a.k.a. a ViewRef) */
 function injectChangeDetectorRef(isPipe = false) {
-    return createViewRef(getPreviousOrParentTNode(), getLView(), isPipe);
+    return createViewRef(getCurrentTNode(), getLView(), isPipe);
 }
 /**
  * Creates a ViewRef and stores it on the injector as ChangeDetectorRef (public alias).
@@ -18183,8 +18312,8 @@ function createViewRef(tNode, lView, isPipe) {
         const componentView = getComponentLViewByIndex(tNode.index, lView); // look down
         return new ViewRef(componentView, componentView);
     }
-    else if (tNode.type === 3 /* Element */ || tNode.type === 0 /* Container */ ||
-        tNode.type === 4 /* ElementContainer */ || tNode.type === 5 /* IcuContainer */) {
+    else if (tNode.type === 2 /* Element */ || tNode.type === 0 /* Container */ ||
+        tNode.type === 3 /* ElementContainer */ || tNode.type === 4 /* IcuContainer */) {
         // The LView represents the location where the injection is requested from.
         // We need to locate the containing LView (in case where the `lView` is an embedded view)
         const hostComponentView = lView[DECLARATION_COMPONENT_VIEW]; // look up
@@ -18207,7 +18336,7 @@ function injectRenderer2() {
     // We need the Renderer to be based on the component that it's being injected into, however since
     // DI happens before we've entered its view, `getLView` will return the parent view instead.
     const lView = getLView();
-    const tNode = getPreviousOrParentTNode();
+    const tNode = getCurrentTNode();
     const nodeAtIndex = getComponentLViewByIndex(tNode.index, lView);
     return getOrCreateRenderer2(isLView(nodeAtIndex) ? nodeAtIndex : lView);
 }
@@ -20763,6 +20892,915 @@ function computeStaticStyling(tNode, attrs, writeToHost) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Synchronously perform change detection on a component (and possibly its sub-components).
+ *
+ * This function triggers change detection in a synchronous way on a component.
+ *
+ * @param component The component which the change detection should be performed on.
+ */
+function detectChanges(component) {
+    const view = getComponentViewByInstance(component);
+    detectChangesInternal(view[TVIEW], view, component);
+}
+/**
+ * Marks the component as dirty (needing change detection). Marking a component dirty will
+ * schedule a change detection on it at some point in the future.
+ *
+ * Marking an already dirty component as dirty won't do anything. Only one outstanding change
+ * detection can be scheduled per component tree.
+ *
+ * @param component Component to mark as dirty.
+ */
+function markDirty(component) {
+    ngDevMode && assertDefined(component, 'component');
+    const rootView = markViewDirty(getComponentViewByInstance(component));
+    ngDevMode && assertDefined(rootView[CONTEXT], 'rootContext should be defined');
+    scheduleTick(rootView[CONTEXT], 1 /* DetectChanges */);
+}
+/**
+ * Used to perform change detection on the whole application.
+ *
+ * This is equivalent to `detectChanges`, but invoked on root component. Additionally, `tick`
+ * executes lifecycle hooks and conditionally checks components based on their
+ * `ChangeDetectionStrategy` and dirtiness.
+ *
+ * The preferred way to trigger change detection is to call `markDirty`. `markDirty` internally
+ * schedules `tick` using a scheduler in order to coalesce multiple `markDirty` calls into a
+ * single change detection run. By default, the scheduler is `requestAnimationFrame`, but can
+ * be changed when calling `renderComponent` and providing the `scheduler` option.
+ */
+function tick(component) {
+    const rootView = getRootView(component);
+    const rootContext = rootView[CONTEXT];
+    tickRootContext(rootContext);
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Retrieves the component instance associated with a given DOM element.
+ *
+ * @usageNotes
+ * Given the following DOM structure:
+ * ```html
+ * <my-app>
+ *   <div>
+ *     <child-comp></child-comp>
+ *   </div>
+ * </my-app>
+ * ```
+ * Calling `getComponent` on `<child-comp>` will return the instance of `ChildComponent`
+ * associated with this DOM element.
+ *
+ * Calling the function on `<my-app>` will return the `MyApp` instance.
+ *
+ *
+ * @param element DOM element from which the component should be retrieved.
+ * @returns Component instance associated with the element or `null` if there
+ *    is no component associated with it.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getComponent(element) {
+    assertDomElement(element);
+    const context = loadLContext(element, false);
+    if (context === null)
+        return null;
+    if (context.component === undefined) {
+        context.component = getComponentAtNodeIndex(context.nodeIndex, context.lView);
+    }
+    return context.component;
+}
+/**
+ * If inside an embedded view (e.g. `*ngIf` or `*ngFor`), retrieves the context of the embedded
+ * view that the element is part of. Otherwise retrieves the instance of the component whose view
+ * owns the element (in this case, the result is the same as calling `getOwningComponent`).
+ *
+ * @param element Element for which to get the surrounding component instance.
+ * @returns Instance of the component that is around the element or null if the element isn't
+ *    inside any component.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getContext(element) {
+    assertDomElement(element);
+    const context = loadLContext(element, false);
+    return context === null ? null : context.lView[CONTEXT];
+}
+/**
+ * Retrieves the component instance whose view contains the DOM element.
+ *
+ * For example, if `<child-comp>` is used in the template of `<app-comp>`
+ * (i.e. a `ViewChild` of `<app-comp>`), calling `getOwningComponent` on `<child-comp>`
+ * would return `<app-comp>`.
+ *
+ * @param elementOrDir DOM element, component or directive instance
+ *    for which to retrieve the root components.
+ * @returns Component instance whose view owns the DOM element or null if the element is not
+ *    part of a component view.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getOwningComponent(elementOrDir) {
+    const context = loadLContext(elementOrDir, false);
+    if (context === null)
+        return null;
+    let lView = context.lView;
+    let parent;
+    ngDevMode && assertLView(lView);
+    while (lView[TVIEW].type === 2 /* Embedded */ && (parent = getLViewParent(lView))) {
+        lView = parent;
+    }
+    return lView[FLAGS] & 512 /* IsRoot */ ? null : lView[CONTEXT];
+}
+/**
+ * Retrieves all root components associated with a DOM element, directive or component instance.
+ * Root components are those which have been bootstrapped by Angular.
+ *
+ * @param elementOrDir DOM element, component or directive instance
+ *    for which to retrieve the root components.
+ * @returns Root components associated with the target object.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getRootComponents(elementOrDir) {
+    return [...getRootContext(elementOrDir).components];
+}
+/**
+ * Retrieves an `Injector` associated with an element, component or directive instance.
+ *
+ * @param elementOrDir DOM element, component or directive instance for which to
+ *    retrieve the injector.
+ * @returns Injector associated with the element, component or directive instance.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getInjector(elementOrDir) {
+    const context = loadLContext(elementOrDir, false);
+    if (context === null)
+        return Injector.NULL;
+    const tNode = context.lView[TVIEW].data[context.nodeIndex];
+    return new NodeInjector(tNode, context.lView);
+}
+/**
+ * Retrieve a set of injection tokens at a given DOM node.
+ *
+ * @param element Element for which the injection tokens should be retrieved.
+ */
+function getInjectionTokens(element) {
+    const context = loadLContext(element, false);
+    if (context === null)
+        return [];
+    const lView = context.lView;
+    const tView = lView[TVIEW];
+    const tNode = tView.data[context.nodeIndex];
+    const providerTokens = [];
+    const startIndex = tNode.providerIndexes & 1048575 /* ProvidersStartIndexMask */;
+    const endIndex = tNode.directiveEnd;
+    for (let i = startIndex; i < endIndex; i++) {
+        let value = tView.data[i];
+        if (isDirectiveDefHack(value)) {
+            // The fact that we sometimes store Type and sometimes DirectiveDef in this location is a
+            // design flaw.  We should always store same type so that we can be monomorphic. The issue
+            // is that for Components/Directives we store the def instead the type. The correct behavior
+            // is that we should always be storing injectable type in this location.
+            value = value.type;
+        }
+        providerTokens.push(value);
+    }
+    return providerTokens;
+}
+/**
+ * Retrieves directive instances associated with a given DOM element. Does not include
+ * component instances.
+ *
+ * @usageNotes
+ * Given the following DOM structure:
+ * ```
+ * <my-app>
+ *   <button my-button></button>
+ *   <my-comp></my-comp>
+ * </my-app>
+ * ```
+ * Calling `getDirectives` on `<button>` will return an array with an instance of the `MyButton`
+ * directive that is associated with the DOM element.
+ *
+ * Calling `getDirectives` on `<my-comp>` will return an empty array.
+ *
+ * @param element DOM element for which to get the directives.
+ * @returns Array of directives associated with the element.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getDirectives(element) {
+    const context = loadLContext(element);
+    if (context.directives === undefined) {
+        context.directives = getDirectivesAtNodeIndex(context.nodeIndex, context.lView, false);
+    }
+    // The `directives` in this case are a named array called `LComponentView`. Clone the
+    // result so we don't expose an internal data structure in the user's console.
+    return context.directives === null ? [] : [...context.directives];
+}
+function loadLContext(target, throwOnNotFound = true) {
+    const context = getLContext(target);
+    if (!context && throwOnNotFound) {
+        throw new Error(ngDevMode ? `Unable to find context associated with ${stringifyForError(target)}` :
+            'Invalid ng target');
+    }
+    return context;
+}
+/**
+ * Retrieve map of local references.
+ *
+ * The references are retrieved as a map of local reference name to element or directive instance.
+ *
+ * @param target DOM element, component or directive instance for which to retrieve
+ *    the local references.
+ */
+function getLocalRefs(target) {
+    const context = loadLContext(target, false);
+    if (context === null)
+        return {};
+    if (context.localRefs === undefined) {
+        context.localRefs = discoverLocalRefs(context.lView, context.nodeIndex);
+    }
+    return context.localRefs || {};
+}
+/**
+ * Retrieves the host element of a component or directive instance.
+ * The host element is the DOM element that matched the selector of the directive.
+ *
+ * @param componentOrDirective Component or directive instance for which the host
+ *     element should be retrieved.
+ * @returns Host element of the target.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getHostElement(componentOrDirective) {
+    return getLContext(componentOrDirective).native;
+}
+/**
+ * Retrieves the rendered text for a given component.
+ *
+ * This function retrieves the host element of a component and
+ * and then returns the `textContent` for that element. This implies
+ * that the text returned will include re-projected content of
+ * the component as well.
+ *
+ * @param component The component to return the content text for.
+ */
+function getRenderedText(component) {
+    const hostElement = getHostElement(component);
+    return hostElement.textContent || '';
+}
+function loadLContextFromNode(node) {
+    if (!(node instanceof Node))
+        throw new Error('Expecting instance of DOM Element');
+    return loadLContext(node);
+}
+/**
+ * Retrieves a list of event listeners associated with a DOM element. The list does include host
+ * listeners, but it does not include event listeners defined outside of the Angular context
+ * (e.g. through `addEventListener`).
+ *
+ * @usageNotes
+ * Given the following DOM structure:
+ * ```
+ * <my-app>
+ *   <div (click)="doSomething()"></div>
+ * </my-app>
+ *
+ * ```
+ * Calling `getListeners` on `<div>` will return an object that looks as follows:
+ * ```
+ * {
+ *   name: 'click',
+ *   element: <div>,
+ *   callback: () => doSomething(),
+ *   useCapture: false
+ * }
+ * ```
+ *
+ * @param element Element for which the DOM listeners should be retrieved.
+ * @returns Array of event listeners on the DOM element.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function getListeners(element) {
+    assertDomElement(element);
+    const lContext = loadLContext(element, false);
+    if (lContext === null)
+        return [];
+    const lView = lContext.lView;
+    const tView = lView[TVIEW];
+    const lCleanup = lView[CLEANUP];
+    const tCleanup = tView.cleanup;
+    const listeners = [];
+    if (tCleanup && lCleanup) {
+        for (let i = 0; i < tCleanup.length;) {
+            const firstParam = tCleanup[i++];
+            const secondParam = tCleanup[i++];
+            if (typeof firstParam === 'string') {
+                const name = firstParam;
+                const listenerElement = unwrapRNode(lView[secondParam]);
+                const callback = lCleanup[tCleanup[i++]];
+                const useCaptureOrIndx = tCleanup[i++];
+                // if useCaptureOrIndx is boolean then report it as is.
+                // if useCaptureOrIndx is positive number then it in unsubscribe method
+                // if useCaptureOrIndx is negative number then it is a Subscription
+                const type = (typeof useCaptureOrIndx === 'boolean' || useCaptureOrIndx >= 0) ? 'dom' : 'output';
+                const useCapture = typeof useCaptureOrIndx === 'boolean' ? useCaptureOrIndx : false;
+                if (element == listenerElement) {
+                    listeners.push({ element, name, callback, useCapture, type });
+                }
+            }
+        }
+    }
+    listeners.sort(sortListeners);
+    return listeners;
+}
+function sortListeners(a, b) {
+    if (a.name == b.name)
+        return 0;
+    return a.name < b.name ? -1 : 1;
+}
+/**
+ * This function should not exist because it is megamorphic and only mostly correct.
+ *
+ * See call site for more info.
+ */
+function isDirectiveDefHack(obj) {
+    return obj.type !== undefined && obj.template !== undefined && obj.declaredInputs !== undefined;
+}
+/**
+ * Returns the attached `DebugNode` instance for an element in the DOM.
+ *
+ * @param element DOM element which is owned by an existing component's view.
+ */
+function getDebugNode(element) {
+    let debugNode = null;
+    const lContext = loadLContextFromNode(element);
+    const lView = lContext.lView;
+    const nodeIndex = lContext.nodeIndex;
+    if (nodeIndex !== -1) {
+        const valueInLView = lView[nodeIndex];
+        // this means that value in the lView is a component with its own
+        // data. In this situation the TNode is not accessed at the same spot.
+        const tNode = isLView(valueInLView) ? valueInLView[T_HOST] :
+            getTNode(lView[TVIEW], nodeIndex - HEADER_OFFSET);
+        ngDevMode &&
+            assertEqual(tNode.index, nodeIndex, 'Expecting that TNode at index is same as index');
+        debugNode = buildDebugNode(tNode, lView);
+    }
+    return debugNode;
+}
+/**
+ * Retrieve the component `LView` from component/element.
+ *
+ * NOTE: `LView` is a private and should not be leaked outside.
+ *       Don't export this method to `ng.*` on window.
+ *
+ * @param target DOM element or component instance for which to retrieve the LView.
+ */
+function getComponentLView(target) {
+    const lContext = loadLContext(target);
+    const nodeIndx = lContext.nodeIndex;
+    const lView = lContext.lView;
+    const componentLView = lView[nodeIndx];
+    ngDevMode && assertLView(componentLView);
+    return componentLView;
+}
+/** Asserts that a value is a DOM Element. */
+function assertDomElement(value) {
+    if (typeof Element !== 'undefined' && !(value instanceof Element)) {
+        throw new Error('Expecting instance of DOM Element');
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Marks a component for check (in case of OnPush components) and synchronously
+ * performs change detection on the application this component belongs to.
+ *
+ * @param component Component to {@link ChangeDetectorRef#markForCheck mark for check}.
+ *
+ * @publicApi
+ * @globalApi ng
+ */
+function applyChanges(component) {
+    markDirty(component);
+    getRootComponents(component).forEach(rootComponent => detectChanges(rootComponent));
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * This file introduces series of globally accessible debug tools
+ * to allow for the Angular debugging story to function.
+ *
+ * To see this in action run the following command:
+ *
+ *   bazel run --config=ivy
+ *   //packages/core/test/bundling/todo:devserver
+ *
+ *  Then load `localhost:5432` and start using the console tools.
+ */
+/**
+ * This value reflects the property on the window where the dev
+ * tools are patched (window.ng).
+ * */
+const GLOBAL_PUBLISH_EXPANDO_KEY = 'ng';
+let _published = false;
+/**
+ * Publishes a collection of default debug tools onto`window.ng`.
+ *
+ * These functions are available globally when Angular is in development
+ * mode and are automatically stripped away from prod mode is on.
+ */
+function publishDefaultGlobalUtils() {
+    if (!_published) {
+        _published = true;
+        publishGlobalUtil('getComponent', getComponent);
+        publishGlobalUtil('getContext', getContext);
+        publishGlobalUtil('getListeners', getListeners);
+        publishGlobalUtil('getOwningComponent', getOwningComponent);
+        publishGlobalUtil('getHostElement', getHostElement);
+        publishGlobalUtil('getInjector', getInjector);
+        publishGlobalUtil('getRootComponents', getRootComponents);
+        publishGlobalUtil('getDirectives', getDirectives);
+        publishGlobalUtil('applyChanges', applyChanges);
+    }
+}
+/**
+ * Publishes the given function to `window.ng` so that it can be
+ * used from the browser console when an application is not in production.
+ */
+function publishGlobalUtil(name, fn) {
+    if (typeof COMPILED === 'undefined' || !COMPILED) {
+        // Note: we can't export `ng` when using closure enhanced optimization as:
+        // - closure declares globals itself for minified names, which sometimes clobber our `ng` global
+        // - we can't declare a closure extern as the namespace `ng` is already used within Google
+        //   for typings for AngularJS (via `goog.provide('ng....')`).
+        const w = _global;
+        ngDevMode && assertDefined(fn, 'function not defined');
+        if (w) {
+            let container = w[GLOBAL_PUBLISH_EXPANDO_KEY];
+            if (!container) {
+                container = w[GLOBAL_PUBLISH_EXPANDO_KEY] = {};
+            }
+            container[name] = fn;
+        }
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const ɵ0$b = (token, notFoundValue) => {
+    throw new Error('NullInjector: Not found: ' + stringifyForError(token));
+};
+// TODO: A hack to not pull in the NullInjector from @angular/core.
+const NULL_INJECTOR$1 = {
+    get: ɵ0$b
+};
+/**
+ * Bootstraps a Component into an existing host element and returns an instance
+ * of the component.
+ *
+ * Use this function to bootstrap a component into the DOM tree. Each invocation
+ * of this function will create a separate tree of components, injectors and
+ * change detection cycles and lifetimes. To dynamically insert a new component
+ * into an existing tree such that it shares the same injection, change detection
+ * and object lifetime, use {@link ViewContainer#createComponent}.
+ *
+ * @param componentType Component to bootstrap
+ * @param options Optional parameters which control bootstrapping
+ */
+function renderComponent$1(componentType /* Type as workaround for: Microsoft/TypeScript/issues/4881 */, opts = {}) {
+    ngDevMode && publishDefaultGlobalUtils();
+    ngDevMode && assertComponentType(componentType);
+    const rendererFactory = opts.rendererFactory || domRendererFactory3;
+    const sanitizer = opts.sanitizer || null;
+    const componentDef = getComponentDef(componentType);
+    if (componentDef.type != componentType)
+        componentDef.type = componentType;
+    // The first index of the first selector is the tag name.
+    const componentTag = componentDef.selectors[0][0];
+    const hostRenderer = rendererFactory.createRenderer(null, null);
+    const hostRNode = locateHostElement(hostRenderer, opts.host || componentTag, componentDef.encapsulation);
+    const rootFlags = componentDef.onPush ? 64 /* Dirty */ | 512 /* IsRoot */ :
+        16 /* CheckAlways */ | 512 /* IsRoot */;
+    const rootContext = createRootContext(opts.scheduler, opts.playerHandler);
+    const renderer = rendererFactory.createRenderer(hostRNode, componentDef);
+    const rootTView = createTView(0 /* Root */, null, null, 1, 0, null, null, null, null, null);
+    const rootView = createLView(null, rootTView, rootContext, rootFlags, null, null, rendererFactory, renderer, null, opts.injector || null);
+    enterView(rootView);
+    let component;
+    try {
+        if (rendererFactory.begin)
+            rendererFactory.begin();
+        const componentView = createRootComponentView(hostRNode, componentDef, rootView, rendererFactory, renderer, sanitizer);
+        component = createRootComponent(componentView, componentDef, rootView, rootContext, opts.hostFeatures || null);
+        // create mode pass
+        renderView(rootTView, rootView, null);
+        // update mode pass
+        refreshView(rootTView, rootView, null, null);
+    }
+    finally {
+        leaveView();
+        if (rendererFactory.end)
+            rendererFactory.end();
+    }
+    return component;
+}
+/**
+ * Creates the root component view and the root component node.
+ *
+ * @param rNode Render host element.
+ * @param def ComponentDef
+ * @param rootView The parent view where the host node is stored
+ * @param hostRenderer The current renderer
+ * @param sanitizer The sanitizer, if provided
+ *
+ * @returns Component view created
+ */
+function createRootComponentView(rNode, def, rootView, rendererFactory, hostRenderer, sanitizer) {
+    const tView = rootView[TVIEW];
+    ngDevMode && assertIndexInRange(rootView, 0 + HEADER_OFFSET);
+    rootView[0 + HEADER_OFFSET] = rNode;
+    const tNode = getOrCreateTNode(tView, 0, 2 /* Element */, null, null);
+    const mergedAttrs = tNode.mergedAttrs = def.hostAttrs;
+    if (mergedAttrs !== null) {
+        computeStaticStyling(tNode, mergedAttrs, true);
+        if (rNode !== null) {
+            setUpAttributes(hostRenderer, rNode, mergedAttrs);
+            if (tNode.classes !== null) {
+                writeDirectClass(hostRenderer, rNode, tNode.classes);
+            }
+            if (tNode.styles !== null) {
+                writeDirectStyle(hostRenderer, rNode, tNode.styles);
+            }
+        }
+    }
+    const viewRenderer = rendererFactory.createRenderer(rNode, def);
+    const componentView = createLView(rootView, getOrCreateTComponentView(def), null, def.onPush ? 64 /* Dirty */ : 16 /* CheckAlways */, rootView[HEADER_OFFSET], tNode, rendererFactory, viewRenderer, sanitizer || null, null);
+    if (tView.firstCreatePass) {
+        diPublicInInjector(getOrCreateNodeInjectorForNode(tNode, rootView), tView, def.type);
+        markAsComponentHost(tView, tNode);
+        initTNodeFlags(tNode, rootView.length, 1);
+    }
+    addToViewTree(rootView, componentView);
+    // Store component view at node index, with node as the HOST
+    return rootView[HEADER_OFFSET] = componentView;
+}
+/**
+ * Creates a root component and sets it up with features and host bindings. Shared by
+ * renderComponent() and ViewContainerRef.createComponent().
+ */
+function createRootComponent(componentView, componentDef, rootLView, rootContext, hostFeatures) {
+    const tView = rootLView[TVIEW];
+    // Create directive instance with factory() and store at next index in viewData
+    const component = instantiateRootComponent(tView, rootLView, componentDef);
+    rootContext.components.push(component);
+    componentView[CONTEXT] = component;
+    hostFeatures && hostFeatures.forEach((feature) => feature(component, componentDef));
+    // We want to generate an empty QueryList for root content queries for backwards
+    // compatibility with ViewEngine.
+    if (componentDef.contentQueries) {
+        componentDef.contentQueries(1 /* Create */, component, rootLView.length - 1);
+    }
+    const rootTNode = getCurrentTNode();
+    ngDevMode && assertDefined(rootTNode, 'tNode should have been already created');
+    if (tView.firstCreatePass &&
+        (componentDef.hostBindings !== null || componentDef.hostAttrs !== null)) {
+        const elementIndex = rootTNode.index - HEADER_OFFSET;
+        setSelectedIndex(elementIndex);
+        const rootTView = rootLView[TVIEW];
+        addHostBindingsToExpandoInstructions(rootTView, componentDef);
+        growHostVarsSpace(rootTView, rootLView, componentDef.hostVars);
+        invokeHostBindingsInCreationMode(componentDef, component);
+    }
+    return component;
+}
+function createRootContext(scheduler, playerHandler) {
+    return {
+        components: [],
+        scheduler: scheduler || defaultScheduler,
+        clean: CLEAN_PROMISE,
+        playerHandler: playerHandler || null,
+        flags: 0 /* Empty */
+    };
+}
+/**
+ * Used to enable lifecycle hooks on the root component.
+ *
+ * Include this feature when calling `renderComponent` if the root component
+ * you are rendering has lifecycle hooks defined. Otherwise, the hooks won't
+ * be called properly.
+ *
+ * Example:
+ *
+ * ```
+ * renderComponent(AppComponent, {hostFeatures: [LifecycleHooksFeature]});
+ * ```
+ */
+function LifecycleHooksFeature(component, def) {
+    const rootTView = readPatchedLView(component)[TVIEW];
+    const dirIndex = rootTView.data.length - 1;
+    // TODO(misko): replace `as TNode` with createTNode call. (needs refactoring to lose dep on
+    // LNode).
+    registerPostOrderHooks(rootTView, { directiveStart: dirIndex, directiveEnd: dirIndex + 1 });
+}
+/**
+ * Wait on component until it is rendered.
+ *
+ * This function returns a `Promise` which is resolved when the component's
+ * change detection is executed. This is determined by finding the scheduler
+ * associated with the `component`'s render tree and waiting until the scheduler
+ * flushes. If nothing is scheduled, the function returns a resolved promise.
+ *
+ * Example:
+ * ```
+ * await whenRendered(myComponent);
+ * ```
+ *
+ * @param component Component to wait upon
+ * @returns Promise which resolves when the component is rendered.
+ */
+function whenRendered(component) {
+    return getRootContext(component).clean;
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function getSuperType(type) {
+    return Object.getPrototypeOf(type.prototype).constructor;
+}
+/**
+ * Merges the definition from a super class to a sub class.
+ * @param definition The definition that is a SubClass of another directive of component
+ *
+ * @codeGenApi
+ */
+function ɵɵInheritDefinitionFeature(definition) {
+    let superType = getSuperType(definition.type);
+    let shouldInheritFields = true;
+    const inheritanceChain = [definition];
+    while (superType) {
+        let superDef = undefined;
+        if (isComponentDef(definition)) {
+            // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
+            superDef = superType.ɵcmp || superType.ɵdir;
+        }
+        else {
+            if (superType.ɵcmp) {
+                throw new Error('Directives cannot inherit Components');
+            }
+            // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
+            superDef = superType.ɵdir;
+        }
+        if (superDef) {
+            if (shouldInheritFields) {
+                inheritanceChain.push(superDef);
+                // Some fields in the definition may be empty, if there were no values to put in them that
+                // would've justified object creation. Unwrap them if necessary.
+                const writeableDef = definition;
+                writeableDef.inputs = maybeUnwrapEmpty(definition.inputs);
+                writeableDef.declaredInputs = maybeUnwrapEmpty(definition.declaredInputs);
+                writeableDef.outputs = maybeUnwrapEmpty(definition.outputs);
+                // Merge hostBindings
+                const superHostBindings = superDef.hostBindings;
+                superHostBindings && inheritHostBindings(definition, superHostBindings);
+                // Merge queries
+                const superViewQuery = superDef.viewQuery;
+                const superContentQueries = superDef.contentQueries;
+                superViewQuery && inheritViewQuery(definition, superViewQuery);
+                superContentQueries && inheritContentQueries(definition, superContentQueries);
+                // Merge inputs and outputs
+                fillProperties(definition.inputs, superDef.inputs);
+                fillProperties(definition.declaredInputs, superDef.declaredInputs);
+                fillProperties(definition.outputs, superDef.outputs);
+                // Merge animations metadata.
+                // If `superDef` is a Component, the `data` field is present (defaults to an empty object).
+                if (isComponentDef(superDef) && superDef.data.animation) {
+                    // If super def is a Component, the `definition` is also a Component, since Directives can
+                    // not inherit Components (we throw an error above and cannot reach this code).
+                    const defData = definition.data;
+                    defData.animation = (defData.animation || []).concat(superDef.data.animation);
+                }
+            }
+            // Run parent features
+            const features = superDef.features;
+            if (features) {
+                for (let i = 0; i < features.length; i++) {
+                    const feature = features[i];
+                    if (feature && feature.ngInherit) {
+                        feature(definition);
+                    }
+                    // If `InheritDefinitionFeature` is a part of the current `superDef`, it means that this
+                    // def already has all the necessary information inherited from its super class(es), so we
+                    // can stop merging fields from super classes. However we need to iterate through the
+                    // prototype chain to look for classes that might contain other "features" (like
+                    // NgOnChanges), which we should invoke for the original `definition`. We set the
+                    // `shouldInheritFields` flag to indicate that, essentially skipping fields inheritance
+                    // logic and only invoking functions from the "features" list.
+                    if (feature === ɵɵInheritDefinitionFeature) {
+                        shouldInheritFields = false;
+                    }
+                }
+            }
+        }
+        superType = Object.getPrototypeOf(superType);
+    }
+    mergeHostAttrsAcrossInheritance(inheritanceChain);
+}
+/**
+ * Merge the `hostAttrs` and `hostVars` from the inherited parent to the base class.
+ *
+ * @param inheritanceChain A list of `WritableDefs` starting at the top most type and listing
+ * sub-types in order. For each type take the `hostAttrs` and `hostVars` and merge it with the child
+ * type.
+ */
+function mergeHostAttrsAcrossInheritance(inheritanceChain) {
+    let hostVars = 0;
+    let hostAttrs = null;
+    // We process the inheritance order from the base to the leaves here.
+    for (let i = inheritanceChain.length - 1; i >= 0; i--) {
+        const def = inheritanceChain[i];
+        // For each `hostVars`, we need to add the superclass amount.
+        def.hostVars = (hostVars += def.hostVars);
+        // for each `hostAttrs` we need to merge it with superclass.
+        def.hostAttrs =
+            mergeHostAttrs(def.hostAttrs, hostAttrs = mergeHostAttrs(hostAttrs, def.hostAttrs));
+    }
+}
+function maybeUnwrapEmpty(value) {
+    if (value === EMPTY_OBJ) {
+        return {};
+    }
+    else if (value === EMPTY_ARRAY) {
+        return [];
+    }
+    else {
+        return value;
+    }
+}
+function inheritViewQuery(definition, superViewQuery) {
+    const prevViewQuery = definition.viewQuery;
+    if (prevViewQuery) {
+        definition.viewQuery = (rf, ctx) => {
+            superViewQuery(rf, ctx);
+            prevViewQuery(rf, ctx);
+        };
+    }
+    else {
+        definition.viewQuery = superViewQuery;
+    }
+}
+function inheritContentQueries(definition, superContentQueries) {
+    const prevContentQueries = definition.contentQueries;
+    if (prevContentQueries) {
+        definition.contentQueries = (rf, ctx, directiveIndex) => {
+            superContentQueries(rf, ctx, directiveIndex);
+            prevContentQueries(rf, ctx, directiveIndex);
+        };
+    }
+    else {
+        definition.contentQueries = superContentQueries;
+    }
+}
+function inheritHostBindings(definition, superHostBindings) {
+    const prevHostBindings = definition.hostBindings;
+    if (prevHostBindings) {
+        definition.hostBindings = (rf, ctx) => {
+            superHostBindings(rf, ctx);
+            prevHostBindings(rf, ctx);
+        };
+    }
+    else {
+        definition.hostBindings = superHostBindings;
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Fields which exist on either directive or component definitions, and need to be copied from
+ * parent to child classes by the `ɵɵCopyDefinitionFeature`.
+ */
+const COPY_DIRECTIVE_FIELDS = [
+    // The child class should use the providers of its parent.
+    'providersResolver',
+];
+/**
+ * Fields which exist only on component definitions, and need to be copied from parent to child
+ * classes by the `ɵɵCopyDefinitionFeature`.
+ *
+ * The type here allows any field of `ComponentDef` which is not also a property of `DirectiveDef`,
+ * since those should go in `COPY_DIRECTIVE_FIELDS` above.
+ */
+const COPY_COMPONENT_FIELDS = [
+    // The child class should use the template function of its parent, including all template
+    // semantics.
+    'template',
+    'decls',
+    'consts',
+    'vars',
+    'onPush',
+    'ngContentSelectors',
+    // The child class should use the CSS styles of its parent, including all styling semantics.
+    'styles',
+    'encapsulation',
+    // The child class should be checked by the runtime in the same way as its parent.
+    'schemas',
+];
+/**
+ * Copies the fields not handled by the `ɵɵInheritDefinitionFeature` from the supertype of a
+ * definition.
+ *
+ * This exists primarily to support ngcc migration of an existing View Engine pattern, where an
+ * entire decorator is inherited from a parent to a child class. When ngcc detects this case, it
+ * generates a skeleton definition on the child class, and applies this feature.
+ *
+ * The `ɵɵCopyDefinitionFeature` then copies any needed fields from the parent class' definition,
+ * including things like the component template function.
+ *
+ * @param definition The definition of a child class which inherits from a parent class with its
+ * own definition.
+ *
+ * @codeGenApi
+ */
+function ɵɵCopyDefinitionFeature(definition) {
+    let superType = getSuperType(definition.type);
+    let superDef = undefined;
+    if (isComponentDef(definition)) {
+        // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
+        superDef = superType.ɵcmp;
+    }
+    else {
+        // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
+        superDef = superType.ɵdir;
+    }
+    // Needed because `definition` fields are readonly.
+    const defAny = definition;
+    // Copy over any fields that apply to either directives or components.
+    for (const field of COPY_DIRECTIVE_FIELDS) {
+        defAny[field] = superDef[field];
+    }
+    if (isComponentDef(superDef)) {
+        // Copy over any component-specific fields.
+        for (const field of COPY_COMPONENT_FIELDS) {
+            defAny[field] = superDef[field];
+        }
+    }
+}
+
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 let _symbolIterator = null;
 function getSymbolIterator() {
     if (!_symbolIterator) {
@@ -21521,69 +22559,15 @@ function ɵɵattributeInterpolateV(attrName, values, sanitizer, namespace) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Synchronously perform change detection on a component (and possibly its sub-components).
- *
- * This function triggers change detection in a synchronous way on a component.
- *
- * @param component The component which the change detection should be performed on.
- */
-function detectChanges(component) {
-    const view = getComponentViewByInstance(component);
-    detectChangesInternal(view[TVIEW], view, component);
-}
-/**
- * Marks the component as dirty (needing change detection). Marking a component dirty will
- * schedule a change detection on it at some point in the future.
- *
- * Marking an already dirty component as dirty won't do anything. Only one outstanding change
- * detection can be scheduled per component tree.
- *
- * @param component Component to mark as dirty.
- */
-function markDirty(component) {
-    ngDevMode && assertDefined(component, 'component');
-    const rootView = markViewDirty(getComponentViewByInstance(component));
-    ngDevMode && assertDefined(rootView[CONTEXT], 'rootContext should be defined');
-    scheduleTick(rootView[CONTEXT], 1 /* DetectChanges */);
-}
-/**
- * Used to perform change detection on the whole application.
- *
- * This is equivalent to `detectChanges`, but invoked on root component. Additionally, `tick`
- * executes lifecycle hooks and conditionally checks components based on their
- * `ChangeDetectionStrategy` and dirtiness.
- *
- * The preferred way to trigger change detection is to call `markDirty`. `markDirty` internally
- * schedules `tick` using a scheduler in order to coalesce multiple `markDirty` calls into a
- * single change detection run. By default, the scheduler is `requestAnimationFrame`, but can
- * be changed when calling `renderComponent` and providing the `scheduler` option.
- */
-function tick(component) {
-    const rootView = getRootView(component);
-    const rootContext = rootView[CONTEXT];
-    tickRootContext(rootContext);
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 function templateFirstCreatePass(index, tView, lView, templateFn, decls, vars, tagName, attrsIndex, localRefsIndex) {
     ngDevMode && assertFirstCreatePass(tView);
     ngDevMode && ngDevMode.firstCreatePass++;
     const tViewConsts = tView.consts;
     // TODO(pk): refactor getOrCreateTNode to have the "create" only version
-    const tNode = getOrCreateTNode(tView, lView[T_HOST], index, 0 /* Container */, tagName || null, getConstant(tViewConsts, attrsIndex));
+    const tNode = getOrCreateTNode(tView, index, 0 /* Container */, tagName || null, getConstant(tViewConsts, attrsIndex));
     resolveDirectives(tView, lView, tNode, getConstant(tViewConsts, localRefsIndex));
     registerPostOrderHooks(tView, tNode);
-    const embeddedTView = tNode.tViews = createTView(2 /* Embedded */, -1, templateFn, decls, vars, tView.directiveRegistry, tView.pipeRegistry, null, tView.schemas, tViewConsts);
-    const embeddedTViewNode = createTNode(tView, null, 2 /* View */, -1, null, null);
-    embeddedTViewNode.injectorIndex = tNode.injectorIndex;
-    embeddedTView.node = embeddedTViewNode;
+    const embeddedTView = tNode.tViews = createTView(2 /* Embedded */, tNode, templateFn, decls, vars, tView.directiveRegistry, tView.pipeRegistry, null, tView.schemas, tViewConsts);
     if (tView.queries !== null) {
         tView.queries.template(tView, tNode);
         embeddedTView.queries = tView.queries.embeddedTView(tNode);
@@ -21616,7 +22600,7 @@ function ɵɵtemplate(index, templateFn, decls, vars, tagName, attrsIndex, local
     const tNode = tView.firstCreatePass ?
         templateFirstCreatePass(index, tView, lView, templateFn, decls, vars, tagName, attrsIndex, localRefsIndex) :
         tView.data[adjustedIndex];
-    setPreviousOrParentTNode(tNode, false);
+    setCurrentTNode(tNode, false);
     const comment = lView[RENDERER].createComment(ngDevMode ? 'container' : '');
     appendChild(tView, lView, comment, tNode);
     attachPatchData(comment, lView);
@@ -21673,9 +22657,12 @@ function ɵɵdirectiveInject(token, flags = InjectFlags.Default) {
     const lView = getLView();
     // Fall back to inject() if view hasn't been created. This situation can happen in tests
     // if inject utilities are used before bootstrapping.
-    if (lView == null)
+    if (lView === null) {
+        // Verify that we will not get into infinite loop.
+        ngDevMode && assertInjectImplementationNot(ɵɵdirectiveInject);
         return ɵɵinject(token, flags);
-    const tNode = getPreviousOrParentTNode();
+    }
+    const tNode = getCurrentTNode();
     return getOrCreateInjectable(tNode, lView, resolveForwardRef(token), flags);
 }
 /**
@@ -21684,7 +22671,7 @@ function ɵɵdirectiveInject(token, flags = InjectFlags.Default) {
  * @codeGenApi
  */
 function ɵɵinjectAttribute(attrNameToInject) {
-    return injectAttributeImpl(getPreviousOrParentTNode(), attrNameToInject);
+    return injectAttributeImpl(getCurrentTNode(), attrNameToInject);
 }
 /**
  * Throws an error indicating that a factory function could not be generated by the compiler for a
@@ -21762,7 +22749,7 @@ function elementStartFirstCreatePass(index, tView, lView, native, name, attrsInd
     ngDevMode && ngDevMode.firstCreatePass++;
     const tViewConsts = tView.consts;
     const attrs = getConstant(tViewConsts, attrsIndex);
-    const tNode = getOrCreateTNode(tView, lView[T_HOST], index, 3 /* Element */, name, attrs);
+    const tNode = getOrCreateTNode(tView, index, 2 /* Element */, name, attrs);
     const hasDirectives = resolveDirectives(tView, lView, tNode, getConstant(tViewConsts, localRefsIndex));
     ngDevMode && logUnknownElementError(tView, native, tNode, hasDirectives);
     if (tNode.attrs !== null) {
@@ -21803,7 +22790,7 @@ function ɵɵelementStart(index, name, attrsIndex, localRefsIndex) {
     const tNode = tView.firstCreatePass ?
         elementStartFirstCreatePass(index, tView, lView, native, name, attrsIndex, localRefsIndex) :
         tView.data[adjustedIndex];
-    setPreviousOrParentTNode(tNode, true);
+    setCurrentTNode(tNode, true);
     const mergedAttrs = tNode.mergedAttrs;
     if (mergedAttrs !== null) {
         setUpAttributes(renderer, native, mergedAttrs);
@@ -21838,24 +22825,24 @@ function ɵɵelementStart(index, name, attrsIndex, localRefsIndex) {
  * @codeGenApi
  */
 function ɵɵelementEnd() {
-    let previousOrParentTNode = getPreviousOrParentTNode();
-    ngDevMode && assertDefined(previousOrParentTNode, 'No parent node to close.');
-    if (getIsParent()) {
-        setIsNotParent();
+    let currentTNode = getCurrentTNode();
+    ngDevMode && assertDefined(currentTNode, 'No parent node to close.');
+    if (isCurrentTNodeParent()) {
+        setCurrentTNodeAsNotParent();
     }
     else {
-        ngDevMode && assertHasParent(getPreviousOrParentTNode());
-        previousOrParentTNode = previousOrParentTNode.parent;
-        setPreviousOrParentTNode(previousOrParentTNode, false);
+        ngDevMode && assertHasParent(getCurrentTNode());
+        currentTNode = currentTNode.parent;
+        setCurrentTNode(currentTNode, false);
     }
-    const tNode = previousOrParentTNode;
-    ngDevMode && assertNodeType(tNode, 3 /* Element */);
+    const tNode = currentTNode;
+    ngDevMode && assertNodeType(tNode, 2 /* Element */);
     decreaseElementDepthCount();
     const tView = getTView();
     if (tView.firstCreatePass) {
-        registerPostOrderHooks(tView, previousOrParentTNode);
-        if (isContentQueryHost(previousOrParentTNode)) {
-            tView.queries.elementEnd(previousOrParentTNode);
+        registerPostOrderHooks(tView, currentTNode);
+        if (isContentQueryHost(currentTNode)) {
+            tView.queries.elementEnd(currentTNode);
         }
     }
     if (tNode.classesWithoutHost != null && hasClassInput(tNode)) {
@@ -21926,7 +22913,7 @@ function elementContainerStartFirstCreatePass(index, tView, lView, attrsIndex, l
     ngDevMode && ngDevMode.firstCreatePass++;
     const tViewConsts = tView.consts;
     const attrs = getConstant(tViewConsts, attrsIndex);
-    const tNode = getOrCreateTNode(tView, lView[T_HOST], index, 4 /* ElementContainer */, 'ng-container', attrs);
+    const tNode = getOrCreateTNode(tView, index, 3 /* ElementContainer */, 'ng-container', attrs);
     // While ng-container doesn't necessarily support styling, we use the style context to identify
     // and execute directives on the ng-container.
     if (attrs !== null) {
@@ -21963,7 +22950,7 @@ function ɵɵelementContainerStart(index, attrsIndex, localRefsIndex) {
     const tNode = tView.firstCreatePass ?
         elementContainerStartFirstCreatePass(index, tView, lView, attrsIndex, localRefsIndex) :
         tView.data[adjustedIndex];
-    setPreviousOrParentTNode(tNode, true);
+    setCurrentTNode(tNode, true);
     ngDevMode && ngDevMode.rendererCreateComment++;
     const native = lView[adjustedIndex] =
         lView[RENDERER].createComment(ngDevMode ? 'ng-container' : '');
@@ -21983,21 +22970,21 @@ function ɵɵelementContainerStart(index, attrsIndex, localRefsIndex) {
  * @codeGenApi
  */
 function ɵɵelementContainerEnd() {
-    let previousOrParentTNode = getPreviousOrParentTNode();
+    let currentTNode = getCurrentTNode();
     const tView = getTView();
-    if (getIsParent()) {
-        setIsNotParent();
+    if (isCurrentTNodeParent()) {
+        setCurrentTNodeAsNotParent();
     }
     else {
-        ngDevMode && assertHasParent(previousOrParentTNode);
-        previousOrParentTNode = previousOrParentTNode.parent;
-        setPreviousOrParentTNode(previousOrParentTNode, false);
+        ngDevMode && assertHasParent(currentTNode);
+        currentTNode = currentTNode.parent;
+        setCurrentTNode(currentTNode, false);
     }
-    ngDevMode && assertNodeType(previousOrParentTNode, 4 /* ElementContainer */);
+    ngDevMode && assertNodeType(currentTNode, 3 /* ElementContainer */);
     if (tView.firstCreatePass) {
-        registerPostOrderHooks(tView, previousOrParentTNode);
-        if (isContentQueryHost(previousOrParentTNode)) {
-            tView.queries.elementEnd(previousOrParentTNode);
+        registerPostOrderHooks(tView, currentTNode);
+        if (isContentQueryHost(currentTNode)) {
+            tView.queries.elementEnd(currentTNode);
         }
     }
 }
@@ -22077,7 +23064,7 @@ function isObservable(obj) {
 function ɵɵlistener(eventName, listenerFn, useCapture = false, eventTargetResolver) {
     const lView = getLView();
     const tView = getTView();
-    const tNode = getPreviousOrParentTNode();
+    const tNode = getCurrentTNode();
     listenerInternal(tView, lView, lView[RENDERER], tNode, eventName, listenerFn, useCapture, eventTargetResolver);
     return ɵɵlistener;
 }
@@ -22103,7 +23090,7 @@ function ɵɵlistener(eventName, listenerFn, useCapture = false, eventTargetReso
  * @codeGenApi
  */
 function ɵɵsyntheticHostListener(eventName, listenerFn, useCapture = false, eventTargetResolver) {
-    const tNode = getPreviousOrParentTNode();
+    const tNode = getCurrentTNode();
     const lView = getLView();
     const tView = getTView();
     const currentDef = getCurrentDirectiveDef(tView.data);
@@ -22150,10 +23137,10 @@ function listenerInternal(tView, lView, renderer, tNode, eventName, listenerFn, 
     // register a listener and store its cleanup function on LView.
     const lCleanup = getLCleanup(lView);
     ngDevMode &&
-        assertNodeOfPossibleTypes(tNode, [3 /* Element */, 0 /* Container */, 4 /* ElementContainer */]);
+        assertNodeOfPossibleTypes(tNode, [2 /* Element */, 0 /* Container */, 3 /* ElementContainer */]);
     let processOutputs = true;
     // add native event listener - applicable to elements only
-    if (tNode.type === 3 /* Element */) {
+    if (tNode.type === 2 /* Element */) {
         const native = getNativeByTNode(tNode, lView);
         const resolved = eventTargetResolver ? eventTargetResolver(native) : EMPTY_OBJ;
         const target = resolved.target || native;
@@ -22427,12 +23414,12 @@ function setDelayProjection(value) {
 function ɵɵprojection(nodeIndex, selectorIndex = 0, attrs) {
     const lView = getLView();
     const tView = getTView();
-    const tProjectionNode = getOrCreateTNode(tView, lView[T_HOST], nodeIndex, 1 /* Projection */, null, attrs || null);
+    const tProjectionNode = getOrCreateTNode(tView, nodeIndex, 1 /* Projection */, null, attrs || null);
     // We can't use viewData[HOST_NODE] because projection nodes can be nested in embedded views.
     if (tProjectionNode.projection === null)
         tProjectionNode.projection = selectorIndex;
     // `<ng-content>` has no content
-    setIsNotParent();
+    setCurrentTNodeAsNotParent();
     // We might need to delay the projection of nodes if they are in the middle of an i18n block
     if (!delayProjection) {
         // re-distribution of projectable nodes is stored on a component's view level
@@ -23299,7 +24286,7 @@ function markDuplicates(tData, tStylingKey, index, isPrevDir, isClassBinding) {
 /**
  * Determines if two `TStylingKey`s are a match.
  *
- * When computing weather a binding contains a duplicate, we need to compare if the instruction
+ * When computing whether a binding contains a duplicate, we need to compare if the instruction
  * `TStylingKey` has a match.
  *
  * Here are examples of `TStylingKey`s which match given `tStylingKeyCursor` is:
@@ -24230,7 +25217,7 @@ function updateStylingMap(tView, tNode, lView, renderer, oldKeyValueArray, newKe
  * @param bindingIndex Binding index of the binding.
  */
 function updateStyling(tView, tNode, lView, renderer, prop, value, isClassBased, bindingIndex) {
-    if (tNode.type !== 3 /* Element */) {
+    if (tNode.type !== 2 /* Element */) {
         // It is possible to have styling on non-elements (such as ng-container).
         // This is rare, but it does happen. In such a case, just ignore the binding.
         return;
@@ -24398,12 +25385,12 @@ function ɵɵtext(index, value = '') {
         assertEqual(getBindingIndex(), tView.bindingStartIndex, 'text nodes should be created before any bindings');
     ngDevMode && assertIndexInRange(lView, adjustedIndex);
     const tNode = tView.firstCreatePass ?
-        getOrCreateTNode(tView, lView[T_HOST], index, 3 /* Element */, null, null) :
+        getOrCreateTNode(tView, index, 2 /* Element */, null, null) :
         tView.data[adjustedIndex];
     const textNative = lView[adjustedIndex] = createTextNode(value, lView[RENDERER]);
     appendChild(tView, lView, textNative, tNode);
     // Text nodes are self closing.
-    setPreviousOrParentTNode(tNode, false);
+    setCurrentTNode(tNode, false);
 }
 
 /**
@@ -25754,862 +26741,6 @@ function ɵɵsyntheticHostProperty(propName, value, sanitizer) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Retrieves the component instance associated with a given DOM element.
- *
- * @usageNotes
- * Given the following DOM structure:
- * ```html
- * <my-app>
- *   <div>
- *     <child-comp></child-comp>
- *   </div>
- * </my-app>
- * ```
- * Calling `getComponent` on `<child-comp>` will return the instance of `ChildComponent`
- * associated with this DOM element.
- *
- * Calling the function on `<my-app>` will return the `MyApp` instance.
- *
- *
- * @param element DOM element from which the component should be retrieved.
- * @returns Component instance associated with the element or `null` if there
- *    is no component associated with it.
- *
- * @publicApi
- * @globalApi ng
- */
-function getComponent(element) {
-    assertDomElement(element);
-    const context = loadLContext(element, false);
-    if (context === null)
-        return null;
-    if (context.component === undefined) {
-        context.component = getComponentAtNodeIndex(context.nodeIndex, context.lView);
-    }
-    return context.component;
-}
-/**
- * If inside an embedded view (e.g. `*ngIf` or `*ngFor`), retrieves the context of the embedded
- * view that the element is part of. Otherwise retrieves the instance of the component whose view
- * owns the element (in this case, the result is the same as calling `getOwningComponent`).
- *
- * @param element Element for which to get the surrounding component instance.
- * @returns Instance of the component that is around the element or null if the element isn't
- *    inside any component.
- *
- * @publicApi
- * @globalApi ng
- */
-function getContext(element) {
-    assertDomElement(element);
-    const context = loadLContext(element, false);
-    return context === null ? null : context.lView[CONTEXT];
-}
-/**
- * Retrieves the component instance whose view contains the DOM element.
- *
- * For example, if `<child-comp>` is used in the template of `<app-comp>`
- * (i.e. a `ViewChild` of `<app-comp>`), calling `getOwningComponent` on `<child-comp>`
- * would return `<app-comp>`.
- *
- * @param elementOrDir DOM element, component or directive instance
- *    for which to retrieve the root components.
- * @returns Component instance whose view owns the DOM element or null if the element is not
- *    part of a component view.
- *
- * @publicApi
- * @globalApi ng
- */
-function getOwningComponent(elementOrDir) {
-    const context = loadLContext(elementOrDir, false);
-    if (context === null)
-        return null;
-    let lView = context.lView;
-    let parent;
-    ngDevMode && assertLView(lView);
-    while (lView[HOST] === null && (parent = getLViewParent(lView))) {
-        // As long as lView[HOST] is null we know we are part of sub-template such as `*ngIf`
-        lView = parent;
-    }
-    return lView[FLAGS] & 512 /* IsRoot */ ? null : lView[CONTEXT];
-}
-/**
- * Retrieves all root components associated with a DOM element, directive or component instance.
- * Root components are those which have been bootstrapped by Angular.
- *
- * @param elementOrDir DOM element, component or directive instance
- *    for which to retrieve the root components.
- * @returns Root components associated with the target object.
- *
- * @publicApi
- * @globalApi ng
- */
-function getRootComponents(elementOrDir) {
-    return [...getRootContext(elementOrDir).components];
-}
-/**
- * Retrieves an `Injector` associated with an element, component or directive instance.
- *
- * @param elementOrDir DOM element, component or directive instance for which to
- *    retrieve the injector.
- * @returns Injector associated with the element, component or directive instance.
- *
- * @publicApi
- * @globalApi ng
- */
-function getInjector(elementOrDir) {
-    const context = loadLContext(elementOrDir, false);
-    if (context === null)
-        return Injector.NULL;
-    const tNode = context.lView[TVIEW].data[context.nodeIndex];
-    return new NodeInjector(tNode, context.lView);
-}
-/**
- * Retrieve a set of injection tokens at a given DOM node.
- *
- * @param element Element for which the injection tokens should be retrieved.
- */
-function getInjectionTokens(element) {
-    const context = loadLContext(element, false);
-    if (context === null)
-        return [];
-    const lView = context.lView;
-    const tView = lView[TVIEW];
-    const tNode = tView.data[context.nodeIndex];
-    const providerTokens = [];
-    const startIndex = tNode.providerIndexes & 1048575 /* ProvidersStartIndexMask */;
-    const endIndex = tNode.directiveEnd;
-    for (let i = startIndex; i < endIndex; i++) {
-        let value = tView.data[i];
-        if (isDirectiveDefHack(value)) {
-            // The fact that we sometimes store Type and sometimes DirectiveDef in this location is a
-            // design flaw.  We should always store same type so that we can be monomorphic. The issue
-            // is that for Components/Directives we store the def instead the type. The correct behavior
-            // is that we should always be storing injectable type in this location.
-            value = value.type;
-        }
-        providerTokens.push(value);
-    }
-    return providerTokens;
-}
-/**
- * Retrieves directive instances associated with a given DOM element. Does not include
- * component instances.
- *
- * @usageNotes
- * Given the following DOM structure:
- * ```
- * <my-app>
- *   <button my-button></button>
- *   <my-comp></my-comp>
- * </my-app>
- * ```
- * Calling `getDirectives` on `<button>` will return an array with an instance of the `MyButton`
- * directive that is associated with the DOM element.
- *
- * Calling `getDirectives` on `<my-comp>` will return an empty array.
- *
- * @param element DOM element for which to get the directives.
- * @returns Array of directives associated with the element.
- *
- * @publicApi
- * @globalApi ng
- */
-function getDirectives(element) {
-    const context = loadLContext(element);
-    if (context.directives === undefined) {
-        context.directives = getDirectivesAtNodeIndex(context.nodeIndex, context.lView, false);
-    }
-    // The `directives` in this case are a named array called `LComponentView`. Clone the
-    // result so we don't expose an internal data structure in the user's console.
-    return context.directives === null ? [] : [...context.directives];
-}
-function loadLContext(target, throwOnNotFound = true) {
-    const context = getLContext(target);
-    if (!context && throwOnNotFound) {
-        throw new Error(ngDevMode ? `Unable to find context associated with ${stringifyForError(target)}` :
-            'Invalid ng target');
-    }
-    return context;
-}
-/**
- * Retrieve map of local references.
- *
- * The references are retrieved as a map of local reference name to element or directive instance.
- *
- * @param target DOM element, component or directive instance for which to retrieve
- *    the local references.
- */
-function getLocalRefs(target) {
-    const context = loadLContext(target, false);
-    if (context === null)
-        return {};
-    if (context.localRefs === undefined) {
-        context.localRefs = discoverLocalRefs(context.lView, context.nodeIndex);
-    }
-    return context.localRefs || {};
-}
-/**
- * Retrieves the host element of a component or directive instance.
- * The host element is the DOM element that matched the selector of the directive.
- *
- * @param componentOrDirective Component or directive instance for which the host
- *     element should be retrieved.
- * @returns Host element of the target.
- *
- * @publicApi
- * @globalApi ng
- */
-function getHostElement(componentOrDirective) {
-    return getLContext(componentOrDirective).native;
-}
-/**
- * Retrieves the rendered text for a given component.
- *
- * This function retrieves the host element of a component and
- * and then returns the `textContent` for that element. This implies
- * that the text returned will include re-projected content of
- * the component as well.
- *
- * @param component The component to return the content text for.
- */
-function getRenderedText(component) {
-    const hostElement = getHostElement(component);
-    return hostElement.textContent || '';
-}
-function loadLContextFromNode(node) {
-    if (!(node instanceof Node))
-        throw new Error('Expecting instance of DOM Element');
-    return loadLContext(node);
-}
-/**
- * Retrieves a list of event listeners associated with a DOM element. The list does include host
- * listeners, but it does not include event listeners defined outside of the Angular context
- * (e.g. through `addEventListener`).
- *
- * @usageNotes
- * Given the following DOM structure:
- * ```
- * <my-app>
- *   <div (click)="doSomething()"></div>
- * </my-app>
- *
- * ```
- * Calling `getListeners` on `<div>` will return an object that looks as follows:
- * ```
- * {
- *   name: 'click',
- *   element: <div>,
- *   callback: () => doSomething(),
- *   useCapture: false
- * }
- * ```
- *
- * @param element Element for which the DOM listeners should be retrieved.
- * @returns Array of event listeners on the DOM element.
- *
- * @publicApi
- * @globalApi ng
- */
-function getListeners(element) {
-    assertDomElement(element);
-    const lContext = loadLContext(element, false);
-    if (lContext === null)
-        return [];
-    const lView = lContext.lView;
-    const tView = lView[TVIEW];
-    const lCleanup = lView[CLEANUP];
-    const tCleanup = tView.cleanup;
-    const listeners = [];
-    if (tCleanup && lCleanup) {
-        for (let i = 0; i < tCleanup.length;) {
-            const firstParam = tCleanup[i++];
-            const secondParam = tCleanup[i++];
-            if (typeof firstParam === 'string') {
-                const name = firstParam;
-                const listenerElement = unwrapRNode(lView[secondParam]);
-                const callback = lCleanup[tCleanup[i++]];
-                const useCaptureOrIndx = tCleanup[i++];
-                // if useCaptureOrIndx is boolean then report it as is.
-                // if useCaptureOrIndx is positive number then it in unsubscribe method
-                // if useCaptureOrIndx is negative number then it is a Subscription
-                const type = (typeof useCaptureOrIndx === 'boolean' || useCaptureOrIndx >= 0) ? 'dom' : 'output';
-                const useCapture = typeof useCaptureOrIndx === 'boolean' ? useCaptureOrIndx : false;
-                if (element == listenerElement) {
-                    listeners.push({ element, name, callback, useCapture, type });
-                }
-            }
-        }
-    }
-    listeners.sort(sortListeners);
-    return listeners;
-}
-function sortListeners(a, b) {
-    if (a.name == b.name)
-        return 0;
-    return a.name < b.name ? -1 : 1;
-}
-/**
- * This function should not exist because it is megamorphic and only mostly correct.
- *
- * See call site for more info.
- */
-function isDirectiveDefHack(obj) {
-    return obj.type !== undefined && obj.template !== undefined && obj.declaredInputs !== undefined;
-}
-/**
- * Returns the attached `DebugNode` instance for an element in the DOM.
- *
- * @param element DOM element which is owned by an existing component's view.
- */
-function getDebugNode(element) {
-    let debugNode = null;
-    const lContext = loadLContextFromNode(element);
-    const lView = lContext.lView;
-    const nodeIndex = lContext.nodeIndex;
-    if (nodeIndex !== -1) {
-        const valueInLView = lView[nodeIndex];
-        // this means that value in the lView is a component with its own
-        // data. In this situation the TNode is not accessed at the same spot.
-        const tNode = isLView(valueInLView) ? valueInLView[T_HOST] :
-            getTNode(lView[TVIEW], nodeIndex - HEADER_OFFSET);
-        debugNode = buildDebugNode(tNode, lView, nodeIndex);
-    }
-    return debugNode;
-}
-/**
- * Retrieve the component `LView` from component/element.
- *
- * NOTE: `LView` is a private and should not be leaked outside.
- *       Don't export this method to `ng.*` on window.
- *
- * @param target DOM element or component instance for which to retrieve the LView.
- */
-function getComponentLView(target) {
-    const lContext = loadLContext(target);
-    const nodeIndx = lContext.nodeIndex;
-    const lView = lContext.lView;
-    const componentLView = lView[nodeIndx];
-    ngDevMode && assertLView(componentLView);
-    return componentLView;
-}
-/** Asserts that a value is a DOM Element. */
-function assertDomElement(value) {
-    if (typeof Element !== 'undefined' && !(value instanceof Element)) {
-        throw new Error('Expecting instance of DOM Element');
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Marks a component for check (in case of OnPush components) and synchronously
- * performs change detection on the application this component belongs to.
- *
- * @param component Component to {@link ChangeDetectorRef#markForCheck mark for check}.
- *
- * @publicApi
- * @globalApi ng
- */
-function applyChanges(component) {
-    markDirty(component);
-    getRootComponents(component).forEach(rootComponent => detectChanges(rootComponent));
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * This file introduces series of globally accessible debug tools
- * to allow for the Angular debugging story to function.
- *
- * To see this in action run the following command:
- *
- *   bazel run --config=ivy
- *   //packages/core/test/bundling/todo:devserver
- *
- *  Then load `localhost:5432` and start using the console tools.
- */
-/**
- * This value reflects the property on the window where the dev
- * tools are patched (window.ng).
- * */
-const GLOBAL_PUBLISH_EXPANDO_KEY = 'ng';
-let _published = false;
-/**
- * Publishes a collection of default debug tools onto`window.ng`.
- *
- * These functions are available globally when Angular is in development
- * mode and are automatically stripped away from prod mode is on.
- */
-function publishDefaultGlobalUtils() {
-    if (!_published) {
-        _published = true;
-        publishGlobalUtil('getComponent', getComponent);
-        publishGlobalUtil('getContext', getContext);
-        publishGlobalUtil('getListeners', getListeners);
-        publishGlobalUtil('getOwningComponent', getOwningComponent);
-        publishGlobalUtil('getHostElement', getHostElement);
-        publishGlobalUtil('getInjector', getInjector);
-        publishGlobalUtil('getRootComponents', getRootComponents);
-        publishGlobalUtil('getDirectives', getDirectives);
-        publishGlobalUtil('applyChanges', applyChanges);
-    }
-}
-/**
- * Publishes the given function to `window.ng` so that it can be
- * used from the browser console when an application is not in production.
- */
-function publishGlobalUtil(name, fn) {
-    if (typeof COMPILED === 'undefined' || !COMPILED) {
-        // Note: we can't export `ng` when using closure enhanced optimization as:
-        // - closure declares globals itself for minified names, which sometimes clobber our `ng` global
-        // - we can't declare a closure extern as the namespace `ng` is already used within Google
-        //   for typings for AngularJS (via `goog.provide('ng....')`).
-        const w = _global;
-        ngDevMode && assertDefined(fn, 'function not defined');
-        if (w) {
-            let container = w[GLOBAL_PUBLISH_EXPANDO_KEY];
-            if (!container) {
-                container = w[GLOBAL_PUBLISH_EXPANDO_KEY] = {};
-            }
-            container[name] = fn;
-        }
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-const ɵ0$b = (token, notFoundValue) => {
-    throw new Error('NullInjector: Not found: ' + stringifyForError(token));
-};
-// TODO: A hack to not pull in the NullInjector from @angular/core.
-const NULL_INJECTOR$1 = {
-    get: ɵ0$b
-};
-/**
- * Bootstraps a Component into an existing host element and returns an instance
- * of the component.
- *
- * Use this function to bootstrap a component into the DOM tree. Each invocation
- * of this function will create a separate tree of components, injectors and
- * change detection cycles and lifetimes. To dynamically insert a new component
- * into an existing tree such that it shares the same injection, change detection
- * and object lifetime, use {@link ViewContainer#createComponent}.
- *
- * @param componentType Component to bootstrap
- * @param options Optional parameters which control bootstrapping
- */
-function renderComponent$1(componentType /* Type as workaround for: Microsoft/TypeScript/issues/4881 */, opts = {}) {
-    ngDevMode && publishDefaultGlobalUtils();
-    ngDevMode && assertComponentType(componentType);
-    const rendererFactory = opts.rendererFactory || domRendererFactory3;
-    const sanitizer = opts.sanitizer || null;
-    const componentDef = getComponentDef(componentType);
-    if (componentDef.type != componentType)
-        componentDef.type = componentType;
-    // The first index of the first selector is the tag name.
-    const componentTag = componentDef.selectors[0][0];
-    const hostRenderer = rendererFactory.createRenderer(null, null);
-    const hostRNode = locateHostElement(hostRenderer, opts.host || componentTag, componentDef.encapsulation);
-    const rootFlags = componentDef.onPush ? 64 /* Dirty */ | 512 /* IsRoot */ :
-        16 /* CheckAlways */ | 512 /* IsRoot */;
-    const rootContext = createRootContext(opts.scheduler, opts.playerHandler);
-    const renderer = rendererFactory.createRenderer(hostRNode, componentDef);
-    const rootTView = createTView(0 /* Root */, -1, null, 1, 0, null, null, null, null, null);
-    const rootView = createLView(null, rootTView, rootContext, rootFlags, null, null, rendererFactory, renderer, undefined, opts.injector || null);
-    enterView(rootView, null);
-    let component;
-    try {
-        if (rendererFactory.begin)
-            rendererFactory.begin();
-        const componentView = createRootComponentView(hostRNode, componentDef, rootView, rendererFactory, renderer, sanitizer);
-        component = createRootComponent(componentView, componentDef, rootView, rootContext, opts.hostFeatures || null);
-        // create mode pass
-        renderView(rootTView, rootView, null);
-        // update mode pass
-        refreshView(rootTView, rootView, null, null);
-    }
-    finally {
-        leaveView();
-        if (rendererFactory.end)
-            rendererFactory.end();
-    }
-    return component;
-}
-/**
- * Creates the root component view and the root component node.
- *
- * @param rNode Render host element.
- * @param def ComponentDef
- * @param rootView The parent view where the host node is stored
- * @param hostRenderer The current renderer
- * @param sanitizer The sanitizer, if provided
- *
- * @returns Component view created
- */
-function createRootComponentView(rNode, def, rootView, rendererFactory, hostRenderer, sanitizer) {
-    const tView = rootView[TVIEW];
-    ngDevMode && assertIndexInRange(rootView, 0 + HEADER_OFFSET);
-    rootView[0 + HEADER_OFFSET] = rNode;
-    const tNode = getOrCreateTNode(tView, null, 0, 3 /* Element */, null, null);
-    const mergedAttrs = tNode.mergedAttrs = def.hostAttrs;
-    if (mergedAttrs !== null) {
-        computeStaticStyling(tNode, mergedAttrs, true);
-        if (rNode !== null) {
-            setUpAttributes(hostRenderer, rNode, mergedAttrs);
-            if (tNode.classes !== null) {
-                writeDirectClass(hostRenderer, rNode, tNode.classes);
-            }
-            if (tNode.styles !== null) {
-                writeDirectStyle(hostRenderer, rNode, tNode.styles);
-            }
-        }
-    }
-    const viewRenderer = rendererFactory.createRenderer(rNode, def);
-    const componentView = createLView(rootView, getOrCreateTComponentView(def), null, def.onPush ? 64 /* Dirty */ : 16 /* CheckAlways */, rootView[HEADER_OFFSET], tNode, rendererFactory, viewRenderer, sanitizer);
-    if (tView.firstCreatePass) {
-        diPublicInInjector(getOrCreateNodeInjectorForNode(tNode, rootView), tView, def.type);
-        markAsComponentHost(tView, tNode);
-        initTNodeFlags(tNode, rootView.length, 1);
-    }
-    addToViewTree(rootView, componentView);
-    // Store component view at node index, with node as the HOST
-    return rootView[HEADER_OFFSET] = componentView;
-}
-/**
- * Creates a root component and sets it up with features and host bindings. Shared by
- * renderComponent() and ViewContainerRef.createComponent().
- */
-function createRootComponent(componentView, componentDef, rootLView, rootContext, hostFeatures) {
-    const tView = rootLView[TVIEW];
-    // Create directive instance with factory() and store at next index in viewData
-    const component = instantiateRootComponent(tView, rootLView, componentDef);
-    rootContext.components.push(component);
-    componentView[CONTEXT] = component;
-    hostFeatures && hostFeatures.forEach((feature) => feature(component, componentDef));
-    // We want to generate an empty QueryList for root content queries for backwards
-    // compatibility with ViewEngine.
-    if (componentDef.contentQueries) {
-        componentDef.contentQueries(1 /* Create */, component, rootLView.length - 1);
-    }
-    const rootTNode = getPreviousOrParentTNode();
-    if (tView.firstCreatePass &&
-        (componentDef.hostBindings !== null || componentDef.hostAttrs !== null)) {
-        const elementIndex = rootTNode.index - HEADER_OFFSET;
-        setSelectedIndex(elementIndex);
-        const rootTView = rootLView[TVIEW];
-        addHostBindingsToExpandoInstructions(rootTView, componentDef);
-        growHostVarsSpace(rootTView, rootLView, componentDef.hostVars);
-        invokeHostBindingsInCreationMode(componentDef, component);
-    }
-    return component;
-}
-function createRootContext(scheduler, playerHandler) {
-    return {
-        components: [],
-        scheduler: scheduler || defaultScheduler,
-        clean: CLEAN_PROMISE,
-        playerHandler: playerHandler || null,
-        flags: 0 /* Empty */
-    };
-}
-/**
- * Used to enable lifecycle hooks on the root component.
- *
- * Include this feature when calling `renderComponent` if the root component
- * you are rendering has lifecycle hooks defined. Otherwise, the hooks won't
- * be called properly.
- *
- * Example:
- *
- * ```
- * renderComponent(AppComponent, {hostFeatures: [LifecycleHooksFeature]});
- * ```
- */
-function LifecycleHooksFeature(component, def) {
-    const rootTView = readPatchedLView(component)[TVIEW];
-    const dirIndex = rootTView.data.length - 1;
-    // TODO(misko): replace `as TNode` with createTNode call. (needs refactoring to lose dep on
-    // LNode).
-    registerPostOrderHooks(rootTView, { directiveStart: dirIndex, directiveEnd: dirIndex + 1 });
-}
-/**
- * Wait on component until it is rendered.
- *
- * This function returns a `Promise` which is resolved when the component's
- * change detection is executed. This is determined by finding the scheduler
- * associated with the `component`'s render tree and waiting until the scheduler
- * flushes. If nothing is scheduled, the function returns a resolved promise.
- *
- * Example:
- * ```
- * await whenRendered(myComponent);
- * ```
- *
- * @param component Component to wait upon
- * @returns Promise which resolves when the component is rendered.
- */
-function whenRendered(component) {
-    return getRootContext(component).clean;
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-function getSuperType(type) {
-    return Object.getPrototypeOf(type.prototype).constructor;
-}
-/**
- * Merges the definition from a super class to a sub class.
- * @param definition The definition that is a SubClass of another directive of component
- *
- * @codeGenApi
- */
-function ɵɵInheritDefinitionFeature(definition) {
-    let superType = getSuperType(definition.type);
-    let shouldInheritFields = true;
-    const inheritanceChain = [definition];
-    while (superType) {
-        let superDef = undefined;
-        if (isComponentDef(definition)) {
-            // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
-            superDef = superType.ɵcmp || superType.ɵdir;
-        }
-        else {
-            if (superType.ɵcmp) {
-                throw new Error('Directives cannot inherit Components');
-            }
-            // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
-            superDef = superType.ɵdir;
-        }
-        if (superDef) {
-            if (shouldInheritFields) {
-                inheritanceChain.push(superDef);
-                // Some fields in the definition may be empty, if there were no values to put in them that
-                // would've justified object creation. Unwrap them if necessary.
-                const writeableDef = definition;
-                writeableDef.inputs = maybeUnwrapEmpty(definition.inputs);
-                writeableDef.declaredInputs = maybeUnwrapEmpty(definition.declaredInputs);
-                writeableDef.outputs = maybeUnwrapEmpty(definition.outputs);
-                // Merge hostBindings
-                const superHostBindings = superDef.hostBindings;
-                superHostBindings && inheritHostBindings(definition, superHostBindings);
-                // Merge queries
-                const superViewQuery = superDef.viewQuery;
-                const superContentQueries = superDef.contentQueries;
-                superViewQuery && inheritViewQuery(definition, superViewQuery);
-                superContentQueries && inheritContentQueries(definition, superContentQueries);
-                // Merge inputs and outputs
-                fillProperties(definition.inputs, superDef.inputs);
-                fillProperties(definition.declaredInputs, superDef.declaredInputs);
-                fillProperties(definition.outputs, superDef.outputs);
-                // Merge animations metadata.
-                // If `superDef` is a Component, the `data` field is present (defaults to an empty object).
-                if (isComponentDef(superDef) && superDef.data.animation) {
-                    // If super def is a Component, the `definition` is also a Component, since Directives can
-                    // not inherit Components (we throw an error above and cannot reach this code).
-                    const defData = definition.data;
-                    defData.animation = (defData.animation || []).concat(superDef.data.animation);
-                }
-            }
-            // Run parent features
-            const features = superDef.features;
-            if (features) {
-                for (let i = 0; i < features.length; i++) {
-                    const feature = features[i];
-                    if (feature && feature.ngInherit) {
-                        feature(definition);
-                    }
-                    // If `InheritDefinitionFeature` is a part of the current `superDef`, it means that this
-                    // def already has all the necessary information inherited from its super class(es), so we
-                    // can stop merging fields from super classes. However we need to iterate through the
-                    // prototype chain to look for classes that might contain other "features" (like
-                    // NgOnChanges), which we should invoke for the original `definition`. We set the
-                    // `shouldInheritFields` flag to indicate that, essentially skipping fields inheritance
-                    // logic and only invoking functions from the "features" list.
-                    if (feature === ɵɵInheritDefinitionFeature) {
-                        shouldInheritFields = false;
-                    }
-                }
-            }
-        }
-        superType = Object.getPrototypeOf(superType);
-    }
-    mergeHostAttrsAcrossInheritance(inheritanceChain);
-}
-/**
- * Merge the `hostAttrs` and `hostVars` from the inherited parent to the base class.
- *
- * @param inheritanceChain A list of `WritableDefs` starting at the top most type and listing
- * sub-types in order. For each type take the `hostAttrs` and `hostVars` and merge it with the child
- * type.
- */
-function mergeHostAttrsAcrossInheritance(inheritanceChain) {
-    let hostVars = 0;
-    let hostAttrs = null;
-    // We process the inheritance order from the base to the leaves here.
-    for (let i = inheritanceChain.length - 1; i >= 0; i--) {
-        const def = inheritanceChain[i];
-        // For each `hostVars`, we need to add the superclass amount.
-        def.hostVars = (hostVars += def.hostVars);
-        // for each `hostAttrs` we need to merge it with superclass.
-        def.hostAttrs =
-            mergeHostAttrs(def.hostAttrs, hostAttrs = mergeHostAttrs(hostAttrs, def.hostAttrs));
-    }
-}
-function maybeUnwrapEmpty(value) {
-    if (value === EMPTY_OBJ) {
-        return {};
-    }
-    else if (value === EMPTY_ARRAY) {
-        return [];
-    }
-    else {
-        return value;
-    }
-}
-function inheritViewQuery(definition, superViewQuery) {
-    const prevViewQuery = definition.viewQuery;
-    if (prevViewQuery) {
-        definition.viewQuery = (rf, ctx) => {
-            superViewQuery(rf, ctx);
-            prevViewQuery(rf, ctx);
-        };
-    }
-    else {
-        definition.viewQuery = superViewQuery;
-    }
-}
-function inheritContentQueries(definition, superContentQueries) {
-    const prevContentQueries = definition.contentQueries;
-    if (prevContentQueries) {
-        definition.contentQueries = (rf, ctx, directiveIndex) => {
-            superContentQueries(rf, ctx, directiveIndex);
-            prevContentQueries(rf, ctx, directiveIndex);
-        };
-    }
-    else {
-        definition.contentQueries = superContentQueries;
-    }
-}
-function inheritHostBindings(definition, superHostBindings) {
-    const prevHostBindings = definition.hostBindings;
-    if (prevHostBindings) {
-        definition.hostBindings = (rf, ctx) => {
-            superHostBindings(rf, ctx);
-            prevHostBindings(rf, ctx);
-        };
-    }
-    else {
-        definition.hostBindings = superHostBindings;
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * Fields which exist on either directive or component definitions, and need to be copied from
- * parent to child classes by the `ɵɵCopyDefinitionFeature`.
- */
-const COPY_DIRECTIVE_FIELDS = [
-    // The child class should use the providers of its parent.
-    'providersResolver',
-];
-/**
- * Fields which exist only on component definitions, and need to be copied from parent to child
- * classes by the `ɵɵCopyDefinitionFeature`.
- *
- * The type here allows any field of `ComponentDef` which is not also a property of `DirectiveDef`,
- * since those should go in `COPY_DIRECTIVE_FIELDS` above.
- */
-const COPY_COMPONENT_FIELDS = [
-    // The child class should use the template function of its parent, including all template
-    // semantics.
-    'template',
-    'decls',
-    'consts',
-    'vars',
-    'onPush',
-    'ngContentSelectors',
-    // The child class should use the CSS styles of its parent, including all styling semantics.
-    'styles',
-    'encapsulation',
-    // The child class should be checked by the runtime in the same way as its parent.
-    'schemas',
-];
-/**
- * Copies the fields not handled by the `ɵɵInheritDefinitionFeature` from the supertype of a
- * definition.
- *
- * This exists primarily to support ngcc migration of an existing View Engine pattern, where an
- * entire decorator is inherited from a parent to a child class. When ngcc detects this case, it
- * generates a skeleton definition on the child class, and applies this feature.
- *
- * The `ɵɵCopyDefinitionFeature` then copies any needed fields from the parent class' definition,
- * including things like the component template function.
- *
- * @param definition The definition of a child class which inherits from a parent class with its
- * own definition.
- *
- * @codeGenApi
- */
-function ɵɵCopyDefinitionFeature(definition) {
-    let superType = getSuperType(definition.type);
-    let superDef = undefined;
-    if (isComponentDef(definition)) {
-        // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
-        superDef = superType.ɵcmp;
-    }
-    else {
-        // Don't use getComponentDef/getDirectiveDef. This logic relies on inheritance.
-        superDef = superType.ɵdir;
-    }
-    // Needed because `definition` fields are readonly.
-    const defAny = definition;
-    // Copy over any fields that apply to either directives or components.
-    for (const field of COPY_DIRECTIVE_FIELDS) {
-        defAny[field] = superDef[field];
-    }
-    if (isComponentDef(superDef)) {
-        // Copy over any component-specific fields.
-        for (const field of COPY_COMPONENT_FIELDS) {
-            defAny[field] = superDef[field];
-        }
-    }
-}
-
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * Resolves the providers which are defined in the DirectiveDef.
  *
  * When inserting the tokens and the factories in their respective arrays, we can assume that
@@ -26655,7 +26786,7 @@ function resolveProvider$1(provider, tInjectables, lInjectablesBlueprint, isComp
         const lView = getLView();
         let token = isTypeProvider(provider) ? provider : resolveForwardRef(provider.provide);
         let providerFactory = providerToFactory(provider);
-        const tNode = getPreviousOrParentTNode();
+        const tNode = getCurrentTNode();
         const beginIndex = tNode.providerIndexes & 1048575 /* ProvidersStartIndexMask */;
         const endIndex = tNode.directiveStart;
         const cptViewProvidersCount = tNode.providerIndexes >> 20 /* CptViewProvidersCountShift */;
@@ -26868,7 +26999,7 @@ function multiFactory(factoryFn, index, isViewProvider, isComponent, f) {
  *        ɵɵtextInterpolate(ctx.greeter.greet());
  *      }
  *    },
- *    features: [ProvidersFeature([GreeterDE])]
+ *    features: [ɵɵProvidersFeature([GreeterDE])]
  *  });
  * }
  * ```
@@ -27136,7 +27267,7 @@ class Version {
 /**
  * @publicApi
  */
-const VERSION = new Version('10.1.1');
+const VERSION = new Version('10.1.6');
 
 /**
  * @license
@@ -27351,7 +27482,6 @@ class DefaultIterableDiffer {
     _reset() {
         if (this.isDirty) {
             let record;
-            let nextRecord;
             for (record = this._previousItHead = this._itHead; record !== null; record = record._next) {
                 record._nextPrevious = record._next;
             }
@@ -27359,9 +27489,8 @@ class DefaultIterableDiffer {
                 record.previousIndex = record.currentIndex;
             }
             this._additionsHead = this._additionsTail = null;
-            for (record = this._movesHead; record !== null; record = nextRecord) {
+            for (record = this._movesHead; record !== null; record = record._nextMoved) {
                 record.previousIndex = record.currentIndex;
-                nextRecord = record._nextMoved;
             }
             this._movesHead = this._movesTail = null;
             this._removalsHead = this._removalsTail = null;
@@ -30069,14 +30198,14 @@ class ComponentFactory$1 extends ComponentFactory {
             16 /* CheckAlways */ | 512 /* IsRoot */;
         const rootContext = createRootContext();
         // Create the root view. Uses empty TView and ContentTemplate.
-        const rootTView = createTView(0 /* Root */, -1, null, 1, 0, null, null, null, null, null);
+        const rootTView = createTView(0 /* Root */, null, null, 1, 0, null, null, null, null, null);
         const rootLView = createLView(null, rootTView, rootContext, rootFlags, null, null, rendererFactory, hostRenderer, sanitizer, rootViewInjector);
         // rootView is the parent when bootstrapping
         // TODO(misko): it looks like we are entering view here but we don't really need to as
         // `renderView` does that. However as the code is written it is needed because
         // `createRootComponentView` and `createRootComponent` both read global state. Fixing those
         // issues would allow us to drop this.
-        enterView(rootLView, null);
+        enterView(rootLView);
         let component;
         let tElementNode;
         try {
@@ -30120,11 +30249,7 @@ class ComponentFactory$1 extends ComponentFactory {
         finally {
             leaveView();
         }
-        const componentRef = new ComponentRef$1(this.componentType, component, createElementRef(ElementRef, tElementNode, rootLView), rootLView, tElementNode);
-        // The host element of the internal root view is attached to the component's host view node.
-        ngDevMode && assertNodeOfPossibleTypes(rootTView.node, [2 /* View */]);
-        rootTView.node.child = tElementNode;
-        return componentRef;
+        return new ComponentRef$1(this.componentType, component, createElementRef(ElementRef, tElementNode, rootLView), rootLView, tElementNode);
     }
 }
 const componentFactoryResolver = new ComponentFactoryResolver$1();
@@ -30155,7 +30280,6 @@ class ComponentRef$1 extends ComponentRef {
         this.destroyCbs = [];
         this.instance = instance;
         this.hostView = this.changeDetectorRef = new RootViewRef(_rootLView);
-        assignTViewNodeToLView(_rootLView[TVIEW], null, -1, _rootLView);
         this.componentType = componentType;
     }
     get injector() {
@@ -30540,9 +30664,9 @@ function applyCreateOpCodes(tView, rootindex, createOpCodes, lView) {
             ngDevMode && ngDevMode.rendererCreateTextNode++;
             previousTNode = currentTNode;
             currentTNode =
-                createDynamicNodeAtIndex(tView, lView, textNodeIndex, 3 /* Element */, textRNode, null);
+                createDynamicNodeAtIndex(tView, lView, textNodeIndex, 2 /* Element */, textRNode, null);
             visitedNodes.push(textNodeIndex);
-            setIsNotParent();
+            setCurrentTNodeAsNotParent();
         }
         else if (typeof opCode == 'number') {
             switch (opCode & 7 /* MASK_INSTRUCTION */) {
@@ -30572,13 +30696,13 @@ function applyCreateOpCodes(tView, rootindex, createOpCodes, lView) {
                     previousTNode = currentTNode;
                     currentTNode = getTNode(tView, nodeIndex);
                     if (currentTNode) {
-                        setPreviousOrParentTNode(currentTNode, isParent);
+                        setCurrentTNode(currentTNode, isParent);
                     }
                     break;
                 case 5 /* ElementEnd */:
                     const elementIndex = opCode >>> 3 /* SHIFT_REF */;
                     previousTNode = currentTNode = getTNode(tView, elementIndex);
-                    setPreviousOrParentTNode(currentTNode, false);
+                    setCurrentTNode(currentTNode, false);
                     break;
                 case 4 /* Attr */:
                     const elementNodeIndex = opCode >>> 3 /* SHIFT_REF */;
@@ -30602,11 +30726,11 @@ function applyCreateOpCodes(tView, rootindex, createOpCodes, lView) {
                     const commentRNode = renderer.createComment(commentValue);
                     ngDevMode && ngDevMode.rendererCreateComment++;
                     previousTNode = currentTNode;
-                    currentTNode = createDynamicNodeAtIndex(tView, lView, commentNodeIndex, 5 /* IcuContainer */, commentRNode, null);
+                    currentTNode = createDynamicNodeAtIndex(tView, lView, commentNodeIndex, 4 /* IcuContainer */, commentRNode, null);
                     visitedNodes.push(commentNodeIndex);
                     attachPatchData(commentRNode, lView);
                     // We will add the case nodes later, during the update phase
-                    setIsNotParent();
+                    setCurrentTNodeAsNotParent();
                     break;
                 case ELEMENT_MARKER:
                     const tagNameValue = createOpCodes[++i];
@@ -30616,7 +30740,7 @@ function applyCreateOpCodes(tView, rootindex, createOpCodes, lView) {
                     const elementRNode = renderer.createElement(tagNameValue);
                     ngDevMode && ngDevMode.rendererCreateElement++;
                     previousTNode = currentTNode;
-                    currentTNode = createDynamicNodeAtIndex(tView, lView, elementNodeIndex, 3 /* Element */, elementRNode, tagNameValue);
+                    currentTNode = createDynamicNodeAtIndex(tView, lView, elementNodeIndex, 2 /* Element */, elementRNode, tagNameValue);
                     visitedNodes.push(elementNodeIndex);
                     break;
                 default:
@@ -30624,7 +30748,7 @@ function applyCreateOpCodes(tView, rootindex, createOpCodes, lView) {
             }
         }
     }
-    setIsNotParent();
+    setCurrentTNodeAsNotParent();
     return visitedNodes;
 }
 /**
@@ -30780,7 +30904,14 @@ function appendI18nNode(tView, tNode, parentTNode, previousTNode, lView) {
     // Re-organize node tree to put this node in the correct position.
     if (previousTNode === parentTNode && tNode !== parentTNode.child) {
         tNode.next = parentTNode.child;
-        parentTNode.child = tNode;
+        // FIXME(misko): Checking `tNode.parent` is a temporary workaround until we properly
+        // refactor the i18n code in #38707 and this code will be deleted.
+        if (tNode.parent === null) {
+            tView.firstChild = tNode;
+        }
+        else {
+            parentTNode.child = tNode;
+        }
     }
     else if (previousTNode !== parentTNode && tNode !== previousTNode.next) {
         tNode.next = previousTNode.next;
@@ -30823,20 +30954,20 @@ function i18nEndFirstPass(tView, lView) {
     const tI18n = tView.data[rootIndex + HEADER_OFFSET];
     ngDevMode && assertDefined(tI18n, `You should call i18nStart before i18nEnd`);
     // Find the last node that was added before `i18nEnd`
-    const lastCreatedNode = getPreviousOrParentTNode();
+    const lastCreatedNode = getCurrentTNode();
     // Read the instructions to insert/move/remove DOM elements
     const visitedNodes = applyCreateOpCodes(tView, rootIndex, tI18n.create, lView);
     // Remove deleted nodes
     let index = rootIndex + 1;
-    while (index <= lastCreatedNode.index - HEADER_OFFSET) {
+    while (lastCreatedNode !== null && index <= lastCreatedNode.index - HEADER_OFFSET) {
         if (visitedNodes.indexOf(index) === -1) {
             removeNode(tView, lView, index, /* markAsDetached */ true);
         }
         // Check if an element has any local refs and skip them
         const tNode = getTNode(tView, index);
         if (tNode &&
-            (tNode.type === 0 /* Container */ || tNode.type === 3 /* Element */ ||
-                tNode.type === 4 /* ElementContainer */) &&
+            (tNode.type === 0 /* Container */ || tNode.type === 2 /* Element */ ||
+                tNode.type === 3 /* ElementContainer */) &&
             tNode.localNames !== null) {
             // Divide by 2 to get the number of local refs,
             // since they are stored as an array that also includes directive indexes,
@@ -30859,7 +30990,7 @@ function removeNode(tView, lView, index, markAsDetached) {
             nativeRemoveNode(lView[RENDERER], lContainer[NATIVE]);
         }
     }
-    if (markAsDetached) {
+    if (markAsDetached && removedPhTNode) {
         // Define this node as detached to avoid projecting it later
         removedPhTNode.flags |= 64 /* isDetached */;
     }
@@ -30869,15 +31000,15 @@ function removeNode(tView, lView, index, markAsDetached) {
  * Creates and stores the dynamic TNode, and unhooks it from the tree for now.
  */
 function createDynamicNodeAtIndex(tView, lView, index, type, native, name) {
-    const previousOrParentTNode = getPreviousOrParentTNode();
+    const currentTNode = getCurrentTNode();
     ngDevMode && assertIndexInRange(lView, index + HEADER_OFFSET);
     lView[index + HEADER_OFFSET] = native;
     // FIXME(misko): Why does this create A TNode??? I would not expect this to be here.
-    const tNode = getOrCreateTNode(tView, lView[T_HOST], index, type, name, null);
+    const tNode = getOrCreateTNode(tView, index, type, name, null);
     // We are creating a dynamic node, the previous tNode might not be pointing at this node.
     // We will link ourselves into the tree later with `appendI18nNode`.
-    if (previousOrParentTNode && previousOrParentTNode.next === tNode) {
-        previousOrParentTNode.next = null;
+    if (currentTNode && currentTNode.next === tNode) {
+        currentTNode.next = null;
     }
     return tNode;
 }
@@ -30999,7 +31130,7 @@ function i18nMutateOpCodesToString(opcodes) {
             case 4 /* Attr */:
                 return `(lView[${ref}] as Element).setAttribute("${parser.consumeString()}", "${parser.consumeString()}")`;
             case 5 /* ElementEnd */:
-                return `setPreviousOrParentTNode(tView.data[${ref}] as TNode)`;
+                return `setCurrentTNode(tView.data[${ref}] as TNode)`;
             case 6 /* RemoveNestedIcu */:
                 return `removeNestedICU(${ref})`;
         }
@@ -31112,8 +31243,8 @@ function replaceNgsp(value) {
 function i18nStartFirstPass(lView, tView, index, message, subTemplateIndex) {
     const startIndex = tView.blueprint.length - HEADER_OFFSET;
     i18nVarsCount = 0;
-    const previousOrParentTNode = getPreviousOrParentTNode();
-    const parentTNode = getIsParent() ? previousOrParentTNode : previousOrParentTNode && previousOrParentTNode.parent;
+    const currentTNode = getCurrentTNode();
+    const parentTNode = isCurrentTNodeParent() ? currentTNode : currentTNode && currentTNode.parent;
     let parentIndex = parentTNode && parentTNode !== lView[T_HOST] ? parentTNode.index - HEADER_OFFSET : index;
     let parentIndexPointer = 0;
     parentIndexStack[parentIndexPointer] = parentIndex;
@@ -31126,11 +31257,11 @@ function i18nStartFirstPass(lView, tView, index, message, subTemplateIndex) {
     // keep track whether an element was a parent node or not, so that the logic that consumes
     // the generated `I18nMutateOpCode`s can leverage this information to properly set TNode state
     // (whether it's a parent or sibling).
-    if (index > 0 && previousOrParentTNode !== parentTNode) {
-        let previousTNodeIndex = previousOrParentTNode.index - HEADER_OFFSET;
+    if (index > 0 && currentTNode !== parentTNode) {
+        let previousTNodeIndex = currentTNode.index - HEADER_OFFSET;
         // If current TNode is a sibling node, encode it using a negative index. This information is
         // required when the `Select` action is processed (see the `readCreateOpCodes` function).
-        if (!getIsParent()) {
+        if (!isCurrentTNodeParent()) {
             previousTNodeIndex = ~previousTNodeIndex;
         }
         // Create an OpCode to select the previous TNode
@@ -31234,7 +31365,7 @@ function i18nStartFirstPass(lView, tView, index, message, subTemplateIndex) {
  * See `i18nAttributes` above.
  */
 function i18nAttributesFirstPass(lView, tView, index, values) {
-    const previousElement = getPreviousOrParentTNode();
+    const previousElement = getCurrentTNode();
     const previousElementIndex = previousElement.index - HEADER_OFFSET;
     const updateOpCodes = [];
     if (ngDevMode) {
@@ -31263,7 +31394,7 @@ function i18nAttributesFirstPass(lView, tView, index, values) {
                     const tNode = getTNode(tView, previousElementIndex);
                     // Set attributes for Elements only, for other types (like ElementContainer),
                     // only set inputs below
-                    if (tNode.type === 3 /* Element */) {
+                    if (tNode.type === 2 /* Element */) {
                         elementAttributeInternal(tNode, lView, attrName, value, null, null);
                     }
                     // Check if that attribute is a directive input
@@ -32555,14 +32686,20 @@ function ɵɵpipe(index, pipeName) {
     }
     const pipeFactory = pipeDef.factory || (pipeDef.factory = getFactoryDef(pipeDef.type, true));
     const previousInjectImplementation = setInjectImplementation(ɵɵdirectiveInject);
-    // DI for pipes is supposed to behave like directives when placed on a component
-    // host node, which means that we have to disable access to `viewProviders`.
-    const previousIncludeViewProviders = setIncludeViewProviders(false);
-    const pipeInstance = pipeFactory();
-    setIncludeViewProviders(previousIncludeViewProviders);
-    setInjectImplementation(previousInjectImplementation);
-    store(tView, getLView(), index, pipeInstance);
-    return pipeInstance;
+    try {
+        // DI for pipes is supposed to behave like directives when placed on a component
+        // host node, which means that we have to disable access to `viewProviders`.
+        const previousIncludeViewProviders = setIncludeViewProviders(false);
+        const pipeInstance = pipeFactory();
+        setIncludeViewProviders(previousIncludeViewProviders);
+        store(tView, getLView(), index, pipeInstance);
+        return pipeInstance;
+    }
+    finally {
+        // we have to restore the injector implementation in finally, just in case the creation of the
+        // pipe throws an error.
+        setInjectImplementation(previousInjectImplementation);
+    }
 }
 /**
  * Searches the pipe registry for a pipe with the given name. If one is found,
@@ -33097,7 +33234,7 @@ class TQuery_ {
             // - <needs-target><ng-container><i #target></i></ng-container></needs-target>: here we need
             // to go past `<ng-container>` to determine <i #target> parent node (but we shouldn't traverse
             // up past the query's host node!).
-            while (parent !== null && parent.type === 4 /* ElementContainer */ &&
+            while (parent !== null && parent.type === 3 /* ElementContainer */ &&
                 parent.index !== declarationNodeIdx) {
                 parent = parent.parent;
             }
@@ -33175,7 +33312,7 @@ function getIdxOfMatchingSelector(tNode, selector) {
     return null;
 }
 function createResultByTNodeType(tNode, currentView) {
-    if (tNode.type === 3 /* Element */ || tNode.type === 4 /* ElementContainer */) {
+    if (tNode.type === 2 /* Element */ || tNode.type === 3 /* ElementContainer */) {
         return createElementRef(ElementRef, tNode, currentView);
     }
     else if (tNode.type === 0 /* Container */) {
@@ -33206,7 +33343,7 @@ function createSpecialToken(lView, tNode, read) {
     }
     else if (read === ViewContainerRef) {
         ngDevMode &&
-            assertNodeOfPossibleTypes(tNode, [3 /* Element */, 0 /* Container */, 4 /* ElementContainer */]);
+            assertNodeOfPossibleTypes(tNode, [2 /* Element */, 0 /* Container */, 3 /* ElementContainer */]);
         return createContainerRef(ViewContainerRef, ElementRef, tNode, lView);
     }
     else {
@@ -33358,7 +33495,7 @@ function viewQueryInternal(tView, lView, predicate, descend, read, isStatic) {
  * @codeGenApi
  */
 function ɵɵcontentQuery(directiveIndex, predicate, descend, read) {
-    contentQueryInternal(getTView(), getLView(), predicate, descend, read, false, getPreviousOrParentTNode(), directiveIndex);
+    contentQueryInternal(getTView(), getLView(), predicate, descend, read, false, getCurrentTNode(), directiveIndex);
 }
 /**
  * Registers a QueryList, associated with a static content query, for later refresh
@@ -33373,7 +33510,7 @@ function ɵɵcontentQuery(directiveIndex, predicate, descend, read) {
  * @codeGenApi
  */
 function ɵɵstaticContentQuery(directiveIndex, predicate, descend, read) {
-    contentQueryInternal(getTView(), getLView(), predicate, descend, read, true, getPreviousOrParentTNode(), directiveIndex);
+    contentQueryInternal(getTView(), getLView(), predicate, descend, read, true, getCurrentTNode(), directiveIndex);
 }
 function contentQueryInternal(tView, lView, predicate, descend, read, isStatic, tNode, directiveIndex) {
     if (tView.firstCreatePass) {
@@ -36980,9 +37117,10 @@ function _queryAllR3(parentElement, predicate, matches, elementsOnly) {
  * @param rootNativeNode the root native node on which predicate should not be matched
  */
 function _queryNodeChildrenR3(tNode, lView, predicate, matches, elementsOnly, rootNativeNode) {
+    ngDevMode && assertTNodeForLView(tNode, lView);
     const nativeNode = getNativeByTNodeOrNull(tNode, lView);
     // For each type of TNode, specific logic is executed.
-    if (tNode.type === 3 /* Element */ || tNode.type === 4 /* ElementContainer */) {
+    if (tNode.type === 2 /* Element */ || tNode.type === 3 /* ElementContainer */) {
         // Case 1: the TNode is an element
         // The native node has to be checked.
         _addQueryMatchR3(nativeNode, predicate, matches, elementsOnly, rootNativeNode);
@@ -37067,7 +37205,10 @@ function _queryNodeChildrenR3(tNode, lView, predicate, matches, elementsOnly, ro
 function _queryNodeChildrenInContainerR3(lContainer, predicate, matches, elementsOnly, rootNativeNode) {
     for (let i = CONTAINER_HEADER_OFFSET; i < lContainer.length; i++) {
         const childView = lContainer[i];
-        _queryNodeChildrenR3(childView[TVIEW].node, childView, predicate, matches, elementsOnly, rootNativeNode);
+        const firstChild = childView[TVIEW].firstChild;
+        if (firstChild) {
+            _queryNodeChildrenR3(firstChild, childView, predicate, matches, elementsOnly, rootNativeNode);
+        }
     }
 }
 /**
@@ -37103,7 +37244,7 @@ function _addQueryMatchR3(nativeNode, predicate, matches, elementsOnly, rootNati
  *
  * @param nativeNode the current native node
  * @param predicate the predicate to match
- * @param matches the list of positive matches
+ * @param matches the list where matches are stored
  * @param elementsOnly whether only elements should be searched
  */
 function _queryNativeNodeDescendants(parentNode, predicate, matches, elementsOnly) {
@@ -40184,7 +40325,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "ɵgetDOM", function() { return _angular_common__WEBPACK_IMPORTED_MODULE_0__["ɵgetDOM"]; });
 
 /**
- * @license Angular v10.1.1
+ * @license Angular v10.1.6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -42315,7 +42456,7 @@ function elementMatches(n, selector) {
 /**
  * @publicApi
  */
-const VERSION = new _angular_core__WEBPACK_IMPORTED_MODULE_1__["Version"]('10.1.1');
+const VERSION = new _angular_core__WEBPACK_IMPORTED_MODULE_1__["Version"]('10.1.6');
 
 /**
  * @license
@@ -43382,7 +43523,7 @@ function isDate(value) {
 /*!*****************************************!*\
   !*** ./node_modules/tslib/tslib.es6.js ***!
   \*****************************************/
-/*! exports provided: __extends, __assign, __rest, __decorate, __param, __metadata, __awaiter, __generator, __createBinding, __exportStar, __values, __read, __spread, __spreadArrays, __await, __asyncGenerator, __asyncDelegator, __asyncValues, __makeTemplateObject, __importStar, __importDefault, __classPrivateFieldGet, __classPrivateFieldSet */
+/*! exports provided: __extends, __assign, __rest, __decorate, __param, __metadata, __awaiter, __generator, __createBinding, __exportStar, __values, __read, __spread, __spreadArrays, __spreadArray, __await, __asyncGenerator, __asyncDelegator, __asyncValues, __makeTemplateObject, __importStar, __importDefault, __classPrivateFieldGet, __classPrivateFieldSet */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -43401,6 +43542,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__read", function() { return __read; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__spread", function() { return __spread; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__spreadArrays", function() { return __spreadArrays; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__spreadArray", function() { return __spreadArray; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__await", function() { return __await; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__asyncGenerator", function() { return __asyncGenerator; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "__asyncDelegator", function() { return __asyncDelegator; });
@@ -43434,6 +43576,8 @@ var extendStatics = function(d, b) {
 };
 
 function __extends(d, b) {
+    if (typeof b !== "function" && b !== null)
+        throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
     extendStatics(d, b);
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -43556,19 +43700,27 @@ function __read(o, n) {
     return ar;
 }
 
+/** @deprecated */
 function __spread() {
     for (var ar = [], i = 0; i < arguments.length; i++)
         ar = ar.concat(__read(arguments[i]));
     return ar;
 }
 
+/** @deprecated */
 function __spreadArrays() {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
         for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
             r[k] = a[j];
     return r;
-};
+}
+
+function __spreadArray(to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+}
 
 function __await(v) {
     return this instanceof __await ? (this.v = v, this) : new __await(v);
@@ -43866,7 +44018,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ɵsetRootDomAdapter", function() { return setRootDomAdapter; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "fXoL");
 /**
- * @license Angular v10.1.1
+ * @license Angular v10.1.6
  * (c) 2010-2020 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -48135,7 +48287,7 @@ class AsyncPipe {
         }
     }
 }
-AsyncPipe.ɵfac = function AsyncPipe_Factory(t) { return new (t || AsyncPipe)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdirectiveInject"](_angular_core__WEBPACK_IMPORTED_MODULE_0__["ChangeDetectorRef"])); };
+AsyncPipe.ɵfac = function AsyncPipe_Factory(t) { return new (t || AsyncPipe)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinjectPipeChangeDetectorRef"]()); };
 AsyncPipe.ɵpipe = _angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵdefinePipe"]({ name: "async", type: AsyncPipe, pure: false });
 AsyncPipe.ctorParameters = () => [
     { type: _angular_core__WEBPACK_IMPORTED_MODULE_0__["ChangeDetectorRef"] }
@@ -49151,7 +49303,7 @@ function isPlatformWorkerUi(platformId) {
 /**
  * @publicApi
  */
-const VERSION = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["Version"]('10.1.1');
+const VERSION = new _angular_core__WEBPACK_IMPORTED_MODULE_0__["Version"]('10.1.6');
 
 /**
  * @license
@@ -50392,31 +50544,6 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = function(d, b) {
-    extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-    return extendStatics(d, b);
-};
-
-function __extends(d, b) {
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-var __assign = function() {
-    __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 
 function __awaiter(thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -50428,1082 +50555,44 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
-var version = "1.4.1";
-
-function createCommonjsModule(fn, basedir, module) {
-	return module = {
-	  path: basedir,
-	  exports: {},
-	  require: function (path, base) {
-      return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
-    }
-	}, fn(module, module.exports), module.exports;
-}
-
-function commonjsRequire () {
-	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
-}
-
-// Found this seed-based random generator somewhere
-// Based on The Central Randomizer 1.3 (C) 1997 by Paul Houle (houle@msc.cornell.edu)
-
-var seed = 1;
-
-/**
- * return a random number based on a seed
- * @param seed
- * @returns {number}
- */
-function getNextValue() {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed/(233280.0);
-}
-
-function setSeed(_seed_) {
-    seed = _seed_;
-}
-
-var randomFromSeed = {
-    nextValue: getNextValue,
-    seed: setSeed
+const defaultConfig = {
+    logger: "trace",
+    gateway: { webPlatform: {} },
+    libraries: []
 };
-
-var ORIGINAL = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
-var alphabet;
-var previousSeed;
-
-var shuffled;
-
-function reset() {
-    shuffled = false;
-}
-
-function setCharacters(_alphabet_) {
-    if (!_alphabet_) {
-        if (alphabet !== ORIGINAL) {
-            alphabet = ORIGINAL;
-            reset();
-        }
-        return;
-    }
-
-    if (_alphabet_ === alphabet) {
-        return;
-    }
-
-    if (_alphabet_.length !== ORIGINAL.length) {
-        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL.length + ' unique characters. You submitted ' + _alphabet_.length + ' characters: ' + _alphabet_);
-    }
-
-    var unique = _alphabet_.split('').filter(function(item, ind, arr){
-       return ind !== arr.lastIndexOf(item);
-    });
-
-    if (unique.length) {
-        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL.length + ' unique characters. These characters were not unique: ' + unique.join(', '));
-    }
-
-    alphabet = _alphabet_;
-    reset();
-}
-
-function characters(_alphabet_) {
-    setCharacters(_alphabet_);
-    return alphabet;
-}
-
-function setSeed$1(seed) {
-    randomFromSeed.seed(seed);
-    if (previousSeed !== seed) {
-        reset();
-        previousSeed = seed;
-    }
-}
-
-function shuffle() {
-    if (!alphabet) {
-        setCharacters(ORIGINAL);
-    }
-
-    var sourceArray = alphabet.split('');
-    var targetArray = [];
-    var r = randomFromSeed.nextValue();
-    var characterIndex;
-
-    while (sourceArray.length > 0) {
-        r = randomFromSeed.nextValue();
-        characterIndex = Math.floor(r * sourceArray.length);
-        targetArray.push(sourceArray.splice(characterIndex, 1)[0]);
-    }
-    return targetArray.join('');
-}
-
-function getShuffled() {
-    if (shuffled) {
-        return shuffled;
-    }
-    shuffled = shuffle();
-    return shuffled;
-}
-
-/**
- * lookup shuffled letter
- * @param index
- * @returns {string}
- */
-function lookup(index) {
-    var alphabetShuffled = getShuffled();
-    return alphabetShuffled[index];
-}
-
-function get () {
-  return alphabet || ORIGINAL;
-}
-
-var alphabet_1 = {
-    get: get,
-    characters: characters,
-    seed: setSeed$1,
-    lookup: lookup,
-    shuffled: getShuffled
-};
-
-var crypto = typeof window === 'object' && (window.crypto || window.msCrypto); // IE 11 uses window.msCrypto
-
-var randomByte;
-
-if (!crypto || !crypto.getRandomValues) {
-    randomByte = function(size) {
-        var bytes = [];
-        for (var i = 0; i < size; i++) {
-            bytes.push(Math.floor(Math.random() * 256));
-        }
-        return bytes;
-    };
-} else {
-    randomByte = function(size) {
-        return crypto.getRandomValues(new Uint8Array(size));
-    };
-}
-
-var randomByteBrowser = randomByte;
-
-// This file replaces `format.js` in bundlers like webpack or Rollup,
-// according to `browser` config in `package.json`.
-
-var format_browser = function (random, alphabet, size) {
-  // We can’t use bytes bigger than the alphabet. To make bytes values closer
-  // to the alphabet, we apply bitmask on them. We look for the closest
-  // `2 ** x - 1` number, which will be bigger than alphabet size. If we have
-  // 30 symbols in the alphabet, we will take 31 (00011111).
-  // We do not use faster Math.clz32, because it is not available in browsers.
-  var mask = (2 << Math.log(alphabet.length - 1) / Math.LN2) - 1;
-  // Bitmask is not a perfect solution (in our example it will pass 31 bytes,
-  // which is bigger than the alphabet). As a result, we will need more bytes,
-  // than ID size, because we will refuse bytes bigger than the alphabet.
-
-  // Every hardware random generator call is costly,
-  // because we need to wait for entropy collection. This is why often it will
-  // be faster to ask for few extra bytes in advance, to avoid additional calls.
-
-  // Here we calculate how many random bytes should we call in advance.
-  // It depends on ID length, mask / alphabet size and magic number 1.6
-  // (which was selected according benchmarks).
-
-  // -~f => Math.ceil(f) if n is float number
-  // -~i => i + 1 if n is integer number
-  var step = -~(1.6 * mask * size / alphabet.length);
-  var id = '';
-
-  while (true) {
-    var bytes = random(step);
-    // Compact alternative for `for (var i = 0; i < step; i++)`
-    var i = step;
-    while (i--) {
-      // If random byte is bigger than alphabet even after bitmask,
-      // we refuse it by `|| ''`.
-      id += alphabet[bytes[i] & mask] || '';
-      // More compact than `id.length + 1 === size`
-      if (id.length === +size) return id
-    }
-  }
-};
-
-function generate(number) {
-    var loopCounter = 0;
-    var done;
-
-    var str = '';
-
-    while (!done) {
-        str = str + format_browser(randomByteBrowser, alphabet_1.get(), 1);
-        done = number < (Math.pow(16, loopCounter + 1 ) );
-        loopCounter++;
-    }
-    return str;
-}
-
-var generate_1 = generate;
-
-// Ignore all milliseconds before a certain time to reduce the size of the date entropy without sacrificing uniqueness.
-// This number should be updated every year or so to keep the generated id short.
-// To regenerate `new Date() - 0` and bump the version. Always bump the version!
-var REDUCE_TIME = 1567752802062;
-
-// don't change unless we change the algos or REDUCE_TIME
-// must be an integer and less than 16
-var version$1 = 7;
-
-// Counter is used when shortid is called multiple times in one second.
-var counter;
-
-// Remember the last time shortid was called in case counter is needed.
-var previousSeconds;
-
-/**
- * Generate unique id
- * Returns string id
- */
-function build(clusterWorkerId) {
-    var str = '';
-
-    var seconds = Math.floor((Date.now() - REDUCE_TIME) * 0.001);
-
-    if (seconds === previousSeconds) {
-        counter++;
-    } else {
-        counter = 0;
-        previousSeconds = seconds;
-    }
-
-    str = str + generate_1(version$1);
-    str = str + generate_1(clusterWorkerId);
-    if (counter > 0) {
-        str = str + generate_1(counter);
-    }
-    str = str + generate_1(seconds);
-    return str;
-}
-
-var build_1 = build;
-
-function isShortId(id) {
-    if (!id || typeof id !== 'string' || id.length < 6 ) {
-        return false;
-    }
-
-    var nonAlphabetic = new RegExp('[^' +
-      alphabet_1.get().replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&') +
-    ']');
-    return !nonAlphabetic.test(id);
-}
-
-var isValid = isShortId;
-
-var lib = createCommonjsModule(function (module) {
-
-
-
-
-
-// if you are using cluster or multiple servers use this to make each instance
-// has a unique value for worker
-// Note: I don't know if this is automatically set when using third
-// party cluster solutions such as pm2.
-var clusterWorkerId =  0;
-
-/**
- * Set the seed.
- * Highly recommended if you don't want people to try to figure out your id schema.
- * exposed as shortid.seed(int)
- * @param seed Integer value to seed the random alphabet.  ALWAYS USE THE SAME SEED or you might get overlaps.
- */
-function seed(seedValue) {
-    alphabet_1.seed(seedValue);
-    return module.exports;
-}
-
-/**
- * Set the cluster worker or machine id
- * exposed as shortid.worker(int)
- * @param workerId worker must be positive integer.  Number less than 16 is recommended.
- * returns shortid module so it can be chained.
- */
-function worker(workerId) {
-    clusterWorkerId = workerId;
-    return module.exports;
-}
-
-/**
- *
- * sets new characters to use in the alphabet
- * returns the shuffled alphabet
- */
-function characters(newCharacters) {
-    if (newCharacters !== undefined) {
-        alphabet_1.characters(newCharacters);
-    }
-
-    return alphabet_1.shuffled();
-}
-
-/**
- * Generate unique id
- * Returns string id
- */
-function generate() {
-  return build_1(clusterWorkerId);
-}
-
-// Export all other functions as properties of the generate function
-module.exports = generate;
-module.exports.generate = generate;
-module.exports.seed = seed;
-module.exports.worker = worker;
-module.exports.characters = characters;
-module.exports.isValid = isValid;
-});
-
-var shortid = lib;
-
-var RemoteWebWindow = (function () {
-    function RemoteWebWindow(id, name, control, windows) {
-        this.id = id;
-        this.name = name;
-        this.control = control;
-        this.windows = windows;
-    }
-    RemoteWebWindow.prototype.getURL = function () {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, this.callControl("getURL", {})];
-                    case 1:
-                        result = _b.sent();
-                        return [2, (_a = result === null || result === void 0 ? void 0 : result.returned) === null || _a === void 0 ? void 0 : _a._value];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.moveResize = function (bounds) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("moveResize", bounds, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.close = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                return [2, new Promise(function (resolve, reject) {
-                        var done = function () {
-                            if (timeout) {
-                                clearTimeout(timeout);
-                            }
-                            if (un) {
-                                un();
-                            }
-                        };
-                        var un = _this.windows.onWindowRemoved(function (w) {
-                            if (w.id === _this.id) {
-                                resolve(_this);
-                                done();
-                            }
-                        });
-                        var timeout = setTimeout(function () {
-                            reject("can not close window - probably not opened by your window");
-                            done();
-                        }, 1000);
-                        _this.callControl("close", {}, true)
-                            .catch(function () {
-                        });
-                    })];
-            });
-        });
-    };
-    RemoteWebWindow.prototype.setTitle = function (title) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (typeof title === "string") {
-                            title = { title: title };
-                        }
-                        return [4, this.callControl("setTitle", title, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.resizeTo = function (width, height) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("moveResize", { width: width, height: height }, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.moveTo = function (top, left) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("moveResize", { top: top, left: left }, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.focus = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("focus", {}, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.getBounds = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("getBounds", {})];
-                    case 1:
-                        result = _a.sent();
-                        return [2, result.returned];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.getContext = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("getContext", {})];
-                    case 1:
-                        result = _a.sent();
-                        return [2, result.returned];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.getTitle = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var result;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("getTitle", {})];
-                    case 1:
-                        result = _a.sent();
-                        return [2, result.returned._value];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.onContextUpdated = function (callback) {
-        throw new Error("Method not implemented.");
-    };
-    RemoteWebWindow.prototype.updateContext = function (context) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("updateContext", context, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.setContext = function (context) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.callControl("setContext", context, true)];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    RemoteWebWindow.prototype.callControl = function (command, args, skipResult) {
-        if (skipResult === void 0) { skipResult = false; }
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.control.send({ command: command, domain: "windows", args: args, skipResult: skipResult }, { windowId: this.id })];
-                    case 1: return [2, _a.sent()];
-                }
-            });
-        });
-    };
-    return RemoteWebWindow;
-}());
-
-function createRegistry(options) {
-    if (options && options.errorHandling
-        && typeof options.errorHandling !== "function"
-        && options.errorHandling !== "log"
-        && options.errorHandling !== "silent"
-        && options.errorHandling !== "throw") {
-        throw new Error("Invalid options passed to createRegistry. Prop errorHandling should be [\"log\" | \"silent\" | \"throw\" | (err) => void], but " + typeof options.errorHandling + " was passed");
-    }
-    var _userErrorHandler = options && typeof options.errorHandling === "function" && options.errorHandling;
-    var callbacks = {};
-    function add(key, callback) {
-        var callbacksForKey = callbacks[key];
-        if (!callbacksForKey) {
-            callbacksForKey = [];
-            callbacks[key] = callbacksForKey;
-        }
-        callbacksForKey.push(callback);
-        return function () {
-            var allForKey = callbacks[key];
-            if (!allForKey) {
-                return;
-            }
-            allForKey = allForKey.reduce(function (acc, element, index) {
-                if (!(element === callback && acc.length === index)) {
-                    acc.push(element);
-                }
-                return acc;
-            }, []);
-            callbacks[key] = allForKey;
-        };
-    }
-    function execute(key) {
-        var argumentsArr = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            argumentsArr[_i - 1] = arguments[_i];
-        }
-        var callbacksForKey = callbacks[key];
-        if (!callbacksForKey || callbacksForKey.length === 0) {
-            return [];
-        }
-        var results = [];
-        callbacksForKey.forEach(function (callback) {
-            try {
-                var result = callback.apply(undefined, argumentsArr);
-                results.push(result);
-            }
-            catch (err) {
-                results.push(undefined);
-                _handleError(err, key);
-            }
-        });
-        return results;
-    }
-    function _handleError(exceptionArtifact, key) {
-        var errParam = exceptionArtifact instanceof Error ? exceptionArtifact : new Error(exceptionArtifact);
-        if (_userErrorHandler) {
-            _userErrorHandler(errParam);
-            return;
-        }
-        var msg = "[ERROR] callback-registry: User callback for key \"" + key + "\" failed: " + errParam.stack;
-        if (options) {
-            switch (options.errorHandling) {
-                case "log":
-                    return console.error(msg);
-                case "silent":
-                    return;
-                case "throw":
-                    throw new Error(msg);
-            }
-        }
-        console.error(msg);
-    }
-    function clear() {
-        callbacks = {};
-    }
-    function clearKey(key) {
-        var callbacksForKey = callbacks[key];
-        if (!callbacksForKey) {
-            return;
-        }
-        delete callbacks[key];
-    }
-    return {
-        add: add,
-        execute: execute,
-        clear: clear,
-        clearKey: clearKey
-    };
-}
-createRegistry.default = createRegistry;
-var lib$1 = createRegistry;
-
-var Control = (function () {
-    function Control() {
-        this.callbacks = {};
-        this.registry = lib$1();
-    }
-    Control.prototype.start = function (interop, logger) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        this.interop = interop;
-                        this.logger = logger;
-                        return [4, this.interop.register(Control.CONTROL_METHOD, function (arg) { return __awaiter(_this, void 0, void 0, function () {
-                                var command, result, result, callback;
-                                return __generator(this, function (_a) {
-                                    command = arg;
-                                    logger.trace("received control command " + JSON.stringify(command));
-                                    if (command.domain === "windows") {
-                                        if (!this.myWindow) {
-                                            return [2];
-                                        }
-                                        result = this.myWindow[command.command].call(this.myWindow, command.args);
-                                        if (command.skipResult) {
-                                            return [2, {}];
-                                        }
-                                        else {
-                                            return [2, result];
-                                        }
-                                    }
-                                    if (command.domain === "appManager") {
-                                        if (!this.myInstance) {
-                                            return [2];
-                                        }
-                                        result = this.myInstance[command.command].call(this.myInstance, command.args);
-                                        if (command.skipResult) {
-                                            return [2, {}];
-                                        }
-                                        else {
-                                            return [2, result];
-                                        }
-                                    }
-                                    if (command.domain === "layouts") {
-                                        callback = this.callbacks[command.domain];
-                                        if (callback) {
-                                            callback(command);
-                                        }
-                                    }
-                                    return [2];
-                                });
-                            }); })];
-                    case 1:
-                        _a.sent();
-                        this.registry.execute("started");
-                        return [2];
-                }
-            });
-        });
-    };
-    Control.prototype.send = function (command, target) {
-        if (!this.interop) {
-            throw new Error("Control not started");
-        }
-        this.logger.info("sending control command " + JSON.stringify(command) + " to " + JSON.stringify(target) + "}");
-        return this.interop.invoke(Control.CONTROL_METHOD, command, target);
-    };
-    Control.prototype.subscribe = function (domain, callback) {
-        this.callbacks[domain] = callback;
-    };
-    Control.prototype.setLocalWindow = function (window) {
-        this.myWindow = window;
-    };
-    Control.prototype.setLocalInstance = function (instance) {
-        this.myInstance = instance;
-    };
-    Control.prototype.onStart = function (callback) {
-        return this.registry.add("started", callback);
-    };
-    Control.CONTROL_METHOD = "GC.Control";
-    return Control;
-}());
-
-var LocalWebWindow = (function () {
-    function LocalWebWindow(id, name, window, control, interop) {
-        this.id = id;
-        this.name = name;
-        this.window = window;
-        this.control = control;
-        this.interop = interop;
-        this.context = {};
-        this.registry = lib$1();
-        control.setLocalWindow(this);
-    }
-    LocalWebWindow.prototype.getURL = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2, this.window.location.href];
-            });
-        });
-    };
-    LocalWebWindow.prototype.moveResize = function (_a) {
-        var left = _a.left, top = _a.top, width = _a.width, height = _a.height;
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_b) {
-                left = left !== null && left !== void 0 ? left : window.screenLeft;
-                top = top !== null && top !== void 0 ? top : window.screenTop;
-                width = width !== null && width !== void 0 ? width : window.outerWidth;
-                height = height !== null && height !== void 0 ? height : window.outerHeight;
-                window.moveTo(left, top);
-                window.resizeTo(width, height);
-                return [2, this];
-            });
-        });
-    };
-    LocalWebWindow.prototype.close = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                if (!this.parent) {
-                    throw new Error("can not close window if it's not opened by script");
-                }
-                try {
-                    window.close();
-                }
-                catch (_b) {
-                    console.log("what");
-                }
-                return [2, this];
-            });
-        });
-    };
-    LocalWebWindow.prototype.setTitle = function (title) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                if (typeof title === "object" && title !== null) {
-                    title = title.title;
-                }
-                document.title = title;
-                return [2, this];
-            });
-        });
-    };
-    LocalWebWindow.prototype.resizeTo = function (width, height) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.moveResize({ width: width, height: height })];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    LocalWebWindow.prototype.moveTo = function (top, left) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.moveResize({ top: top, left: left })];
-                    case 1:
-                        _a.sent();
-                        return [2, this];
-                }
-            });
-        });
-    };
-    LocalWebWindow.prototype.focus = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                window.focus();
-                return [2, this];
-            });
-        });
-    };
-    LocalWebWindow.prototype.getBounds = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2, this.getBoundsSync()];
-            });
-        });
-    };
-    LocalWebWindow.prototype.getContext = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2, this.getContextSync()];
-            });
-        });
-    };
-    LocalWebWindow.prototype.getContextSync = function () {
-        return this.context;
-    };
-    LocalWebWindow.prototype.getTitle = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2, this.window.document.title];
-            });
-        });
-    };
-    LocalWebWindow.prototype.onContextUpdated = function (callback) {
-        return this.registry.add("context-updated", callback);
-    };
-    LocalWebWindow.prototype.updateContext = function (context) {
-        var oldContext = this.context;
-        this.context = Object.assign({}, oldContext, context);
-        this.registry.execute("context-updated", this.context, oldContext);
-        return Promise.resolve(this);
-    };
-    LocalWebWindow.prototype.setContext = function (context) {
-        return __awaiter(this, void 0, void 0, function () {
-            var oldContext;
-            return __generator(this, function (_a) {
-                oldContext = this.context;
-                this.context = Object.assign({}, context);
-                this.registry.execute("context-updated", context, oldContext);
-                return [2, Promise.resolve(this)];
-            });
-        });
-    };
-    LocalWebWindow.prototype.getBoundsSync = function () {
-        return {
-            left: this.window.screenLeft,
-            top: this.window.screenTop,
-            width: this.window.outerWidth,
-            height: this.window.outerHeight
-        };
-    };
-    return LocalWebWindow;
-}());
-
-var ChildWebWindow = (function (_super) {
-    __extends(ChildWebWindow, _super);
-    function ChildWebWindow(window, id, name, control, windows) {
-        var _this = _super.call(this, id, name, control, windows) || this;
-        _this.window = window;
-        _this.id = id;
-        _this.name = name;
-        return _this;
-    }
-    return ChildWebWindow;
-}(RemoteWebWindow));
-
-var createMethodName = function (id) { return "\"GC.Wnd.\"" + id; };
-var registerChildStartupContext = function (interop, parent, id, name, options) {
+const parseConfig = (config) => {
     var _a;
-    var methodName = createMethodName(id);
-    var startingContext = {
-        context: (_a = options === null || options === void 0 ? void 0 : options.context) !== null && _a !== void 0 ? _a : {},
-        name: name,
-        parent: parent
-    };
-    interop.register(methodName, function () { return startingContext; });
-};
-var initStartupContext = function (my, interop, instance) { return __awaiter(void 0, void 0, void 0, function () {
-    var methodName, result;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                methodName = createMethodName(my.id);
-                if (!interop.methods().find(function (m) { return m.name === methodName; })) return [3, 2];
-                return [4, interop.invoke(methodName)];
-            case 1:
-                result = _a.sent();
-                if (my) {
-                    my.setContext(result.returned.context);
-                    my.name = result.returned.name;
-                    my.parent = result.returned.parent;
-                    if (instance) {
-                        instance.startedByScript = true;
-                        instance.context = result.returned.context;
-                    }
-                }
-                _a.label = 2;
-            case 2: return [2];
-        }
-    });
-}); };
-
-var Windows = (function () {
-    function Windows(interop, control) {
-        this.interop = interop;
-        this.control = control;
-        this.registry = lib$1();
-        this.childWindows = [];
-        var id = interop.instance.windowId;
-        var name = "document.title (" + shortid() + ")";
-        this.myWindow = new LocalWebWindow(id, name, window, this.control, this.interop);
-        this.trackWindowsLifetime();
+    const combined = Object.assign({}, defaultConfig, config);
+    if (combined.systemLogger) {
+        combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "trace";
     }
-    Windows.prototype.list = function () {
-        var _this = this;
-        var method = this.interop.methods({ name: Control.CONTROL_METHOD })[0];
-        if (!method) {
-            return [];
-        }
-        var servers = method.getServers ? method.getServers() : [];
-        return servers.reduce(function (prev, current) {
-            var remoteWindow = _this.remoteFromServer(current);
-            if (remoteWindow) {
-                prev.push(remoteWindow);
-            }
-            return prev;
-        }, []);
+    return combined;
+};
+
+const checkSingleton = () => {
+    const glue42CoreNamespace = window.glue42core;
+    if (!glue42CoreNamespace) {
+        window.glue42core = { webStarted: true };
+        return;
+    }
+    if (glue42CoreNamespace.webStarted) {
+        throw new Error("The Glue42 Core Web has already been started for this application.");
+    }
+    glue42CoreNamespace.webStarted = true;
+};
+
+const enterprise = (config) => {
+    var _a, _b;
+    const enterpriseConfig = {
+        windows: true,
+        layouts: "full",
+        appManager: "full",
+        channels: true,
+        libraries: config.libraries,
+        logger: (_b = (_a = config === null || config === void 0 ? void 0 : config.systemLogger) === null || _a === void 0 ? void 0 : _a.level) !== null && _b !== void 0 ? _b : "warn"
     };
-    Windows.prototype.findById = function (id) {
-        return this.list().find(function (w) { return w.id === id; });
-    };
-    Windows.prototype.my = function () {
-        return this.myWindow;
-    };
-    Windows.prototype.open = function (name, url, options) {
-        var _a, _b, _c, _d, _e;
-        return __awaiter(this, void 0, void 0, function () {
-            var width, height, left, top, id, relativeWindowId_1, relativeWindow, relativeWindowBounds, relativeDir, newBounds, optionsString, newWindow, remoteWindow;
-            return __generator(this, function (_f) {
-                switch (_f.label) {
-                    case 0:
-                        width = (_a = options === null || options === void 0 ? void 0 : options.width) !== null && _a !== void 0 ? _a : 400;
-                        height = (_b = options === null || options === void 0 ? void 0 : options.height) !== null && _b !== void 0 ? _b : 400;
-                        left = (_c = options === null || options === void 0 ? void 0 : options.left) !== null && _c !== void 0 ? _c : window.screen.availWidth - window.screenLeft;
-                        top = (_d = options === null || options === void 0 ? void 0 : options.top) !== null && _d !== void 0 ? _d : 0;
-                        id = shortid();
-                        registerChildStartupContext(this.interop, this.my().id, id, name, options);
-                        if (!(options === null || options === void 0 ? void 0 : options.relativeTo)) return [3, 2];
-                        relativeWindowId_1 = options.relativeTo;
-                        relativeWindow = this.list().find(function (w) { return w.id === relativeWindowId_1; });
-                        if (!relativeWindow) return [3, 2];
-                        return [4, relativeWindow.getBounds()];
-                    case 1:
-                        relativeWindowBounds = _f.sent();
-                        relativeDir = (_e = options.relativeDirection) !== null && _e !== void 0 ? _e : "right";
-                        newBounds = this.getRelativeBounds({ width: width, height: height, left: left, top: top }, relativeWindowBounds, relativeDir);
-                        width = newBounds.width;
-                        height = newBounds.height;
-                        left = newBounds.left;
-                        top = newBounds.top;
-                        _f.label = 2;
-                    case 2:
-                        optionsString = "width=" + width + ",height=" + height + ",left=" + left + ",top=" + top + ",scrollbars=none,location=no,status=no,menubar=no";
-                        newWindow = window.open(url, id, optionsString);
-                        if (!newWindow) {
-                            throw new Error("failed to open a window with url=" + url + " and options=" + optionsString);
-                        }
-                        newWindow.focus();
-                        newWindow.moveTo(left, top);
-                        newWindow.resizeTo(width, height);
-                        remoteWindow = new ChildWebWindow(newWindow, id, name, this.control, this);
-                        this.childWindows.push(remoteWindow);
-                        return [2, remoteWindow];
-                }
-            });
-        });
-    };
-    Windows.prototype.onWindowAdded = function (callback) {
-        return this.registry.add("window-added", callback);
-    };
-    Windows.prototype.onWindowRemoved = function (callback) {
-        return this.registry.add("window-removed", callback);
-    };
-    Windows.prototype.getChildWindows = function () {
-        this.childWindows = this.childWindows.filter(function (cw) { return !cw.window.closed; });
-        return this.childWindows;
-    };
-    Windows.prototype.remoteFromServer = function (server) {
-        var _a;
-        if (!server.windowId) {
-            return undefined;
-        }
-        return new RemoteWebWindow(server.windowId, (_a = server.application) !== null && _a !== void 0 ? _a : "", this.control, this);
-    };
-    Windows.prototype.getRelativeBounds = function (rect, relativeTo, relativeDirection) {
-        var edgeDistance = 0;
-        switch (relativeDirection) {
-            case "bottom":
-                return {
-                    left: relativeTo.left,
-                    top: relativeTo.top + relativeTo.height + edgeDistance,
-                    width: relativeTo.width,
-                    height: rect.height
-                };
-            case "top":
-                return {
-                    left: relativeTo.left,
-                    top: relativeTo.top - rect.height - edgeDistance,
-                    width: relativeTo.width,
-                    height: rect.height
-                };
-            case "right":
-                return {
-                    left: relativeTo.left + relativeTo.width + edgeDistance,
-                    top: relativeTo.top,
-                    width: rect.width,
-                    height: relativeTo.height
-                };
-            case "left":
-                return {
-                    left: relativeTo.left - rect.width - edgeDistance,
-                    top: relativeTo.top,
-                    width: rect.width,
-                    height: relativeTo.height
-                };
-        }
-        throw new Error("invalid relativeDirection");
-    };
-    Windows.prototype.trackWindowsLifetime = function () {
-        var _this = this;
-        this.interop.serverMethodAdded(function (_a) {
-            var server = _a.server, method = _a.method;
-            if (method.name !== Control.CONTROL_METHOD) {
-                return;
-            }
-            var remoteWindow = _this.remoteFromServer(server);
-            if (remoteWindow) {
-                _this.registry.execute("window-added", remoteWindow);
-            }
-        });
-        this.interop.serverRemoved(function (server) {
-            var remoteWindow = _this.remoteFromServer(server);
-            if (remoteWindow) {
-                _this.registry.execute("window-removed", remoteWindow);
-            }
-        });
-    };
-    return Windows;
-}());
+    return window.Glue(enterpriseConfig);
+};
 
 /**
  * Wraps values in an `Ok` type.
@@ -51641,15 +50730,15 @@ PERFORMANCE OF THIS SOFTWARE.
 
 
 
-var __assign$1 = function() {
-    __assign$1 = Object.assign || function __assign(t) {
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
         }
         return t;
     };
-    return __assign$1.apply(this, arguments);
+    return __assign.apply(this, arguments);
 };
 
 function __rest(s, e) {
@@ -51745,7 +50834,7 @@ var printPath = function (paths) {
 };
 var prependAt = function (newAt, _a) {
     var at = _a.at, rest = __rest(_a, ["at"]);
-    return (__assign$1({ at: newAt + (at || '') }, rest));
+    return (__assign({ at: newAt + (at || '') }, rest));
 };
 /**
  * Decoders transform json objects with unknown structure into known and
@@ -52123,7 +51212,7 @@ var Decoder = /** @class */ (function () {
      * ```
      */
     Decoder.optional = function (decoder) {
-        return new Decoder(function (json) { return (json === undefined ? ok(undefined) : decoder.decode(json)); });
+        return new Decoder(function (json) { return (json === undefined || json === null ? ok(undefined) : decoder.decode(json)); });
     };
     /**
      * Decoder that attempts to run each decoder in `decoders` and either succeeds
@@ -52298,41 +51387,171 @@ var oneOf = Decoder.oneOf;
 /** See `Decoder.lazy` */
 var lazy = Decoder.lazy;
 
-var nonEmptyStringDecoder = string().where(function (s) { return s.length > 0; }, "Expected a non-empty string");
-
-var windowLayoutItemDecoder = object({
-    type: constant("window"),
-    config: object({
-        appName: nonEmptyStringDecoder,
-        url: optional(nonEmptyStringDecoder)
+const nonEmptyStringDecoder = string().where((s) => s.length > 0, "Expected a non-empty string");
+const nonNegativeNumberDecoder = number().where((num) => num >= 0, "Expected a non-negative number");
+const libDomainDecoder = oneOf(constant("windows"), constant("appManager"), constant("layouts"), constant("intents"));
+const windowOperationTypesDecoder = oneOf(constant("openWindow"), constant("windowHello"), constant("windowAdded"), constant("windowRemoved"), constant("getBounds"), constant("getUrl"), constant("moveResize"), constant("focus"), constant("close"), constant("getTitle"), constant("setTitle"));
+const appManagerOperationTypesDecoder = oneOf(constant("appHello"), constant("applicationAdded"), constant("applicationRemoved"), constant("applicationChanged"), constant("instanceStarted"), constant("instanceStopped"), constant("applicationStart"), constant("instanceStop"), constant("clear"));
+const layoutsOperationTypesDecoder = oneOf(constant("layoutAdded"), constant("layoutChanged"), constant("layoutRemoved"), constant("get"), constant("getAll"), constant("export"), constant("import"), constant("remove"));
+const windowRelativeDirectionDecoder = oneOf(constant("top"), constant("left"), constant("right"), constant("bottom"));
+const windowOpenSettingsDecoder = optional(object({
+    top: optional(number()),
+    left: optional(number()),
+    width: optional(nonNegativeNumberDecoder),
+    height: optional(nonNegativeNumberDecoder),
+    context: optional(anyJson()),
+    relativeTo: optional(nonEmptyStringDecoder),
+    relativeDirection: optional(windowRelativeDirectionDecoder),
+    windowId: optional(nonEmptyStringDecoder)
+}));
+const openWindowConfigDecoder = object({
+    name: nonEmptyStringDecoder,
+    url: nonEmptyStringDecoder,
+    options: windowOpenSettingsDecoder
+});
+const windowHelloDecoder = object({
+    windowId: optional(nonEmptyStringDecoder)
+});
+const coreWindowDataDecoder = object({
+    windowId: nonEmptyStringDecoder,
+    name: nonEmptyStringDecoder
+});
+const simpleWindowDecoder = object({
+    windowId: nonEmptyStringDecoder
+});
+const helloSuccessDecoder = object({
+    windows: array(coreWindowDataDecoder),
+    isWorkspaceFrame: boolean()
+});
+const windowTitleConfigDecoder = object({
+    windowId: nonEmptyStringDecoder,
+    title: string()
+});
+const windowMoveResizeConfigDecoder = object({
+    windowId: nonEmptyStringDecoder,
+    top: optional(number()),
+    left: optional(number()),
+    width: optional(nonNegativeNumberDecoder),
+    height: optional(nonNegativeNumberDecoder),
+    relative: optional(boolean())
+});
+const windowBoundsResultDecoder = object({
+    windowId: nonEmptyStringDecoder,
+    bounds: object({
+        top: number(),
+        left: number(),
+        width: nonNegativeNumberDecoder,
+        height: nonNegativeNumberDecoder
     })
 });
-var groupLayoutItemDecoder = object({
-    type: constant("group"),
-    config: anyJson(),
-    children: array(oneOf(windowLayoutItemDecoder))
+const windowUrlResultDecoder = object({
+    windowId: nonEmptyStringDecoder,
+    url: nonEmptyStringDecoder
 });
-var columnLayoutItemDecoder = object({
-    type: constant("column"),
-    config: anyJson(),
-    children: array(oneOf(groupLayoutItemDecoder, windowLayoutItemDecoder, lazy(function () { return columnLayoutItemDecoder; }), lazy(function () { return rowLayoutItemDecoder; })))
+const anyDecoder = anyJson();
+const boundsDecoder = object({
+    top: optional(number()),
+    left: optional(number()),
+    width: optional(nonNegativeNumberDecoder),
+    height: optional(nonNegativeNumberDecoder)
 });
-var rowLayoutItemDecoder = object({
-    type: constant("row"),
-    config: anyJson(),
-    children: array(oneOf(columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder, lazy(function () { return rowLayoutItemDecoder; })))
+const instanceDataDecoder = object({
+    id: nonEmptyStringDecoder,
+    applicationName: nonEmptyStringDecoder
 });
-var workspaceComponentDecoder = object({
-    type: constant("Workspace"),
-    state: object({
-        config: anyJson(),
-        children: array(oneOf(rowLayoutItemDecoder, columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder))
-    })
+const applicationDetailsDecoder = object({
+    url: nonEmptyStringDecoder,
+    top: optional(number()),
+    left: optional(number()),
+    width: optional(nonNegativeNumberDecoder),
+    height: optional(nonNegativeNumberDecoder)
 });
-
-var windowComponentDecoder = object({
-    type: constant("window"),
-    componentType: constant("application"),
+const intentDefinitionDecoder = object({
+    name: nonEmptyStringDecoder,
+    displayName: optional(string()),
+    contexts: optional(array(string())),
+    customConfig: optional(object())
+});
+const fdc3AppDefinitionDecoder = object({
+    name: nonEmptyStringDecoder,
+    title: optional(nonEmptyStringDecoder),
+    version: optional(nonEmptyStringDecoder),
+    appId: nonEmptyStringDecoder,
+    manifest: nonEmptyStringDecoder,
+    manifestType: nonEmptyStringDecoder,
+    tooltip: optional(nonEmptyStringDecoder),
+    description: optional(nonEmptyStringDecoder),
+    contactEmail: optional(nonEmptyStringDecoder),
+    supportEmail: optional(nonEmptyStringDecoder),
+    publisher: optional(nonEmptyStringDecoder),
+    images: optional(array(object({ url: optional(nonEmptyStringDecoder) }))),
+    icons: optional(array(object({ icon: optional(nonEmptyStringDecoder) }))),
+    customConfig: anyJson(),
+    intents: optional(array(intentDefinitionDecoder))
+});
+const applicationDefinitionDecoder = object({
+    name: nonEmptyStringDecoder,
+    type: nonEmptyStringDecoder.where((s) => s === "window", "Expected a value of window"),
+    title: optional(nonEmptyStringDecoder),
+    version: optional(nonEmptyStringDecoder),
+    customProperties: optional(anyJson()),
+    icon: optional(nonEmptyStringDecoder),
+    caption: optional(nonEmptyStringDecoder),
+    details: applicationDetailsDecoder,
+    intents: optional(array(intentDefinitionDecoder))
+});
+const allApplicationDefinitionsDecoder = oneOf(applicationDefinitionDecoder, fdc3AppDefinitionDecoder);
+const appsImportOperationDecoder = object({
+    definitions: array(allApplicationDefinitionsDecoder),
+    mode: oneOf(constant("replace"), constant("merge"))
+});
+const appRemoveConfigDecoder = object({
+    name: nonEmptyStringDecoder
+});
+const appsExportOperationDecoder = object({
+    definitions: array(applicationDefinitionDecoder)
+});
+const applicationDataDecoder = object({
+    name: nonEmptyStringDecoder,
+    type: nonEmptyStringDecoder.where((s) => s === "window", "Expected a value of window"),
+    instances: array(instanceDataDecoder),
+    userProperties: optional(anyJson()),
+    title: optional(nonEmptyStringDecoder),
+    version: optional(nonEmptyStringDecoder),
+    icon: optional(nonEmptyStringDecoder),
+    caption: optional(nonEmptyStringDecoder)
+});
+const baseApplicationDataDecoder = object({
+    name: nonEmptyStringDecoder,
+    type: nonEmptyStringDecoder.where((s) => s === "window", "Expected a value of window"),
+    userProperties: anyJson(),
+    title: optional(nonEmptyStringDecoder),
+    version: optional(nonEmptyStringDecoder),
+    icon: optional(nonEmptyStringDecoder),
+    caption: optional(nonEmptyStringDecoder)
+});
+const appHelloSuccessDecoder = object({
+    apps: array(applicationDataDecoder)
+});
+const basicInstanceDataDecoder = object({
+    id: nonEmptyStringDecoder
+});
+const applicationStartConfigDecoder = object({
+    name: nonEmptyStringDecoder,
+    waitForAGMReady: boolean(),
+    context: optional(anyJson()),
+    top: optional(number()),
+    left: optional(number()),
+    width: optional(nonNegativeNumberDecoder),
+    height: optional(nonNegativeNumberDecoder),
+    relativeTo: optional(nonEmptyStringDecoder),
+    relativeDirection: optional(oneOf(constant("top"), constant("left"), constant("right"), constant("bottom")))
+});
+const layoutTypeDecoder = oneOf(constant("Global"), constant("Activity"), constant("ApplicationDefault"), constant("Swimlane"), constant("Workspace"));
+const componentTypeDecoder = oneOf(constant("application"), constant("activity"));
+const windowLayoutComponentDecoder = object({
+    type: nonEmptyStringDecoder.where((s) => s === "window", "Expected a value of window"),
+    componentType: optional(componentTypeDecoder),
     state: object({
         name: anyJson(),
         context: anyJson(),
@@ -52343,2082 +51562,1707 @@ var windowComponentDecoder = object({
         main: boolean()
     })
 });
-
-var layoutTypeDecoder = oneOf(constant("Global"), constant("Workspace"));
-var newLayoutOptionsDecoder = object({
+const windowLayoutItemDecoder = object({
+    type: constant("window"),
+    config: object({
+        appName: nonEmptyStringDecoder,
+        url: optional(nonEmptyStringDecoder)
+    })
+});
+const groupLayoutItemDecoder = object({
+    type: constant("group"),
+    config: anyJson(),
+    children: array(oneOf(windowLayoutItemDecoder))
+});
+const columnLayoutItemDecoder = object({
+    type: constant("column"),
+    config: anyJson(),
+    children: array(oneOf(groupLayoutItemDecoder, windowLayoutItemDecoder, lazy(() => columnLayoutItemDecoder), lazy(() => rowLayoutItemDecoder)))
+});
+const rowLayoutItemDecoder = object({
+    type: constant("row"),
+    config: anyJson(),
+    children: array(oneOf(columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder, lazy(() => rowLayoutItemDecoder)))
+});
+const workspaceLayoutComponentDecoder = object({
+    type: constant("Workspace"),
+    state: object({
+        config: anyJson(),
+        context: anyJson(),
+        children: array(oneOf(rowLayoutItemDecoder, columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder))
+    })
+});
+const glueLayoutDecoder = object({
+    name: nonEmptyStringDecoder,
+    type: layoutTypeDecoder,
+    components: array(oneOf(windowLayoutComponentDecoder, workspaceLayoutComponentDecoder)),
+    version: optional(nonEmptyStringDecoder),
+    context: optional(anyJson()),
+    metadata: optional(anyJson())
+});
+const newLayoutOptionsDecoder = object({
     name: nonEmptyStringDecoder,
     context: optional(anyJson()),
     metadata: optional(anyJson())
 });
-var restoreOptionsDecoder = object({
+const restoreOptionsDecoder = object({
     name: nonEmptyStringDecoder,
     context: optional(anyJson()),
     closeRunningInstance: optional(boolean())
 });
-var layoutDecoder = object({
+const layoutSummaryDecoder = object({
     name: nonEmptyStringDecoder,
     type: layoutTypeDecoder,
     context: optional(anyJson()),
-    metadata: optional(anyJson()),
-    components: array(oneOf(workspaceComponentDecoder, windowComponentDecoder))
+    metadata: optional(anyJson())
 });
-
-var Layouts = (function () {
-    function Layouts(controller) {
-        this.controller = controller;
-    }
-    Layouts.prototype.getAll = function (type) {
-        layoutTypeDecoder.runWithException(type);
-        return this.controller.getAll(type);
-    };
-    Layouts.prototype.get = function (name, type) {
-        nonEmptyStringDecoder.runWithException(name);
-        layoutTypeDecoder.runWithException(type);
-        return this.controller.get(name, type);
-    };
-    Layouts.prototype.export = function (layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                if (layoutType) {
-                    layoutTypeDecoder.runWithException(layoutType);
-                }
-                return [2, this.controller.export(layoutType)];
-            });
-        });
-    };
-    Layouts.prototype.import = function (layouts) {
-        layouts.forEach(function (layout) { return layoutDecoder.runWithException(layout); });
-        return this.controller.import(layouts);
-    };
-    Layouts.prototype.save = function (layout) {
-        newLayoutOptionsDecoder.runWithException(layout);
-        return this.controller.save(layout);
-    };
-    Layouts.prototype.restore = function (options) {
-        restoreOptionsDecoder.runWithException(options);
-        return this.controller.restore(options);
-    };
-    Layouts.prototype.remove = function (type, name) {
-        nonEmptyStringDecoder.runWithException(name);
-        layoutTypeDecoder.runWithException(type);
-        return this.controller.remove(type, name);
-    };
-    return Layouts;
-}());
-
-var CONTEXT_PREFIX = "___channel___";
-var SharedContextSubscriber = (function () {
-    function SharedContextSubscriber(contexts) {
-        this.contexts = contexts;
-    }
-    SharedContextSubscriber.prototype.subscribe = function (callback) {
-        this.callback = callback;
-    };
-    SharedContextSubscriber.prototype.subscribeFor = function (name, callback) {
-        if (!this.isChannel(name)) {
-            return Promise.reject(new Error("Channel with name: " + name + " doesn't exist!"));
-        }
-        var contextName = this.createContextName(name);
-        return this.contexts.subscribe(contextName, function (data, _, __, ___, extraData) {
-            callback(data.data, data, extraData === null || extraData === void 0 ? void 0 : extraData.updaterId);
-        });
-    };
-    SharedContextSubscriber.prototype.switchChannel = function (name) {
-        return __awaiter(this, void 0, void 0, function () {
-            var contextName, _a;
-            var _this = this;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        this.unsubscribe();
-                        contextName = this.createContextName(name);
-                        _a = this;
-                        return [4, this.contexts.subscribe(contextName, function (data, _, __, ___, extraData) {
-                                if (_this.callback) {
-                                    _this.callback(data.data, data, extraData === null || extraData === void 0 ? void 0 : extraData.updaterId);
-                                }
-                            })];
-                    case 1:
-                        _a.unsubscribeFunc = _b.sent();
-                        return [2];
-                }
-            });
-        });
-    };
-    SharedContextSubscriber.prototype.unsubscribe = function () {
-        if (this.unsubscribeFunc) {
-            this.unsubscribeFunc();
-        }
-    };
-    SharedContextSubscriber.prototype.add = function (name, data) {
-        var contextName = this.createContextName(name);
-        return this.contexts.set(contextName, data);
-    };
-    SharedContextSubscriber.prototype.all = function () {
-        var contextNames = this.contexts.all();
-        var channelContextNames = contextNames.filter(function (contextName) { return contextName.startsWith(CONTEXT_PREFIX); });
-        var channelNames = channelContextNames.map(function (channelContextName) { return channelContextName.substr(CONTEXT_PREFIX.length); });
-        return channelNames;
-    };
-    SharedContextSubscriber.prototype.getContextData = function (name) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (!_this.isChannel(name)) {
-                return reject(new Error("A channel with name: " + name + " doesn't exist!"));
-            }
-            var contextName = _this.createContextName(name);
-            _this.contexts.subscribe(contextName, function (data) {
-                resolve(data);
-            }).then(function (unsubscribeFunc) { return unsubscribeFunc(); });
-        });
-    };
-    SharedContextSubscriber.prototype.update = function (name, data) {
-        var contextName = this.createContextName(name);
-        return this.contexts.update(contextName, data);
-    };
-    SharedContextSubscriber.prototype.createContextName = function (name) {
-        return CONTEXT_PREFIX + name;
-    };
-    SharedContextSubscriber.prototype.isChannel = function (name) {
-        return this.all().some(function (channelName) { return channelName === name; });
-    };
-    return SharedContextSubscriber;
-}());
-
-var Channels = (function () {
-    function Channels(contexts, channels) {
-        var _this = this;
-        this.subsKey = "subs";
-        this.changedKey = "changed";
-        this.registry = lib$1();
-        this.shared = new SharedContextSubscriber(contexts);
-        this.shared.subscribe(this.handler.bind(this));
-        this.readyPromise = Promise.resolve(channels === null || channels === void 0 ? void 0 : channels.reduce(function (promise, channel) {
-            return promise.then(function () { return _this.add(channel); });
-        }, Promise.resolve({})));
-    }
-    Channels.prototype.subscribe = function (callback) {
-        if (typeof callback !== "function") {
-            throw new Error("Please provide the callback as a function!");
-        }
-        return this.registry.add(this.subsKey, callback);
-    };
-    Channels.prototype.subscribeFor = function (name, callback) {
-        return __awaiter(this, void 0, void 0, function () {
-            var unsubscribeFunc;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (typeof name !== "string") {
-                            throw new Error("Please provide the name as a string!");
-                        }
-                        if (typeof callback !== "function") {
-                            throw new Error("Please provide the callback as a function!");
-                        }
-                        return [4, this.shared.subscribeFor(name, callback)];
-                    case 1:
-                        unsubscribeFunc = _a.sent();
-                        return [2, unsubscribeFunc];
-                }
-            });
-        });
-    };
-    Channels.prototype.publish = function (data, name) {
-        return __awaiter(this, void 0, void 0, function () {
-            var context_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (typeof data !== "object") {
-                            throw new Error("Please provide the data as an object!");
-                        }
-                        if (!name) return [3, 2];
-                        if (typeof name !== "string") {
-                            throw new Error("Please provide the name as a string!");
-                        }
-                        return [4, this.get(name)];
-                    case 1:
-                        context_1 = _a.sent();
-                        return [2, this.shared.update(context_1.name, { data: data })];
-                    case 2:
-                        if (!this.currentContext) {
-                            throw new Error("Not joined to any channel!");
-                        }
-                        return [2, this.shared.update(this.currentContext, { data: data })];
-                }
-            });
-        });
-    };
-    Channels.prototype.all = function () {
-        var channelNames = this.shared.all();
-        return Promise.resolve(channelNames);
-    };
-    Channels.prototype.list = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var channelNames, channelContexts;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.all()];
-                    case 1:
-                        channelNames = _a.sent();
-                        return [4, Promise.all(channelNames.map(function (channelName) { return _this.get(channelName); }))];
-                    case 2:
-                        channelContexts = _a.sent();
-                        return [2, channelContexts];
-                }
-            });
-        });
-    };
-    Channels.prototype.get = function (name) {
-        if (typeof name !== "string") {
-            return Promise.reject(new Error("Please provide the channel name as a string!"));
-        }
-        return this.shared.getContextData(name);
-    };
-    Channels.prototype.join = function (name) {
-        return __awaiter(this, void 0, void 0, function () {
-            var doesChannelExist, channelExistsPromise;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (typeof name !== "string") {
-                            throw new Error("Please provide the channel name as a string!");
-                        }
-                        doesChannelExist = function (channelName) {
-                            var channelNames = _this.shared.all();
-                            return channelNames.includes(channelName);
-                        };
-                        if (!!doesChannelExist(name)) return [3, 2];
-                        channelExistsPromise = new Promise(function (resolve, reject) {
-                            var timeoutId;
-                            var intervalId = setInterval(function () {
-                                if (doesChannelExist(name)) {
-                                    clearTimeout(timeoutId);
-                                    clearInterval(intervalId);
-                                    resolve();
-                                }
-                            }, 100);
-                            timeoutId = setTimeout(function () {
-                                clearInterval(intervalId);
-                                return reject(new Error("A channel with name: " + name + " doesn't exist!"));
-                            }, 3000);
-                        });
-                        return [4, channelExistsPromise];
-                    case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2: return [4, this.shared.switchChannel(name)];
-                    case 3:
-                        _a.sent();
-                        this.currentContext = name;
-                        this.registry.execute(this.changedKey, name);
-                        return [2];
-                }
-            });
-        });
-    };
-    Channels.prototype.leave = function () {
-        this.currentContext = undefined;
-        this.registry.execute(this.changedKey, undefined);
-        this.shared.unsubscribe();
-        return Promise.resolve();
-    };
-    Channels.prototype.current = function () {
-        return this.currentContext;
-    };
-    Channels.prototype.my = function () {
-        return this.current();
-    };
-    Channels.prototype.changed = function (callback) {
-        if (typeof callback !== "function") {
-            throw new Error("Please provide the callback as a function!");
-        }
-        return this.registry.add(this.changedKey, callback);
-    };
-    Channels.prototype.onChanged = function (callback) {
-        return this.changed(callback);
-    };
-    Channels.prototype.add = function (info) {
-        return __awaiter(this, void 0, void 0, function () {
-            var context;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (typeof info !== "object") {
-                            throw new Error("Please provide the info as an object!");
-                        }
-                        if (typeof info.name === "undefined") {
-                            throw new Error("info.name is missing!");
-                        }
-                        if (typeof info.name !== "string") {
-                            throw new Error("Please provide the info.name as a string!");
-                        }
-                        if (typeof info.meta === "undefined") {
-                            throw new Error("info.meta is missing!");
-                        }
-                        if (typeof info.meta !== "object") {
-                            throw new Error("Please provide the info.meta as an object!");
-                        }
-                        if (typeof info.meta.color === "undefined") {
-                            throw new Error("info.meta.color is missing!");
-                        }
-                        if (typeof info.meta.color !== "string") {
-                            throw new Error("Please provide the info.meta.color as a string!");
-                        }
-                        context = {
-                            name: info.name,
-                            meta: info.meta,
-                            data: info.data || {}
-                        };
-                        return [4, this.shared.update(info.name, context)];
-                    case 1:
-                        _a.sent();
-                        return [2, context];
-                }
-            });
-        });
-    };
-    Channels.prototype.ready = function () {
-        return this.readyPromise;
-    };
-    Channels.prototype.handler = function (data, context, updaterId) {
-        this.registry.execute(this.subsKey, data, context, updaterId);
-    };
-    return Channels;
-}());
-
-var fetchTimeout = function (url, timeoutMilliseconds) {
-    if (timeoutMilliseconds === void 0) { timeoutMilliseconds = 1000; }
-    return new Promise(function (resolve, reject) {
-        var timeoutHit = false;
-        var timeout = setTimeout(function () {
-            timeoutHit = true;
-            reject(new Error("Fetch request for: " + url + " timed out at: " + timeoutMilliseconds + " milliseconds"));
-        }, timeoutMilliseconds);
-        fetch(url)
-            .then(function (response) {
-            if (!timeoutHit) {
-                clearTimeout(timeout);
-                resolve(response);
-            }
-        })
-            .catch(function (err) {
-            if (!timeoutHit) {
-                clearTimeout(timeout);
-                reject(err);
-            }
-        });
-    });
-};
-
-var Application = (function () {
-    function Application(_appManager, _props, _windows) {
-        var _this = this;
-        var _a, _b, _c, _d;
-        this._appManager = _appManager;
-        this._props = _props;
-        this._windows = _windows;
-        this._registry = lib$1();
-        if (typeof ((_a = _props === null || _props === void 0 ? void 0 : _props.userProperties) === null || _a === void 0 ? void 0 : _a.manifest) === "undefined") {
-            this._url = (_c = (_b = _props === null || _props === void 0 ? void 0 : _props.userProperties) === null || _b === void 0 ? void 0 : _b.details) === null || _c === void 0 ? void 0 : _c.url;
-        }
-        else {
-            var parsedManifest = JSON.parse(_props.userProperties.manifest);
-            this._url = ((_d = parsedManifest.details) === null || _d === void 0 ? void 0 : _d.url) || parsedManifest.url;
-        }
-        _appManager.onInstanceStarted(function (instance) {
-            if (instance.application.name === _this.name) {
-                _this._registry.execute("instanceStarted", instance);
-            }
-        });
-        _appManager.onInstanceStopped(function (instance) {
-            if (instance.application.name === _this.name) {
-                _this._registry.execute("instanceStopped", instance);
-            }
-        });
-    }
-    Object.defineProperty(Application.prototype, "name", {
-        get: function () {
-            return this._props.name;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Application.prototype, "title", {
-        get: function () {
-            return this._props.title || "";
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Application.prototype, "version", {
-        get: function () {
-            return this._props.version || "";
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Application.prototype, "userProperties", {
-        get: function () {
-            return this._props.userProperties || {};
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Application.prototype, "instances", {
-        get: function () {
-            var _this = this;
-            return this._appManager.instances().filter(function (instance) { return instance.application.name === _this.name; });
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Application.prototype.start = function (context, options) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var _a, _b;
-            var unsubscribeFunc;
-            var timeoutId = setTimeout(function () {
-                unsubscribeFunc();
-                reject("Application \"" + _this.name + "\" start timeout!");
-            }, 3000);
-            unsubscribeFunc = _this._appManager.onInstanceStarted(function (instance) {
-                if (instance.application.name === _this.name) {
-                    clearTimeout(timeoutId);
-                    unsubscribeFunc();
-                    resolve(instance);
-                }
-            });
-            var openOptions = __assign(__assign(__assign({}, (_b = (_a = _this._props) === null || _a === void 0 ? void 0 : _a.userProperties) === null || _b === void 0 ? void 0 : _b.details), options), { context: context || (options === null || options === void 0 ? void 0 : options.context) });
-            if (!_this._url) {
-                throw new Error("Application " + _this.name + " doesn't have a URL.");
-            }
-            _this._windows.open(_this.name, _this._url, openOptions);
-        });
-    };
-    Application.prototype.onInstanceStarted = function (callback) {
-        this._registry.add("instanceStarted", callback);
-    };
-    Application.prototype.onInstanceStopped = function (callback) {
-        this._registry.add("instanceStopped", callback);
-    };
-    Application.prototype.updateFromProps = function (props) {
-        var _this = this;
-        var _a, _b;
-        var url = typeof ((_a = props === null || props === void 0 ? void 0 : props.userProperties) === null || _a === void 0 ? void 0 : _a.manifest) !== "undefined" ? JSON.parse(props === null || props === void 0 ? void 0 : props.userProperties.manifest).url : (_b = props === null || props === void 0 ? void 0 : props.userProperties) === null || _b === void 0 ? void 0 : _b.details.url;
-        this._url = url;
-        Object.keys(props).forEach(function (key) {
-            _this._props[key] = props[key];
-        });
-    };
-    return Application;
-}());
-
-var RemoteInstance = (function () {
-    function RemoteInstance(id, application, control, context, agm) {
-        this.id = id;
-        this.application = application;
-        this.control = control;
-        this.context = context;
-        this.agm = agm;
-        this.WINDOW_DID_NOT_HAVE_TIME_TO_RESPOND = "Peer has left while waiting for result";
-    }
-    RemoteInstance.prototype.stop = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4, this.callControl("stop", {}, false)];
-                    case 1:
-                        _a.sent();
-                        return [3, 3];
-                    case 2:
-                        error_1 = _a.sent();
-                        if (error_1.message !== this.WINDOW_DID_NOT_HAVE_TIME_TO_RESPOND) {
-                            throw new Error(error_1);
-                        }
-                        return [3, 3];
-                    case 3: return [2];
-                }
-            });
-        });
-    };
-    RemoteInstance.prototype.callControl = function (command, args, skipResult) {
-        if (skipResult === void 0) { skipResult = false; }
-        return this.control.send({ command: command, domain: "appManager", args: args, skipResult: skipResult }, { instance: this.id });
-    };
-    return RemoteInstance;
-}());
-
-var LocalInstance = (function () {
-    function LocalInstance(id, control, _appManager, agm) {
-        this.id = id;
-        this.control = control;
-        this._appManager = _appManager;
-        this.agm = agm;
-        this.context = {};
-        this.startedByScript = false;
-        this.application = undefined;
-        control.setLocalInstance(this);
-    }
-    LocalInstance.prototype.stop = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this.startedByScript) {
-                var unsubscribe_1 = _this._appManager.onInstanceStopped(function (instance) {
-                    if (instance.id === _this.id) {
-                        unsubscribe_1();
-                        resolve();
-                    }
-                });
-                window.close();
-            }
-            else {
-                reject("Can't close a window that wasn't started by a script.");
-            }
-        });
-    };
-    return LocalInstance;
-}());
-
-var nonEmptyStringDecoder$1 = string().where(function (s) { return s.length > 0; }, "Expected a non-empty string");
-var fdc3AppImageDecoder = object({
-    url: optional(nonEmptyStringDecoder$1)
+const simpleLayoutConfigDecoder = object({
+    name: nonEmptyStringDecoder,
+    type: layoutTypeDecoder
 });
-var fdc3IconDecoder = object({
-    icon: optional(nonEmptyStringDecoder$1)
+const getAllLayoutsConfigDecoder = object({
+    type: layoutTypeDecoder
 });
-var fdc3IntentDecoder = object({
-    name: nonEmptyStringDecoder$1,
+const allLayoutsFullConfigDecoder = object({
+    layouts: array(glueLayoutDecoder)
+});
+const importModeDecoder = oneOf(constant("replace"), constant("merge"));
+const layoutsImportConfigDecoder = object({
+    layouts: array(glueLayoutDecoder),
+    mode: importModeDecoder
+});
+const allLayoutsSummariesResultDecoder = object({
+    summaries: array(layoutSummaryDecoder)
+});
+const simpleLayoutResult = object({
+    layout: glueLayoutDecoder
+});
+const optionalSimpleLayoutResult = object({
+    layout: optional(glueLayoutDecoder)
+});
+const intentsOperationTypesDecoder = oneOf(constant("findIntent"), constant("getIntents"), constant("raiseIntent"));
+const intentHandlerDecoder = object({
+    applicationName: nonEmptyStringDecoder,
+    applicationTitle: string(),
+    applicationDescription: optional(string()),
+    applicationIcon: optional(string()),
+    type: oneOf(constant("app"), constant("instance")),
     displayName: optional(string()),
-    contexts: optional(array(string())),
-    customConfig: optional(object())
+    contextTypes: optional(array(nonEmptyStringDecoder)),
+    instanceId: optional(string()),
+    instanceTitle: optional(string())
 });
-var glue42CoreCreateOptionsDecoder = object({
-    url: nonEmptyStringDecoder$1,
-    top: optional(number()),
-    left: optional(number()),
-    width: optional(number()),
-    height: optional(number()),
-    context: optional(anyJson()),
-    relativeTo: optional(nonEmptyStringDecoder$1),
-    relativeDirection: optional(oneOf(constant("top"), constant("left"), constant("right"), constant("bottom")))
+const intentDecoder = object({
+    name: nonEmptyStringDecoder,
+    handlers: array(intentHandlerDecoder)
 });
-var fdc3ApplicationConfigDecoder = object({
-    name: nonEmptyStringDecoder$1,
-    title: optional(string()),
-    version: optional(string()),
-    appId: nonEmptyStringDecoder$1,
-    manifest: nonEmptyStringDecoder$1,
-    manifestType: nonEmptyStringDecoder$1,
-    tooltip: optional(string()),
-    description: optional(string()),
-    contactEmail: optional(string()),
-    supportEmail: optional(string()),
-    publisher: optional(string()),
-    images: optional(array(fdc3AppImageDecoder)),
-    icons: optional(array(fdc3IconDecoder)),
-    customConfig: optional(object()),
-    intents: optional(array(fdc3IntentDecoder))
+const intentTargetDecoder = oneOf(constant("startNew"), constant("reuse"), object({
+    app: optional(nonEmptyStringDecoder),
+    instance: optional(nonEmptyStringDecoder)
+}));
+const intentContextDecoder = object({
+    type: optional(nonEmptyStringDecoder),
+    data: optional(object())
 });
-var glue42CoreApplicationConfigDecoder = object({
-    name: nonEmptyStringDecoder$1,
-    title: optional(string()),
-    version: optional(string()),
-    details: glue42CoreCreateOptionsDecoder,
-    customProperties: optional(object())
+const intentsDecoder = array(intentDecoder);
+const wrappedIntentsDecoder = object({
+    intents: intentsDecoder
 });
+const intentFilterDecoder = object({
+    name: optional(nonEmptyStringDecoder),
+    contextType: optional(nonEmptyStringDecoder)
+});
+const findFilterDecoder = oneOf(nonEmptyStringDecoder, intentFilterDecoder);
+const wrappedIntentFilterDecoder = object({
+    filter: optional(intentFilterDecoder)
+});
+const intentRequestDecoder = object({
+    intent: nonEmptyStringDecoder,
+    target: optional(intentTargetDecoder),
+    context: optional(intentContextDecoder),
+    options: optional(windowOpenSettingsDecoder)
+});
+const raiseRequestDecoder = oneOf(nonEmptyStringDecoder, intentRequestDecoder);
+const intentResultDecoder = object({
+    request: intentRequestDecoder,
+    handler: intentHandlerDecoder,
+    result: anyJson()
+});
+const addIntentListenerRequestDecoder = object({
+    intent: nonEmptyStringDecoder,
+    contextTypes: optional(array(nonEmptyStringDecoder)),
+    displayName: optional(string()),
+    icon: optional(string()),
+    description: optional(string())
+});
+const addIntentListenerIntentDecoder = oneOf(nonEmptyStringDecoder, addIntentListenerRequestDecoder);
+const channelNameDecoder = (channelNames) => {
+    return nonEmptyStringDecoder.where(s => channelNames.includes(s), "Expected a valid channel name");
+};
 
-var AppManager = (function () {
-    function AppManager(windows, interop, control, config, appName) {
-        var _this = this;
-        this.windows = windows;
-        this.interop = interop;
-        this.control = control;
-        this.config = config;
-        this.appName = appName;
-        this._apps = {};
-        this._instances = [];
-        this.registry = lib$1();
-        this.DEFAULT_POLLING_INTERVAL = 3000;
-        this.OKAY_MESSAGE = "OK";
-        this.LOCAL_SOURCE = "LOCAL_SOURCE";
-        var myId = interop.instance.instance;
-        this._myInstance = new LocalInstance(myId, this.control, this, this.interop.instance);
-        if (config === null || config === void 0 ? void 0 : config.remoteSources) {
-            this.readyPromise = this.subscribeForRemoteApplications(config.remoteSources);
-        }
-        if (config === null || config === void 0 ? void 0 : config.localApplications) {
-            var validatedApplications = this.getValidatedApplications(config.localApplications);
-            this.addApplications(validatedApplications);
-        }
-        control.onStart(function () {
-            _this.trackInstanceLifetime();
-        });
+const operations = {
+    openWindow: { name: "openWindow", dataDecoder: openWindowConfigDecoder, resultDecoder: coreWindowDataDecoder },
+    windowHello: { name: "windowHello", dataDecoder: windowHelloDecoder, resultDecoder: helloSuccessDecoder },
+    windowAdded: { name: "windowAdded", dataDecoder: coreWindowDataDecoder },
+    windowRemoved: { name: "windowRemoved", dataDecoder: simpleWindowDecoder },
+    getBounds: { name: "getBounds", dataDecoder: simpleWindowDecoder, resultDecoder: windowBoundsResultDecoder },
+    getUrl: { name: "getUrl", dataDecoder: simpleWindowDecoder, resultDecoder: windowUrlResultDecoder },
+    moveResize: { name: "moveResize", dataDecoder: windowMoveResizeConfigDecoder },
+    focus: { name: "focus", dataDecoder: simpleWindowDecoder },
+    close: { name: "close", dataDecoder: simpleWindowDecoder },
+    getTitle: { name: "getTitle", dataDecoder: simpleWindowDecoder, resultDecoder: windowTitleConfigDecoder },
+    setTitle: { name: "setTitle", dataDecoder: windowTitleConfigDecoder }
+};
+
+function createRegistry(options) {
+    if (options && options.errorHandling
+        && typeof options.errorHandling !== "function"
+        && options.errorHandling !== "log"
+        && options.errorHandling !== "silent"
+        && options.errorHandling !== "throw") {
+        throw new Error("Invalid options passed to createRegistry. Prop errorHandling should be [\"log\" | \"silent\" | \"throw\" | (err) => void], but " + typeof options.errorHandling + " was passed");
     }
-    Object.defineProperty(AppManager.prototype, "myInstance", {
-        get: function () {
-            if (!this.appName) {
-                console.warn("application wasn't provided to the GlueWeb factory function!");
-            }
-            if (!this._myInstance) {
-                console.warn("The application isn't defined in any of the local/remote application sources!");
-            }
-            return this._myInstance;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    AppManager.prototype.application = function (name) {
-        var _a;
-        return (_a = this._apps[name]) === null || _a === void 0 ? void 0 : _a.application;
-    };
-    AppManager.prototype.applications = function () {
-        var _this = this;
-        return Object.keys(this._apps).map(function (appName) { return _this._apps[appName].application; });
-    };
-    AppManager.prototype.instances = function () {
-        return this._instances;
-    };
-    AppManager.prototype.onAppAdded = function (callback) {
-        var _this = this;
-        var applications = Object.keys(this._apps).map(function (appName) {
-            return _this._apps[appName].application;
-        });
-        this.replay(applications, callback);
-        return this.registry.add("appAdded", callback);
-    };
-    AppManager.prototype.onAppRemoved = function (callback) {
-        return this.registry.add("appRemoved", callback);
-    };
-    AppManager.prototype.onAppChanged = function (callback) {
-        return this.registry.add("appChanged", callback);
-    };
-    AppManager.prototype.onInstanceStarted = function (callback) {
-        return this.registry.add("instanceStarted", callback);
-    };
-    AppManager.prototype.onInstanceStopped = function (callback) {
-        return this.registry.add("instanceStopped", callback);
-    };
-    AppManager.prototype.ready = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var error_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        _a.trys.push([0, 2, , 3]);
-                        return [4, this.readyPromise];
-                    case 1:
-                        _a.sent();
-                        return [3, 3];
-                    case 2:
-                        error_1 = _a.sent();
-                        return [3, 3];
-                    case 3: return [2];
-                }
-            });
-        });
-    };
-    AppManager.prototype.getValidatedApplications = function (applications) {
-        var verifiedApplications = applications.filter(function (application) {
-            var isFDC3App = typeof application.manifest !== "undefined";
-            var isValid;
-            if (isFDC3App) {
-                isValid = fdc3ApplicationConfigDecoder.run(application).ok;
-            }
-            else {
-                isValid = glue42CoreApplicationConfigDecoder.run(application).ok;
-            }
-            if (!isValid) {
-                console.warn("Validation failed for application \"" + application.name + "\"!");
-            }
-            return isValid;
-        });
-        return verifiedApplications;
-    };
-    AppManager.prototype.subscribeForRemoteApplications = function (remoteSources) {
-        return __awaiter(this, void 0, void 0, function () {
-            var initialFetchAppsPromises, _loop_1, this_1, _i, remoteSources_1, remoteSource;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        initialFetchAppsPromises = [];
-                        _loop_1 = function (remoteSource) {
-                            var url = remoteSource.url;
-                            var appsFetch = function () { return __awaiter(_this, void 0, void 0, function () {
-                                var response, json, validatedApplications;
-                                return __generator(this, function (_a) {
-                                    switch (_a.label) {
-                                        case 0: return [4, fetchTimeout(url, 1000)];
-                                        case 1:
-                                            response = _a.sent();
-                                            return [4, response.json()];
-                                        case 2:
-                                            json = (_a.sent());
-                                            if (json.message === this.OKAY_MESSAGE) {
-                                                validatedApplications = this.getValidatedApplications(json.applications);
-                                                this.addApplications(validatedApplications, url);
-                                            }
-                                            return [2];
-                                    }
-                                });
-                            }); };
-                            initialFetchAppsPromises.push(appsFetch());
-                            setInterval(function () { return appsFetch().catch(console.warn); }, remoteSource.pollingInterval || this_1.DEFAULT_POLLING_INTERVAL);
-                        };
-                        this_1 = this;
-                        for (_i = 0, remoteSources_1 = remoteSources; _i < remoteSources_1.length; _i++) {
-                            remoteSource = remoteSources_1[_i];
-                            _loop_1(remoteSource);
-                        }
-                        return [4, Promise.all(initialFetchAppsPromises)];
-                    case 1:
-                        _a.sent();
-                        return [2];
-                }
-            });
-        });
-    };
-    AppManager.prototype.getAppProps = function (application) {
-        var requiredProps = ["name", "title", "version"];
-        var userProperties = Object.fromEntries(Object.entries(application).filter(function (_a) {
-            var key = _a[0];
-            return !requiredProps.includes(key);
-        }));
-        return {
-            name: application.name,
-            title: application.title,
-            version: application.version,
-            userProperties: userProperties
-        };
-    };
-    AppManager.prototype.handleAppsChanged = function (newlyAddedApplications, source) {
-        var _this = this;
-        var _loop_2 = function (newlyAddedApplication) {
-            var currentApplicationWithTheSameNameAndSource = Object.keys(this_2._apps).find(function (appName) {
-                return appName === newlyAddedApplication.name && _this._apps[appName].source === source;
-            });
-            var currentApplicationWithTheSameNameButDifferentSource = Object.keys(this_2._apps).find(function (appName) {
-                return appName === newlyAddedApplication.name && _this._apps[appName].source !== source;
-            });
-            if (currentApplicationWithTheSameNameAndSource) {
-                var currentApplication = this_2._apps[currentApplicationWithTheSameNameAndSource];
-                var appProps = this_2.getAppProps(newlyAddedApplication);
-                if (JSON.stringify(currentApplication.appProps) !== JSON.stringify(appProps)) {
-                    var newlyAddedApplicationInstance = new Application(this_2, appProps, this_2.windows);
-                    this_2.registry.execute("appChanged", newlyAddedApplicationInstance);
-                    this_2._apps[newlyAddedApplication.name] = {
-                        source: currentApplication.source,
-                        application: newlyAddedApplicationInstance,
-                        appProps: appProps
-                    };
-                }
-            }
-            else if (currentApplicationWithTheSameNameButDifferentSource) {
-                console.warn("Application \"" + newlyAddedApplication.name + "\" already defined by source \"" + this_2._apps[currentApplicationWithTheSameNameButDifferentSource].source + "\". Skipping application definition from source " + source + ".");
-            }
-        };
-        var this_2 = this;
-        for (var _i = 0, newlyAddedApplications_1 = newlyAddedApplications; _i < newlyAddedApplications_1.length; _i++) {
-            var newlyAddedApplication = newlyAddedApplications_1[_i];
-            _loop_2(newlyAddedApplication);
+    var _userErrorHandler = options && typeof options.errorHandling === "function" && options.errorHandling;
+    var callbacks = {};
+    function add(key, callback, replayArgumentsArr) {
+        var callbacksForKey = callbacks[key];
+        if (!callbacksForKey) {
+            callbacksForKey = [];
+            callbacks[key] = callbacksForKey;
         }
-    };
-    AppManager.prototype.handleAppsAdded = function (newlyAddedApplications, source) {
-        var currentAppNames = Object.keys(this._apps);
-        var newApplications = newlyAddedApplications.filter(function (newlyAddedApplication) {
-            return !currentAppNames.includes(newlyAddedApplication.name);
-        });
-        for (var _i = 0, newApplications_1 = newApplications; _i < newApplications_1.length; _i++) {
-            var newApplication = newApplications_1[_i];
-            var appProps = this.getAppProps(newApplication);
-            var newApplicationInstance = new Application(this, appProps, this.windows);
-            this.registry.execute("appAdded", newApplicationInstance);
-            this._apps[newApplication.name] = {
-                source: source || this.LOCAL_SOURCE,
-                application: newApplicationInstance,
-                appProps: appProps
-            };
-        }
-    };
-    AppManager.prototype.handleAppsRemoved = function (newlyAddedApplications, source) {
-        var _this = this;
-        var currentApplicationsFromThisSource = Object.keys(this._apps)
-            .filter(function (appName) {
-            return _this._apps[appName].source === source;
-        })
-            .map(function (appName) {
-            return _this._apps[appName].application;
-        });
-        var newlyAddedApplicationNames = newlyAddedApplications.map(function (newlyAddedApplication) {
-            return newlyAddedApplication.name;
-        });
-        var removedApplications = currentApplicationsFromThisSource.filter(function (currentApplicationFromThisSource) {
-            return !newlyAddedApplicationNames.includes(currentApplicationFromThisSource.name);
-        });
-        for (var _i = 0, removedApplications_1 = removedApplications; _i < removedApplications_1.length; _i++) {
-            var removedApplication = removedApplications_1[_i];
-            this.registry.execute("appRemoved", removedApplication);
-            delete this._apps[removedApplication.name];
-        }
-    };
-    AppManager.prototype.tryPopulateMyInstanceApplication = function () {
-        var _this = this;
-        var _a;
-        if (this.appName) {
-            var myApp = (_a = Object.values(this._apps).find(function (app) { return app.application.name === _this.appName; })) === null || _a === void 0 ? void 0 : _a.application;
-            if (myApp) {
-                if (myApp.title) {
-                    document.title = myApp.title;
-                }
-                this._myInstance.application = myApp;
-            }
-        }
-    };
-    AppManager.prototype.addApplications = function (newlyAddedApplications, source) {
-        this.handleAppsChanged(newlyAddedApplications, source);
-        this.handleAppsAdded(newlyAddedApplications, source);
-        this.handleAppsRemoved(newlyAddedApplications, source);
-        if (!this._myInstance.application) {
-            this.tryPopulateMyInstanceApplication();
-        }
-    };
-    AppManager.prototype.replay = function (items, callback) {
-        var itemsToReplay = Array.isArray(items) ? items : Object.values(items);
-        itemsToReplay.forEach(function (item) { return callback(item); });
-    };
-    AppManager.prototype.remoteFromServer = function (server) {
-        return __awaiter(this, void 0, void 0, function () {
-            var serverApp, id, app, appWindow, context;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        serverApp = server.application;
-                        if (!server.instance || !serverApp || !this._apps[serverApp]) {
-                            return [2, undefined];
-                        }
-                        id = server.instance;
-                        app = this._apps[serverApp].application;
-                        appWindow = this.windows.list().find(function (window) { return window.id === server.windowId; });
-                        return [4, (appWindow === null || appWindow === void 0 ? void 0 : appWindow.getContext())];
-                    case 1:
-                        context = _a.sent();
-                        return [2, new RemoteInstance(id, app, this.control, context, server)];
-                }
-            });
-        });
-    };
-    AppManager.prototype.trackInstanceLifetime = function () {
-        var _this = this;
-        this.interop.serverMethodAdded(function (_a) {
-            var server = _a.server, method = _a.method;
-            return __awaiter(_this, void 0, void 0, function () {
-                var remoteInstance;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            if (method.name !== Control.CONTROL_METHOD) {
-                                return [2];
+        callbacksForKey.push(callback);
+        if (replayArgumentsArr) {
+            setTimeout(function () {
+                replayArgumentsArr.forEach(function (replayArgument) {
+                    var _a;
+                    if ((_a = callbacks[key]) === null || _a === void 0 ? void 0 : _a.includes(callback)) {
+                        try {
+                            if (Array.isArray(replayArgument)) {
+                                callback.apply(undefined, replayArgument);
                             }
-                            return [4, this.remoteFromServer(server)];
-                        case 1:
-                            remoteInstance = _b.sent();
-                            if (remoteInstance) {
-                                this._instances.push(remoteInstance);
-                                this.registry.execute("instanceStarted", remoteInstance);
+                            else {
+                                callback.apply(undefined, [replayArgument]);
                             }
-                            return [2];
+                        }
+                        catch (err) {
+                            _handleError(err, key);
+                        }
                     }
                 });
-            });
-        });
-        this.interop.serverRemoved(function (server) { return __awaiter(_this, void 0, void 0, function () {
-            var remoteInstance;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.remoteFromServer(server)];
-                    case 1:
-                        remoteInstance = _a.sent();
-                        if (remoteInstance) {
-                            this._instances = this._instances.filter(function (instance) { return instance.id !== remoteInstance.id; });
-                            this.registry.execute("instanceStopped", remoteInstance);
-                        }
-                        return [2];
-                }
-            });
-        }); });
-    };
-    return AppManager;
-}());
-
-var Notifications = (function () {
-    function Notifications(interop) {
-        this.interop = interop;
-    }
-    Notifications.prototype.raise = function (options) {
-        return __awaiter(this, void 0, void 0, function () {
-            var permissionPromise, notification, interopOptions_1;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!("Notification" in window)) {
-                            throw new Error("this browser does not support desktop notification");
-                        }
-                        if (Notification.permission === "granted") {
-                            permissionPromise = Promise.resolve("granted");
-                        }
-                        else if (Notification.permission === "denied") {
-                            permissionPromise = Promise.reject("no permissions from user");
-                        }
-                        else {
-                            permissionPromise = Notification.requestPermission();
-                        }
-                        return [4, permissionPromise];
-                    case 1:
-                        _a.sent();
-                        notification = this.raiseUsingWebApi(options);
-                        if (options.clickInterop) {
-                            interopOptions_1 = options.clickInterop;
-                            notification.onclick = function () {
-                                var _a, _b;
-                                _this.interop.invoke(interopOptions_1.method, (_a = interopOptions_1 === null || interopOptions_1 === void 0 ? void 0 : interopOptions_1.arguments) !== null && _a !== void 0 ? _a : {}, (_b = interopOptions_1 === null || interopOptions_1 === void 0 ? void 0 : interopOptions_1.target) !== null && _b !== void 0 ? _b : "best");
-                            };
-                        }
-                        return [2, notification];
-                }
-            });
-        });
-    };
-    Notifications.prototype.raiseUsingWebApi = function (options) {
-        return new Notification(options.title, options);
-    };
-    return Notifications;
-}());
-
-var defaultAssetsBaseLocation = "/glue";
-var defaultWorkerName = "worker.js";
-var defaultConfigName = "glue.config.json";
-var defaultLayoutsName = "glue.layouts.json";
-var defaultWorkerLocation = defaultAssetsBaseLocation + "/" + defaultWorkerName;
-var defaultConfig = {
-    layouts: {
-        autoRestore: false,
-        autoSaveWindowContext: false
-    },
-    logger: "error",
-    assets: {
-        location: defaultAssetsBaseLocation
-    },
-    channels: false,
-    appManager: false,
-    libraries: []
-};
-
-var getRemoteConfig = function (userConfig) { return __awaiter(void 0, void 0, void 0, function () {
-    var remoteConfigLocation, response, json, _a;
-    var _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
-            case 0:
-                if (((_b = userConfig.assets) === null || _b === void 0 ? void 0 : _b.extendConfig) === false || userConfig.extends === false) {
-                    return [2, {}];
-                }
-                remoteConfigLocation = ((_c = userConfig.assets) === null || _c === void 0 ? void 0 : _c.location) ? userConfig.assets.location + "/" + defaultConfigName :
-                    typeof userConfig.extends === "string" ? userConfig.extends :
-                        defaultAssetsBaseLocation + "/" + defaultConfigName;
-                _d.label = 1;
-            case 1:
-                _d.trys.push([1, 4, , 5]);
-                return [4, fetchTimeout(remoteConfigLocation)];
-            case 2:
-                response = _d.sent();
-                if (!response.ok) {
-                    return [2, {}];
-                }
-                return [4, response.json()];
-            case 3:
-                json = _d.sent();
-                return [2, json !== null && json !== void 0 ? json : {}];
-            case 4:
-                _a = _d.sent();
-                return [2, {}];
-            case 5: return [2];
+            }, 0);
         }
-    });
-}); };
-var buildConfig = function (userConfig) { return __awaiter(void 0, void 0, void 0, function () {
-    var remoteConfig, resultWebConfig, lastIndex, worker;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                userConfig = userConfig !== null && userConfig !== void 0 ? userConfig : {};
-                return [4, getRemoteConfig(userConfig)];
-            case 1:
-                remoteConfig = _a.sent();
-                resultWebConfig = __assign(__assign(__assign({}, defaultConfig), remoteConfig.glue), userConfig);
-                resultWebConfig.worker = resultWebConfig.assets.location + "/" + defaultWorkerName;
-                if (typeof (resultWebConfig === null || resultWebConfig === void 0 ? void 0 : resultWebConfig.extends) === "string") {
-                    lastIndex = resultWebConfig.extends.lastIndexOf("/");
-                    worker = resultWebConfig.extends.substr(0, lastIndex + 1) + defaultWorkerName;
-                    resultWebConfig.worker = worker;
-                }
-                if (!remoteConfig.layouts) {
-                    remoteConfig.layouts = { remoteType: "json" };
-                }
-                return [2, __assign(__assign({}, remoteConfig), { glue: resultWebConfig })];
-        }
-    });
-}); };
-
-var dbName = "glue42core";
-var dbVersion = 1;
-var SaveContextMethodName = "T42.HC.GetSaveContext";
-
-var LayoutsController = (function () {
-    function LayoutsController(storage, windows, control, interop, config) {
-        var _a, _b;
-        this.storage = storage;
-        this.windows = windows;
-        this.control = control;
-        this.interop = interop;
-        this.autoSaveContext = (_b = (_a = config === null || config === void 0 ? void 0 : config.layouts) === null || _a === void 0 ? void 0 : _a.autoSaveWindowContext) !== null && _b !== void 0 ? _b : false;
-        this.control.subscribe("layouts", this.handleControlMessage.bind(this));
-        this.registerRequestMethods();
-    }
-    LayoutsController.prototype.export = function (layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, globalLayouts, workspaceLayouts;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (layoutType) {
-                            return [2, this.storage.getAll(layoutType)];
-                        }
-                        return [4, Promise.all([
-                                this.storage.getAll("Global"),
-                                this.storage.getAll("Workspace")
-                            ])];
-                    case 1:
-                        _a = _b.sent(), globalLayouts = _a[0], workspaceLayouts = _a[1];
-                        return [2, globalLayouts.concat(workspaceLayouts)];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.import = function (layouts) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, Promise.all(layouts.map(function (layout) { return _this.storage.store(layout, layout.type); }))];
-                    case 1:
-                        _a.sent();
-                        return [2];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.save = function (layoutOptions, autoSave) {
-        if (autoSave === void 0) { autoSave = false; }
-        return __awaiter(this, void 0, void 0, function () {
-            var openedWindows, components, layout;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        openedWindows = this.windows.getChildWindows().map(function (w) { return w.id; });
-                        return [4, this.getRemoteWindowsInfo(openedWindows)];
-                    case 1:
-                        components = _a.sent();
-                        components.push(this.getLocalLayoutComponent(layoutOptions.context, true));
-                        layout = {
-                            type: "Global",
-                            name: layoutOptions.name,
-                            components: components,
-                            context: layoutOptions.context || {},
-                            metadata: layoutOptions.metadata || {}
-                        };
-                        if (!autoSave) return [3, 2];
-                        this.storage.storeAutoLayout(layout);
-                        return [3, 4];
-                    case 2: return [4, this.storage.store(layout, "Global")];
-                    case 3:
-                        _a.sent();
-                        _a.label = 4;
-                    case 4: return [2, layout];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.autoSave = function (layoutOptions) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2, this.save(layoutOptions, true)];
-            });
-        });
-    };
-    LayoutsController.prototype.restore = function (options) {
-        return __awaiter(this, void 0, void 0, function () {
-            var layout;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.storage.get(options.name, "Global")];
-                    case 1:
-                        layout = _a.sent();
-                        if (!layout) {
-                            throw new Error("can not find layout with name " + options.name);
-                        }
-                        this.restoreComponents(layout);
-                        return [2];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.restoreAutoSavedLayout = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var layoutName, layout, my, mainComponent;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        layoutName = "_auto_" + document.location.href;
-                        return [4, this.storage.getAutoLayout(layoutName)];
-                    case 1:
-                        layout = _a.sent();
-                        if (!layout) {
-                            return [2, Promise.resolve()];
-                        }
-                        my = this.windows.my();
-                        if (my.parent) {
-                            return [2];
-                        }
-                        mainComponent = layout.components.find(function (c) { return c.state.main; });
-                        my.setContext(mainComponent === null || mainComponent === void 0 ? void 0 : mainComponent.state.context);
-                        try {
-                            this.restoreComponents(layout);
-                        }
-                        catch (e) {
-                            return [2];
-                        }
-                        return [2];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.remove = function (type, name) {
-        return this.storage.remove(name, type);
-    };
-    LayoutsController.prototype.getAll = function (type) {
-        return __awaiter(this, void 0, void 0, function () {
-            var allLayouts;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.storage.getAll(type)];
-                    case 1:
-                        allLayouts = _a.sent();
-                        return [2, allLayouts.map(function (layout) {
-                                return {
-                                    name: layout.name,
-                                    type: layout.type,
-                                    context: layout.context,
-                                    metadata: layout.metadata
-                                };
-                            })];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.get = function (name, type) {
-        return this.storage.get(name, type);
-    };
-    LayoutsController.prototype.getLocalLayoutComponent = function (context, main) {
-        if (main === void 0) { main = false; }
-        var requestResult;
-        var my = this.windows.my();
-        try {
-            if (this.autoSaveContext) {
-                requestResult = {
-                    windowContext: my.getContextSync()
-                };
+        return function () {
+            var allForKey = callbacks[key];
+            if (!allForKey) {
+                return;
             }
-        }
-        catch (err) {
-        }
-        return {
-            type: "window",
-            componentType: "application",
-            state: {
-                name: my.name,
-                context: (requestResult === null || requestResult === void 0 ? void 0 : requestResult.windowContext) || {},
-                bounds: my.getBoundsSync(),
-                url: window.document.location.href,
-                id: my.id,
-                parentId: my.parent,
-                main: main
-            }
+            allForKey = allForKey.reduce(function (acc, element, index) {
+                if (!(element === callback && acc.length === index)) {
+                    acc.push(element);
+                }
+                return acc;
+            }, []);
+            callbacks[key] = allForKey;
         };
-    };
-    LayoutsController.prototype.restoreComponents = function (layout) {
-        var _this = this;
-        layout.components.forEach(function (c) {
-            if (c.type === "window") {
-                var state = c.state;
-                if (state.main) {
+    }
+    function execute(key) {
+        var argumentsArr = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            argumentsArr[_i - 1] = arguments[_i];
+        }
+        var callbacksForKey = callbacks[key];
+        if (!callbacksForKey || callbacksForKey.length === 0) {
+            return [];
+        }
+        var results = [];
+        callbacksForKey.forEach(function (callback) {
+            try {
+                var result = callback.apply(undefined, argumentsArr);
+                results.push(result);
+            }
+            catch (err) {
+                results.push(undefined);
+                _handleError(err, key);
+            }
+        });
+        return results;
+    }
+    function _handleError(exceptionArtifact, key) {
+        var errParam = exceptionArtifact instanceof Error ? exceptionArtifact : new Error(exceptionArtifact);
+        if (_userErrorHandler) {
+            _userErrorHandler(errParam);
+            return;
+        }
+        var msg = "[ERROR] callback-registry: User callback for key \"" + key + "\" failed: " + errParam.stack;
+        if (options) {
+            switch (options.errorHandling) {
+                case "log":
+                    return console.error(msg);
+                case "silent":
                     return;
-                }
-                var newWindowOptions = __assign(__assign({}, state.bounds), { context: state.context });
-                _this.windows.open(state.name, state.url, newWindowOptions);
+                case "throw":
+                    throw new Error(msg);
             }
-        });
-    };
-    LayoutsController.prototype.getRemoteWindowsInfo = function (windows) {
-        return __awaiter(this, void 0, void 0, function () {
-            var promises, _loop_1, this_1, _i, windows_1, id, responses;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        promises = [];
-                        _loop_1 = function (id) {
-                            var interopServer = this_1.interop.servers().find(function (s) { return s.windowId === id; });
-                            if (!interopServer || !interopServer.getMethods) {
-                                return "continue";
-                            }
-                            var methods = interopServer.getMethods();
-                            if (methods.find(function (m) { return m.name === SaveContextMethodName; })) {
-                                try {
-                                    promises.push(this_1.interop.invoke(SaveContextMethodName, {}, { windowId: id }));
-                                }
-                                catch (_a) {
-                                }
-                            }
-                        };
-                        this_1 = this;
-                        for (_i = 0, windows_1 = windows; _i < windows_1.length; _i++) {
-                            id = windows_1[_i];
-                            _loop_1(id);
-                        }
-                        return [4, Promise.all(promises)];
-                    case 1:
-                        responses = _a.sent();
-                        return [2, responses.map(function (response) { return response.returned; })];
-                }
-            });
-        });
-    };
-    LayoutsController.prototype.registerRequestMethods = function () {
-        var _this = this;
-        this.interop.register(SaveContextMethodName, function (args) {
-            return _this.getLocalLayoutComponent(args);
-        });
-    };
-    LayoutsController.prototype.handleControlMessage = function (command) {
-        return __awaiter(this, void 0, void 0, function () {
-            var layoutCommand, args, components;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        layoutCommand = command;
-                        if (!(layoutCommand.command === "saveLayoutAndClose")) return [3, 3];
-                        args = layoutCommand.args;
-                        return [4, this.getRemoteWindowsInfo(args.childWindows)];
-                    case 1:
-                        components = _a.sent();
-                        components.push(args.parentInfo);
-                        return [4, this.storage.storeAutoLayout({
-                                type: "Global",
-                                name: args.layoutName,
-                                components: components,
-                                context: args.context || {},
-                                metadata: args.metadata || {}
-                            })];
-                    case 2:
-                        _a.sent();
-                        args.childWindows.forEach(function (cw) {
-                            var _a;
-                            (_a = _this.windows.findById(cw)) === null || _a === void 0 ? void 0 : _a.close();
-                        });
-                        _a.label = 3;
-                    case 3: return [2];
-                }
-            });
-        });
-    };
-    return LayoutsController;
-}());
-
-var LayoutStorage = (function () {
-    function LayoutStorage(localStore, autoStore, remoteStore) {
-        this.localStore = localStore;
-        this.autoStore = autoStore;
-        this.remoteStore = remoteStore;
+        }
+        console.error(msg);
     }
-    LayoutStorage.prototype.get = function (name, layoutType) {
+    function clear() {
+        callbacks = {};
+    }
+    function clearKey(key) {
+        var callbacksForKey = callbacks[key];
+        if (!callbacksForKey) {
+            return;
+        }
+        delete callbacks[key];
+    }
+    return {
+        add: add,
+        execute: execute,
+        clear: clear,
+        clearKey: clearKey
+    };
+}
+createRegistry.default = createRegistry;
+var lib = createRegistry;
+
+class WebWindowModel {
+    constructor(_id, _name, _bridge) {
+        this._id = _id;
+        this._name = _name;
+        this._bridge = _bridge;
+        this.registry = lib();
+        this.myCtxKey = `___window___${this.id}`;
+    }
+    get id() {
+        return this._id.slice();
+    }
+    get name() {
+        return this._name.slice();
+    }
+    clean() {
+        if (this.ctxUnsubscribe) {
+            this.ctxUnsubscribe();
+        }
+    }
+    toApi() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.ctxUnsubscribe = yield this._bridge.contextLib.subscribe(this.myCtxKey, (data) => this.registry.execute("context-updated", data));
+            const api = {
+                id: this.id,
+                name: this.name,
+                getURL: this.getURL.bind(this),
+                moveResize: this.moveResize.bind(this),
+                resizeTo: this.resizeTo.bind(this),
+                moveTo: this.moveTo.bind(this),
+                focus: this.focus.bind(this),
+                close: this.close.bind(this),
+                getTitle: this.getTitle.bind(this),
+                setTitle: this.setTitle.bind(this),
+                getBounds: this.getBounds.bind(this),
+                getContext: this.getContext.bind(this),
+                updateContext: this.updateContext.bind(this),
+                setContext: this.setContext.bind(this),
+                onContextUpdated: this.onContextUpdated.bind(this)
+            };
+            this.me = Object.freeze(api);
+            return this.me;
+        });
+    }
+    getURL() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this._bridge.send("windows", operations.getUrl, { windowId: this.id });
+            return result.url;
+        });
+    }
+    moveResize(dimension) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const targetBounds = boundsDecoder.runWithException(dimension);
+            const commandArgs = Object.assign({}, targetBounds, { windowId: this.id, relative: false });
+            yield this._bridge.send("windows", operations.moveResize, commandArgs);
+            return this.me;
+        });
+    }
+    resizeTo(width, height) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof width === "undefined" && typeof height === "undefined") {
+                return this.me;
+            }
+            if (typeof width !== "undefined") {
+                nonNegativeNumberDecoder.runWithException(width);
+            }
+            if (typeof height !== "undefined") {
+                nonNegativeNumberDecoder.runWithException(height);
+            }
+            const commandArgs = Object.assign({}, { width, height }, { windowId: this.id, relative: true });
+            yield this._bridge.send("windows", operations.moveResize, commandArgs);
+            return this.me;
+        });
+    }
+    moveTo(top, left) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof top === "undefined" && typeof left === "undefined") {
+                return this.me;
+            }
+            if (typeof top !== "undefined") {
+                number().runWithException(top);
+            }
+            if (typeof left !== "undefined") {
+                number().runWithException(left);
+            }
+            const commandArgs = Object.assign({}, { top, left }, { windowId: this.id, relative: true });
+            yield this._bridge.send("windows", operations.moveResize, commandArgs);
+            return this.me;
+        });
+    }
+    focus() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._bridge.send("windows", operations.focus, { windowId: this.id });
+            return this.me;
+        });
+    }
+    close() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._bridge.send("windows", operations.close, { windowId: this.id });
+            return this.me;
+        });
+    }
+    getTitle() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this._bridge.send("windows", operations.getTitle, { windowId: this.id });
+            return result.title;
+        });
+    }
+    setTitle(title) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const ttl = nonEmptyStringDecoder.runWithException(title);
+            yield this._bridge.send("windows", operations.setTitle, { windowId: this.id, title: ttl });
+            return this.me;
+        });
+    }
+    getBounds() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this._bridge.send("windows", operations.getBounds, { windowId: this.id });
+            return result.bounds;
+        });
+    }
+    getContext() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const ctx = yield this._bridge.contextLib.get(this.myCtxKey);
+            return ctx;
+        });
+    }
+    updateContext(context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const ctx = anyDecoder.runWithException(context);
+            yield this._bridge.contextLib.update(this.myCtxKey, ctx);
+            return this.me;
+        });
+    }
+    setContext(context) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const ctx = anyDecoder.runWithException(context);
+            yield this._bridge.contextLib.set(this.myCtxKey, ctx);
+            return this.me;
+        });
+    }
+    onContextUpdated(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("Cannot subscribe to context changes, because the provided callback is not a function!");
+        }
+        const wrappedCallback = (data) => {
+            callback(data, this.me);
+        };
+        return this.registry.add("context-updated", wrappedCallback);
+    }
+}
+
+class WindowsController {
+    constructor() {
+        this.registry = lib();
+        this.allWindowProjections = [];
+    }
+    start(coreGlue, ioc) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("windows.controller.web");
+            this.logger.trace("starting the web windows controller");
+            this.publicWindowId = coreGlue.connection.transport.publicWindowId;
+            this.actualWindowId = coreGlue.interop.instance.windowId;
+            this.addWindowOperationExecutors();
+            this.ioc = ioc;
+            this.bridge = ioc.bridge;
+            this.logger.trace(`set the public window id: ${this.publicWindowId} and actual window id: ${this.actualWindowId}, set the bridge operations and ioc, registering with the platform now`);
+            this.platformRegistration = this.registerWithPlatform();
+            yield this.platformRegistration;
+            this.logger.trace("registration with the platform successful, attaching the windows property to glue and returning");
+            const api = this.toApi();
+            coreGlue.windows = api;
+        });
+    }
+    handleBridgeMessage(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.platformRegistration;
+            const operationName = windowOperationTypesDecoder.runWithException(args.operation);
+            const operation = operations[operationName];
+            if (!operation.execute) {
+                return;
+            }
+            let operationData = args.data;
+            if (operation.dataDecoder) {
+                operationData = operation.dataDecoder.runWithException(args.data);
+            }
+            return yield operation.execute(operationData);
+        });
+    }
+    open(name, url, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            nonEmptyStringDecoder.runWithException(name);
+            nonEmptyStringDecoder.runWithException(url);
+            const settings = windowOpenSettingsDecoder.runWithException(options);
+            const windowSuccess = yield this.bridge.send("windows", operations.openWindow, { name, url, options: settings });
+            const projection = yield this.ioc.buildWebWindow(windowSuccess.windowId, windowSuccess.name);
+            return projection.api;
+        });
+    }
+    list() {
+        return this.allWindowProjections.map((projection) => projection.api);
+    }
+    findById(id) {
         var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            var foundRemote, foundLocal;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, ((_a = this.remoteStore) === null || _a === void 0 ? void 0 : _a.get(name, layoutType))];
-                    case 1:
-                        foundRemote = _b.sent();
-                        return [4, this.localStore.get(name, layoutType)];
-                    case 2:
-                        foundLocal = _b.sent();
-                        if (foundRemote && foundLocal) {
-                            return [2, foundRemote];
-                        }
-                        return [2, foundRemote || foundLocal];
-                }
-            });
-        });
-    };
-    LayoutStorage.prototype.getAll = function (layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, local, remote, nonConflictLocal;
-            var _this = this;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, Promise.all([
-                            this.localStore.getAll(layoutType),
-                            new Promise(function (resolve) {
-                                if (_this.remoteStore) {
-                                    return _this.remoteStore.getAll(layoutType).then(resolve);
-                                }
-                                resolve([]);
-                            })
-                        ])];
-                    case 1:
-                        _a = _b.sent(), local = _a[0], remote = _a[1];
-                        nonConflictLocal = local.filter(function (localLayout) { return !remote.some(function (remoteLayout) { return remoteLayout.name === localLayout.name; }); });
-                        return [2, remote.concat(nonConflictLocal)];
-                }
-            });
-        });
-    };
-    LayoutStorage.prototype.store = function (layout, layoutType) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            var remoteLayout;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, ((_a = this.remoteStore) === null || _a === void 0 ? void 0 : _a.get(layout.name, layoutType))];
-                    case 1:
-                        remoteLayout = _b.sent();
-                        if (remoteLayout) {
-                            throw new Error("Cannot save layout with name: " + layout.name + " and type: " + layoutType + ", because it is present in the remote store and is treated as readonly");
-                        }
-                        if (!layout.metadata) {
-                            layout.metadata = { allowSave: true };
-                        }
-                        else {
-                            layout.metadata.allowSave = true;
-                        }
-                        return [4, this.localStore.store(layout, layoutType)];
-                    case 2:
-                        _b.sent();
-                        return [2];
-                }
-            });
-        });
-    };
-    LayoutStorage.prototype.remove = function (name, layoutType) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            var remoteLayout;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, ((_a = this.remoteStore) === null || _a === void 0 ? void 0 : _a.get(name, layoutType))];
-                    case 1:
-                        remoteLayout = _b.sent();
-                        if (remoteLayout) {
-                            throw new Error("Cannot remove layout with name: " + name + " and type: " + layoutType + ", because it is present in the remote store and is treated as readonly");
-                        }
-                        return [4, this.localStore.delete(name, layoutType)];
-                    case 2:
-                        _b.sent();
-                        return [2];
-                }
-            });
-        });
-    };
-    LayoutStorage.prototype.getAutoLayout = function (name) {
-        return this.autoStore.get(name, "Global");
-    };
-    LayoutStorage.prototype.storeAutoLayout = function (layout) {
-        this.autoStore.save(layout);
-    };
-    return LayoutStorage;
-}());
-
-const instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
-
-let idbProxyableTypes;
-let cursorAdvanceMethods;
-// This is a function to prevent it throwing up in node environments.
-function getIdbProxyableTypes() {
-    return (idbProxyableTypes ||
-        (idbProxyableTypes = [
-            IDBDatabase,
-            IDBObjectStore,
-            IDBIndex,
-            IDBCursor,
-            IDBTransaction,
-        ]));
-}
-// This is a function to prevent it throwing up in node environments.
-function getCursorAdvanceMethods() {
-    return (cursorAdvanceMethods ||
-        (cursorAdvanceMethods = [
-            IDBCursor.prototype.advance,
-            IDBCursor.prototype.continue,
-            IDBCursor.prototype.continuePrimaryKey,
-        ]));
-}
-const cursorRequestMap = new WeakMap();
-const transactionDoneMap = new WeakMap();
-const transactionStoreNamesMap = new WeakMap();
-const transformCache = new WeakMap();
-const reverseTransformCache = new WeakMap();
-function promisifyRequest(request) {
-    const promise = new Promise((resolve, reject) => {
-        const unlisten = () => {
-            request.removeEventListener('success', success);
-            request.removeEventListener('error', error);
+        nonEmptyStringDecoder.runWithException(id);
+        return (_a = this.allWindowProjections.find((projection) => projection.id === id)) === null || _a === void 0 ? void 0 : _a.api;
+    }
+    toApi() {
+        return {
+            open: this.open.bind(this),
+            my: this.my.bind(this),
+            list: this.list.bind(this),
+            findById: this.findById.bind(this),
+            onWindowAdded: this.onWindowAdded.bind(this),
+            onWindowRemoved: this.onWindowRemoved.bind(this)
         };
-        const success = () => {
-            resolve(wrap(request.result));
-            unlisten();
-        };
-        const error = () => {
-            reject(request.error);
-            unlisten();
-        };
-        request.addEventListener('success', success);
-        request.addEventListener('error', error);
-    });
-    promise
-        .then((value) => {
-        // Since cursoring reuses the IDBRequest (*sigh*), we cache it for later retrieval
-        // (see wrapFunction).
-        if (value instanceof IDBCursor) {
-            cursorRequestMap.set(value, request);
+    }
+    addWindowOperationExecutors() {
+        operations.windowAdded.execute = this.handleWindowAdded.bind(this);
+        operations.windowRemoved.execute = this.handleWindowRemoved.bind(this);
+        operations.getBounds.execute = this.handleGetBounds.bind(this);
+        operations.getTitle.execute = this.handleGetTitle.bind(this);
+        operations.getUrl.execute = this.handleGetUrl.bind(this);
+        operations.moveResize.execute = this.handleMoveResize.bind(this);
+        operations.setTitle.execute = this.handleSetTitle.bind(this);
+    }
+    my() {
+        return Object.assign({}, this.me);
+    }
+    onWindowAdded(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("Cannot subscribe to window added, because the provided callback is not a function!");
         }
-        // Catching to avoid "Uncaught Promise exceptions"
-    })
-        .catch(() => { });
-    // This mapping exists in reverseTransformCache but doesn't doesn't exist in transformCache. This
-    // is because we create many promises from a single IDBRequest.
-    reverseTransformCache.set(promise, request);
-    return promise;
-}
-function cacheDonePromiseForTransaction(tx) {
-    // Early bail if we've already created a done promise for this transaction.
-    if (transactionDoneMap.has(tx))
-        return;
-    const done = new Promise((resolve, reject) => {
-        const unlisten = () => {
-            tx.removeEventListener('complete', complete);
-            tx.removeEventListener('error', error);
-            tx.removeEventListener('abort', error);
-        };
-        const complete = () => {
-            resolve();
-            unlisten();
-        };
-        const error = () => {
-            reject(tx.error || new DOMException('AbortError', 'AbortError'));
-            unlisten();
-        };
-        tx.addEventListener('complete', complete);
-        tx.addEventListener('error', error);
-        tx.addEventListener('abort', error);
-    });
-    // Cache it for later retrieval.
-    transactionDoneMap.set(tx, done);
-}
-let idbProxyTraps = {
-    get(target, prop, receiver) {
-        if (target instanceof IDBTransaction) {
-            // Special handling for transaction.done.
-            if (prop === 'done')
-                return transactionDoneMap.get(target);
-            // Polyfill for objectStoreNames because of Edge.
-            if (prop === 'objectStoreNames') {
-                return target.objectStoreNames || transactionStoreNamesMap.get(target);
+        return this.registry.add("window-added", callback);
+    }
+    onWindowRemoved(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("Cannot subscribe to window removed, because the provided callback is not a function!");
+        }
+        return this.registry.add("window-removed", callback);
+    }
+    sayHello() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const helloSuccess = yield this.bridge.send("windows", operations.windowHello, { windowId: this.actualWindowId });
+            return helloSuccess;
+        });
+    }
+    registerWithPlatform() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { windows, isWorkspaceFrame } = yield this.sayHello();
+            this.logger.trace("the platform responded to the hello message");
+            if (!isWorkspaceFrame) {
+                this.logger.trace("i am not treated as a workspace frame, setting my window");
+                const myWindow = windows.find((w) => w.windowId === this.publicWindowId);
+                if (!myWindow) {
+                    throw new Error("Cannot initialize the window library, because I received no information about me from the platform");
+                }
+                this.me = (yield this.ioc.buildWebWindow(this.publicWindowId, myWindow.name)).api;
             }
-            // Make tx.store return the only store in the transaction, or undefined if there are many.
-            if (prop === 'store') {
-                return receiver.objectStoreNames[1]
-                    ? undefined
-                    : receiver.objectStore(receiver.objectStoreNames[0]);
+            const currentWindows = yield Promise.all(windows.map((w) => this.ioc.buildWebWindow(w.windowId, w.name)));
+            this.logger.trace("all windows projections are completed, building the list collection");
+            this.allWindowProjections.push(...currentWindows);
+        });
+    }
+    handleWindowAdded(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.allWindowProjections.some((projection) => projection.id === data.windowId)) {
+                return;
             }
-        }
-        // Else transform whatever we get back.
-        return wrap(target[prop]);
-    },
-    set(target, prop, value) {
-        target[prop] = value;
-        return true;
-    },
-    has(target, prop) {
-        if (target instanceof IDBTransaction &&
-            (prop === 'done' || prop === 'store')) {
-            return true;
-        }
-        return prop in target;
-    },
-};
-function replaceTraps(callback) {
-    idbProxyTraps = callback(idbProxyTraps);
-}
-function wrapFunction(func) {
-    // Due to expected object equality (which is enforced by the caching in `wrap`), we
-    // only create one new func per func.
-    // Edge doesn't support objectStoreNames (booo), so we polyfill it here.
-    if (func === IDBDatabase.prototype.transaction &&
-        !('objectStoreNames' in IDBTransaction.prototype)) {
-        return function (storeNames, ...args) {
-            const tx = func.call(unwrap(this), storeNames, ...args);
-            transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.sort() : [storeNames]);
-            return wrap(tx);
-        };
-    }
-    // Cursor methods are special, as the behaviour is a little more different to standard IDB. In
-    // IDB, you advance the cursor and wait for a new 'success' on the IDBRequest that gave you the
-    // cursor. It's kinda like a promise that can resolve with many values. That doesn't make sense
-    // with real promises, so each advance methods returns a new promise for the cursor object, or
-    // undefined if the end of the cursor has been reached.
-    if (getCursorAdvanceMethods().includes(func)) {
-        return function (...args) {
-            // Calling the original function with the proxy as 'this' causes ILLEGAL INVOCATION, so we use
-            // the original object.
-            func.apply(unwrap(this), args);
-            return wrap(cursorRequestMap.get(this));
-        };
-    }
-    return function (...args) {
-        // Calling the original function with the proxy as 'this' causes ILLEGAL INVOCATION, so we use
-        // the original object.
-        return wrap(func.apply(unwrap(this), args));
-    };
-}
-function transformCachableValue(value) {
-    if (typeof value === 'function')
-        return wrapFunction(value);
-    // This doesn't return, it just creates a 'done' promise for the transaction,
-    // which is later returned for transaction.done (see idbObjectHandler).
-    if (value instanceof IDBTransaction)
-        cacheDonePromiseForTransaction(value);
-    if (instanceOfAny(value, getIdbProxyableTypes()))
-        return new Proxy(value, idbProxyTraps);
-    // Return the same value back if we're not going to transform it.
-    return value;
-}
-function wrap(value) {
-    // We sometimes generate multiple promises from a single IDBRequest (eg when cursoring), because
-    // IDB is weird and a single IDBRequest can yield many responses, so these can't be cached.
-    if (value instanceof IDBRequest)
-        return promisifyRequest(value);
-    // If we've already transformed this value before, reuse the transformed value.
-    // This is faster, but it also provides object equality.
-    if (transformCache.has(value))
-        return transformCache.get(value);
-    const newValue = transformCachableValue(value);
-    // Not all types are transformed.
-    // These may be primitive types, so they can't be WeakMap keys.
-    if (newValue !== value) {
-        transformCache.set(value, newValue);
-        reverseTransformCache.set(newValue, value);
-    }
-    return newValue;
-}
-const unwrap = (value) => reverseTransformCache.get(value);
-
-/**
- * Open a database.
- *
- * @param name Name of the database.
- * @param version Schema version.
- * @param callbacks Additional callbacks.
- */
-function openDB(name, version, { blocked, upgrade, blocking, terminated } = {}) {
-    const request = indexedDB.open(name, version);
-    const openPromise = wrap(request);
-    if (upgrade) {
-        request.addEventListener('upgradeneeded', (event) => {
-            upgrade(wrap(request.result), event.oldVersion, event.newVersion, wrap(request.transaction));
+            const webWindowProjection = yield this.ioc.buildWebWindow(data.windowId, data.name);
+            this.allWindowProjections.push(webWindowProjection);
+            this.registry.execute("window-added", webWindowProjection.api);
         });
     }
-    if (blocked)
-        request.addEventListener('blocked', () => blocked());
-    openPromise
-        .then((db) => {
-        if (terminated)
-            db.addEventListener('close', () => terminated());
-        if (blocking)
-            db.addEventListener('versionchange', () => blocking());
-    })
-        .catch(() => { });
-    return openPromise;
-}
-
-const readMethods = ['get', 'getKey', 'getAll', 'getAllKeys', 'count'];
-const writeMethods = ['put', 'add', 'delete', 'clear'];
-const cachedMethods = new Map();
-function getMethod(target, prop) {
-    if (!(target instanceof IDBDatabase &&
-        !(prop in target) &&
-        typeof prop === 'string')) {
-        return;
-    }
-    if (cachedMethods.get(prop))
-        return cachedMethods.get(prop);
-    const targetFuncName = prop.replace(/FromIndex$/, '');
-    const useIndex = prop !== targetFuncName;
-    const isWrite = writeMethods.includes(targetFuncName);
-    if (
-    // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
-    !(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) ||
-        !(isWrite || readMethods.includes(targetFuncName))) {
-        return;
-    }
-    const method = async function (storeName, ...args) {
-        // isWrite ? 'readwrite' : undefined gzipps better, but fails in Edge :(
-        const tx = this.transaction(storeName, isWrite ? 'readwrite' : 'readonly');
-        let target = tx.store;
-        if (useIndex)
-            target = target.index(args.shift());
-        const returnVal = await target[targetFuncName](...args);
-        if (isWrite)
-            await tx.done;
-        return returnVal;
-    };
-    cachedMethods.set(prop, method);
-    return method;
-}
-replaceTraps((oldTraps) => ({
-    ...oldTraps,
-    get: (target, prop, receiver) => getMethod(target, prop) || oldTraps.get(target, prop, receiver),
-    has: (target, prop) => !!getMethod(target, prop) || oldTraps.has(target, prop),
-}));
-
-var LocalStore = (function () {
-    function LocalStore() {
-        if (!("indexedDB" in window)) {
-            throw new Error("Cannot initialize the local storage, because IndexedDb is not supported");
-        }
-    }
-    Object.defineProperty(LocalStore.prototype, "database", {
-        get: function () {
-            var _this = this;
-            if (this._database) {
-                return Promise.resolve(this._database);
+    handleWindowRemoved(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const removed = this.allWindowProjections.find((w) => w.id === data.windowId);
+            if (!removed) {
+                return;
             }
-            return new Promise(function (resolve) {
-                openDB(dbName, dbVersion, { upgrade: _this.setUpDb.bind(_this) })
-                    .then(function (database) {
-                    _this._database = database;
-                    resolve(_this._database);
-                });
-            });
-        },
-        enumerable: true,
-        configurable: true
-    });
-    LocalStore.prototype.getAll = function (layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = layoutType;
-                        switch (_a) {
-                            case "Workspace": return [3, 1];
-                            case "Global": return [3, 3];
-                        }
-                        return [3, 5];
-                    case 1: return [4, this.database];
-                    case 2: return [2, (_b.sent()).getAll("workspaceLayouts")];
-                    case 3: return [4, this.database];
-                    case 4: return [2, (_b.sent()).getAll("globalLayouts")];
-                    case 5: throw new Error("The provided layout type is not recognized: " + layoutType);
-                }
-            });
+            this.allWindowProjections = this.allWindowProjections.filter((w) => w.id !== data.windowId);
+            removed.model.clean();
+            this.registry.execute("window-removed", removed.api);
         });
-    };
-    LocalStore.prototype.delete = function (name, layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = layoutType;
-                        switch (_a) {
-                            case "Workspace": return [3, 1];
-                            case "Global": return [3, 3];
-                        }
-                        return [3, 5];
-                    case 1: return [4, this.database];
-                    case 2: return [2, (_b.sent()).delete("workspaceLayouts", name)];
-                    case 3: return [4, this.database];
-                    case 4: return [2, (_b.sent()).delete("globalLayouts", name)];
-                    case 5: throw new Error("The provided layout type is not recognized: " + layoutType);
-                }
-            });
-        });
-    };
-    LocalStore.prototype.get = function (name, layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _a = layoutType;
-                        switch (_a) {
-                            case "Workspace": return [3, 1];
-                            case "Global": return [3, 3];
-                        }
-                        return [3, 5];
-                    case 1: return [4, this.database];
-                    case 2: return [2, (_b.sent()).get("workspaceLayouts", name)];
-                    case 3: return [4, this.database];
-                    case 4: return [2, (_b.sent()).get("globalLayouts", name)];
-                    case 5: throw new Error("The provided layout type is not recognized: " + layoutType);
-                }
-            });
-        });
-    };
-    LocalStore.prototype.store = function (layout, layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        layoutDecoder.runWithException(layout);
-                        layoutTypeDecoder.runWithException(layoutType);
-                        _a = layoutType;
-                        switch (_a) {
-                            case "Workspace": return [3, 1];
-                            case "Global": return [3, 3];
-                        }
-                        return [3, 5];
-                    case 1: return [4, this.database];
-                    case 2: return [2, (_b.sent()).put("workspaceLayouts", layout, layout.name)];
-                    case 3: return [4, this.database];
-                    case 4: return [2, (_b.sent()).put("globalLayouts", layout, layout.name)];
-                    case 5: throw new Error("The provided layout type is not recognized: " + layoutType);
-                }
-            });
-        });
-    };
-    LocalStore.prototype.setUpDb = function (database) {
-        if (!database.objectStoreNames.contains("workspaceLayouts")) {
-            database.createObjectStore("workspaceLayouts");
-        }
-        if (!database.objectStoreNames.contains("globalLayouts")) {
-            database.createObjectStore("globalLayouts");
-        }
-    };
-    return LocalStore;
-}());
-
-var JSONStore = (function () {
-    function JSONStore(storeBaseUrl) {
-        this.storeBaseUrl = storeBaseUrl;
     }
-    JSONStore.prototype.getAll = function (layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var fetchUrl, response, layouts, error_1, layoutProp, layoutsToVerify;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        layoutTypeDecoder.runWithException(layoutType);
-                        fetchUrl = this.storeBaseUrl + "/" + defaultLayoutsName;
-                        return [4, this.fetchTimeout(fetchUrl)];
-                    case 1:
-                        response = _a.sent();
-                        if (!response.ok) {
-                            return [2, []];
-                        }
-                        _a.label = 2;
-                    case 2:
-                        _a.trys.push([2, 4, , 5]);
-                        return [4, response.json()];
-                    case 3:
-                        layouts = _a.sent();
-                        return [3, 5];
-                    case 4:
-                        error_1 = _a.sent();
-                        return [2, []];
-                    case 5:
-                        if (!layouts) {
-                            return [2, []];
-                        }
-                        layoutProp = layoutType === "Global" ? "globals" : "workspaces";
-                        layoutsToVerify = (layouts[layoutProp] || []);
-                        return [2, layoutsToVerify.filter(function (layout) {
-                                var decodeResult = layoutDecoder.run(layout);
-                                if (!decodeResult.ok) {
-                                    console.warn("Fetched layout: " + layout.name + " is discarded, because it failed the validation: " + JSON.stringify(decodeResult));
-                                }
-                                return decodeResult.ok;
-                            })];
+    handleGetBounds() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                windowId: this.me.id,
+                bounds: {
+                    top: window.screenTop,
+                    left: window.screenLeft,
+                    width: window.innerWidth,
+                    height: window.innerHeight
                 }
-            });
+            };
         });
-    };
-    JSONStore.prototype.get = function (name, layoutType) {
-        return __awaiter(this, void 0, void 0, function () {
-            var allLayouts;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4, this.getAll(layoutType)];
-                    case 1:
-                        allLayouts = _a.sent();
-                        return [2, allLayouts.find(function (layout) { return layout.name === name; })];
-                }
-            });
-        });
-    };
-    JSONStore.prototype.fetchTimeout = function (url, timeoutMilliseconds) {
-        if (timeoutMilliseconds === void 0) { timeoutMilliseconds = 1000; }
-        return new Promise(function (resolve, reject) {
-            var timeoutHit = false;
-            var timeout = setTimeout(function () {
-                timeoutHit = true;
-                reject(new Error("Fetch request for: " + url + " timed out at: " + timeoutMilliseconds + " milliseconds"));
-            }, timeoutMilliseconds);
-            fetch(url)
-                .then(function (response) {
-                if (!timeoutHit) {
-                    clearTimeout(timeout);
-                    resolve(response);
-                }
-            })
-                .catch(function (err) {
-                if (!timeoutHit) {
-                    clearTimeout(timeout);
-                    reject(err);
-                }
-            });
-        });
-    };
-    return JSONStore;
-}());
-
-var AutoStorage = (function () {
-    function AutoStorage() {
     }
-    AutoStorage.prototype.get = function (name, type) {
-        var obj = this.getObjectFromLocalStorage();
-        var key = this.getKey(name, type);
-        return obj[key];
-    };
-    AutoStorage.prototype.save = function (layout) {
-        var obj = this.getObjectFromLocalStorage();
-        var key = this.getKey(layout.name, layout.type);
-        obj[key] = layout;
-        this.setObjectToLocalStorage(obj);
-        return layout;
-    };
-    AutoStorage.prototype.remove = function (name, type) {
-        var obj = this.getObjectFromLocalStorage();
-        var key = this.getKey(name, type);
-        delete obj[key];
-    };
-    AutoStorage.prototype.getObjectFromLocalStorage = function () {
-        var values = window.localStorage.getItem(AutoStorage.KEY);
-        if (values) {
-            return JSON.parse(values);
-        }
-        return {};
-    };
-    AutoStorage.prototype.setObjectToLocalStorage = function (obj) {
-        window.localStorage.setItem(AutoStorage.KEY, JSON.stringify(obj));
-    };
-    AutoStorage.prototype.getKey = function (name, type) {
-        return type + "_" + name;
-    };
-    AutoStorage.KEY = "G0_layouts";
-    return AutoStorage;
-}());
+    handleGetTitle() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                windowId: this.me.id,
+                title: document.title
+            };
+        });
+    }
+    handleGetUrl() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                windowId: this.me.id,
+                url: window.location.href
+            };
+        });
+    }
+    handleMoveResize(config) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const targetTop = typeof config.top === "number" ? config.top :
+                config.relative ? 0 : window.screenTop;
+            const targetLeft = typeof config.left === "number" ? config.left :
+                config.relative ? 0 : window.screenLeft;
+            const targetHeight = typeof config.height === "number" ? config.height :
+                config.relative ? 0 : window.innerHeight;
+            const targetWidth = typeof config.width === "number" ? config.width :
+                config.relative ? 0 : window.innerWidth;
+            const moveMethod = config.relative ? window.moveBy : window.moveTo;
+            const resizeMethod = config.relative ? window.resizeBy : window.resizeTo;
+            moveMethod(targetLeft, targetTop);
+            resizeMethod(targetWidth, targetHeight);
+        });
+    }
+    handleSetTitle(config) {
+        return __awaiter(this, void 0, void 0, function* () {
+            document.title = config.title;
+        });
+    }
+}
 
-var promisePlus = function (promise, timeoutMilliseconds, timeoutMessage) {
-    return new Promise(function (resolve, reject) {
-        var timeout = setTimeout(function () {
-            var message = timeoutMessage || "Promise timeout hit: " + timeoutMilliseconds;
+const PromiseWrap = (promise, timeoutMilliseconds, timeoutMessage) => {
+    return new Promise((resolve, reject) => {
+        let promiseActive = true;
+        const timeout = setTimeout(() => {
+            if (!promiseActive) {
+                return;
+            }
+            promiseActive = false;
+            const message = timeoutMessage || `Promise timeout hit: ${timeoutMilliseconds}`;
             reject(message);
         }, timeoutMilliseconds);
         promise()
-            .then(function (result) {
+            .then((result) => {
+            if (!promiseActive) {
+                return;
+            }
+            promiseActive = false;
             clearTimeout(timeout);
             resolve(result);
         })
-            .catch(function (error) {
+            .catch((error) => {
+            if (!promiseActive) {
+                return;
+            }
+            promiseActive = false;
+            clearTimeout(timeout);
+            reject(error);
+        });
+    });
+};
+const PromisePlus = (executor, timeoutMilliseconds, timeoutMessage) => {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            const message = timeoutMessage || `Promise timeout hit: ${timeoutMilliseconds}`;
+            reject(message);
+        }, timeoutMilliseconds);
+        const providedPromise = new Promise(executor);
+        providedPromise
+            .then((result) => {
+            clearTimeout(timeout);
+            resolve(result);
+        })
+            .catch((error) => {
             clearTimeout(timeout);
             reject(error);
         });
     });
 };
 
-var hookCloseEvents = function (api, config, control, layoutsController) {
-    var done = false;
-    var doneFn = function () { return __awaiter(void 0, void 0, void 0, function () {
-        var shouldSave, allChildren, firstChild, layoutName, command;
-        var _a;
-        return __generator(this, function (_b) {
-            if (!done) {
-                done = true;
-                shouldSave = (_a = config === null || config === void 0 ? void 0 : config.layouts) === null || _a === void 0 ? void 0 : _a.autoRestore;
-                if (shouldSave) {
-                    allChildren = api.windows.getChildWindows().map(function (w) { return w.id; });
-                    firstChild = allChildren[0];
-                    layoutName = "_auto_" + document.location.href;
-                    if (allChildren.length > 0) {
-                        command = {
-                            domain: "layouts",
-                            command: "saveLayoutAndClose",
-                            args: {
-                                childWindows: allChildren,
-                                closeEveryone: true,
-                                layoutName: layoutName,
-                                context: {},
-                                metadata: {},
-                                parentInfo: layoutsController === null || layoutsController === void 0 ? void 0 : layoutsController.getLocalLayoutComponent({}, true)
-                            }
-                        };
-                        control.send(command, { windowId: firstChild });
-                    }
-                    else {
-                        layoutsController === null || layoutsController === void 0 ? void 0 : layoutsController.autoSave({ name: layoutName });
-                    }
+const GlueWebPlatformControlName = "T42.Web.Platform.Control";
+const GlueWebPlatformStreamName = "T42.Web.Platform.Stream";
+const GlueClientControlName = "T42.Web.Client.Control";
+
+class GlueBridge {
+    constructor(coreGlue) {
+        this.coreGlue = coreGlue;
+        this.platformMethodTimeoutMs = 10000;
+    }
+    get contextLib() {
+        return this.coreGlue.contexts;
+    }
+    get interopInstance() {
+        return this.coreGlue.interop.instance.instance;
+    }
+    start(controllers) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.controllers = controllers;
+            yield Promise.all([
+                this.checkWaitMethod(GlueWebPlatformControlName),
+                this.checkWaitMethod(GlueWebPlatformStreamName)
+            ]);
+            const [sub] = yield Promise.all([
+                this.coreGlue.interop.subscribe(GlueWebPlatformStreamName),
+                this.coreGlue.interop.registerAsync(GlueClientControlName, (args, _, success, error) => this.passMessageController(args, success, error))
+            ]);
+            this.sub = sub;
+            this.sub.onData((pkg) => this.passMessageController(pkg.data));
+        });
+    }
+    getInteropInstance(windowId) {
+        const result = this.coreGlue.interop.servers().find((s) => s.windowId && s.windowId === windowId);
+        return {
+            application: result === null || result === void 0 ? void 0 : result.application,
+            applicationName: result === null || result === void 0 ? void 0 : result.applicationName,
+            peerId: result === null || result === void 0 ? void 0 : result.peerId,
+            instance: result === null || result === void 0 ? void 0 : result.instance,
+            windowId: result === null || result === void 0 ? void 0 : result.windowId
+        };
+    }
+    send(domain, operation, operationData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (operation.dataDecoder) {
+                try {
+                    operation.dataDecoder.runWithException(operationData);
                 }
-                api.done();
+                catch (error) {
+                    throw new Error(`Unexpected internal outgoing validation error: ${error.message}, for operation: ${operation.name} and input: ${JSON.stringify(error.input)}`);
+                }
             }
-            return [2];
+            let operationResult;
+            try {
+                operationResult = yield this.transmitMessage(domain, operation, operationData);
+                if (operation.resultDecoder) {
+                    operationResult = operation.resultDecoder.runWithException(operationResult);
+                }
+            }
+            catch (error) {
+                if (error.kind) {
+                    throw new Error(`Unexpected internal incoming validation error: ${error.message}, for operation: ${operation.name} and input: ${JSON.stringify(error.input)}`);
+                }
+                throw new Error(error.message);
+            }
+            return operationResult;
         });
-    }); };
-    window.addEventListener("beforeunload", function () {
-        doneFn();
-    });
+    }
+    checkWaitMethod(name) {
+        return PromisePlus((resolve) => {
+            const hasMethod = this.coreGlue.interop.methods().some((method) => method.name === name);
+            if (hasMethod) {
+                return resolve();
+            }
+            const unSub = this.coreGlue.interop.methodAdded((method) => {
+                if (method.name === name) {
+                    unSub();
+                    resolve();
+                }
+            });
+        }, this.platformMethodTimeoutMs, `Cannot initiate Glue Web, because a system method's discovery timed out: ${name}`);
+    }
+    passMessageController(args, success, error) {
+        const decodeResult = libDomainDecoder.run(args.domain);
+        if (!decodeResult.ok) {
+            if (error) {
+                error(`Cannot execute this client control, because of domain validation error: ${JSON.stringify(decodeResult.error)}`);
+            }
+            return;
+        }
+        const domain = decodeResult.result;
+        this.controllers[domain]
+            .handleBridgeMessage(args)
+            .then((resolutionData) => {
+            if (success) {
+                success(resolutionData);
+            }
+        })
+            .catch((err) => {
+            if (error) {
+                error(err);
+            }
+            console.warn(err);
+        });
+    }
+    transmitMessage(domain, operation, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const messageData = { domain, data, operation: operation.name };
+            let invocationResult;
+            const baseErrorMessage = `Internal Platform Communication Error. Attempted operation: ${JSON.stringify(operation.name)} with data: ${JSON.stringify(data)}. `;
+            try {
+                invocationResult = yield this.coreGlue.interop.invoke(GlueWebPlatformControlName, messageData);
+                if (!invocationResult) {
+                    throw new Error("Received unsupported result from the platform - empty result");
+                }
+                if (!Array.isArray(invocationResult.all_return_values) || invocationResult.all_return_values.length === 0) {
+                    throw new Error("Received unsupported result from the platform - empty values collection");
+                }
+            }
+            catch (error) {
+                if (error && error.all_errors && error.all_errors.length) {
+                    const invocationErrorMessage = error.all_errors[0].message;
+                    throw new Error(`${baseErrorMessage} -> Inner message: ${invocationErrorMessage}`);
+                }
+                throw new Error(`${baseErrorMessage} -> Inner message: ${error.message}`);
+            }
+            return invocationResult.all_return_values[0].returned;
+        });
+    }
+}
+
+const operations$1 = {
+    appHello: { name: "appHello", dataDecoder: windowHelloDecoder, resultDecoder: appHelloSuccessDecoder },
+    applicationAdded: { name: "applicationAdded", dataDecoder: baseApplicationDataDecoder },
+    applicationRemoved: { name: "applicationRemoved", dataDecoder: baseApplicationDataDecoder },
+    applicationChanged: { name: "applicationChanged", dataDecoder: baseApplicationDataDecoder },
+    instanceStarted: { name: "instanceStarted", dataDecoder: instanceDataDecoder },
+    instanceStopped: { name: "instanceStopped", dataDecoder: instanceDataDecoder },
+    applicationStart: { name: "applicationStart", dataDecoder: applicationStartConfigDecoder, resultDecoder: instanceDataDecoder },
+    instanceStop: { name: "instanceStop", dataDecoder: basicInstanceDataDecoder },
+    import: { name: "import" },
+    remove: { name: "remove", dataDecoder: appRemoveConfigDecoder },
+    export: { name: "export", resultDecoder: appsExportOperationDecoder },
+    clear: { name: "clear" }
 };
-var createFactoryFunction = function (coreFactoryFunction) {
-    return function (config) { return __awaiter(void 0, void 0, void 0, function () {
-        var builtCoreConfig, isWebEnvironment, shouldInitializeChannels, shouldInitializeAppManager, gdWindowContext, control, windows, layouts, layoutsController, ext, channelsLib, appManagerLib, coreConfig, core;
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
-        return __generator(this, function (_r) {
-            switch (_r.label) {
-                case 0: return [4, buildConfig(config)];
-                case 1:
-                    builtCoreConfig = _r.sent();
-                    isWebEnvironment = typeof window !== "undefined";
-                    shouldInitializeChannels = ((_a = builtCoreConfig.glue) === null || _a === void 0 ? void 0 : _a.channels) || false;
-                    shouldInitializeAppManager = ((_b = builtCoreConfig.glue) === null || _b === void 0 ? void 0 : _b.appManager) || false;
-                    if (isWebEnvironment) {
-                        gdWindowContext = window;
-                        if ((gdWindowContext === null || gdWindowContext === void 0 ? void 0 : gdWindowContext.glue42gd) && (gdWindowContext === null || gdWindowContext === void 0 ? void 0 : gdWindowContext.Glue)) {
-                            return [2, gdWindowContext.Glue({
-                                    windows: true,
-                                    logger: (_c = builtCoreConfig.glue) === null || _c === void 0 ? void 0 : _c.logger,
-                                    channels: shouldInitializeChannels,
-                                    layouts: true,
-                                    appManager: shouldInitializeAppManager,
-                                    libraries: config.libraries
-                                })];
-                        }
-                    }
-                    control = new Control();
-                    ext = {
-                        libs: [
-                            {
-                                name: "notifications",
-                                create: function (coreLib) { return new Notifications(coreLib.interop); }
-                            }
-                        ],
-                        version: version
-                    };
-                    if (shouldInitializeChannels) {
-                        channelsLib = {
-                            name: "channels",
-                            create: function (coreLib) { return new Channels(coreLib.contexts, builtCoreConfig.channels); }
-                        };
-                        (_d = ext.libs) === null || _d === void 0 ? void 0 : _d.push(channelsLib);
-                    }
-                    if (isWebEnvironment) {
-                        (_e = ext.libs) === null || _e === void 0 ? void 0 : _e.push({
-                            name: "windows",
-                            create: function (coreLib) {
-                                windows = new Windows(coreLib.interop, control);
-                                return windows;
-                            }
-                        }, {
-                            name: "layouts",
-                            create: function (coreLib) {
-                                var _a, _b;
-                                var remoteStore;
-                                if (((_a = builtCoreConfig.layouts) === null || _a === void 0 ? void 0 : _a.remoteType) === "json") {
-                                    var baseLocation = ((_b = builtCoreConfig === null || builtCoreConfig === void 0 ? void 0 : builtCoreConfig.glue.assets) === null || _b === void 0 ? void 0 : _b.location) || defaultAssetsBaseLocation;
-                                    remoteStore = new JSONStore(baseLocation);
-                                }
-                                var localStore = new LocalStore();
-                                var autoStore = new AutoStorage();
-                                var layoutsStorage = new LayoutStorage(localStore, autoStore, remoteStore);
-                                layoutsController = new LayoutsController(layoutsStorage, windows, control, coreLib.interop, builtCoreConfig === null || builtCoreConfig === void 0 ? void 0 : builtCoreConfig.glue);
-                                layouts = new Layouts(layoutsController);
-                                return layouts;
-                            }
-                        });
-                        if (shouldInitializeAppManager) {
-                            appManagerLib = {
-                                name: "appManager",
-                                create: function (coreLib) { var _a; return new AppManager(windows, coreLib.interop, control, builtCoreConfig.appManager, (_a = builtCoreConfig.glue) === null || _a === void 0 ? void 0 : _a.application); }
-                            };
-                            (_f = ext.libs) === null || _f === void 0 ? void 0 : _f.push(appManagerLib);
-                        }
-                    }
-                    coreConfig = {
-                        gateway: {
-                            sharedWorker: (_h = (_g = builtCoreConfig.glue) === null || _g === void 0 ? void 0 : _g.worker) !== null && _h !== void 0 ? _h : defaultWorkerLocation,
-                            inproc: (_j = builtCoreConfig.glue) === null || _j === void 0 ? void 0 : _j.inproc
-                        },
-                        logger: (_k = builtCoreConfig.glue) === null || _k === void 0 ? void 0 : _k.logger,
-                        application: (_l = builtCoreConfig.glue) === null || _l === void 0 ? void 0 : _l.application
-                    };
-                    if (isWebEnvironment && !window.SharedWorker) {
-                        throw new Error("Cannot initialize Glue Web, because this environment does not support Shared Workers");
-                    }
-                    return [4, promisePlus(function () { return coreFactoryFunction(coreConfig, ext); }, 10000, "Glue Web initialization timed out")];
-                case 2:
-                    core = _r.sent();
-                    if (!(config === null || config === void 0 ? void 0 : config.libraries)) return [3, 4];
-                    return [4, Promise.all(config.libraries.map(function (lib) { return lib(core, builtCoreConfig === null || builtCoreConfig === void 0 ? void 0 : builtCoreConfig.glue); }))];
-                case 3:
-                    _r.sent();
-                    _r.label = 4;
-                case 4:
-                    control.start(core.interop, core.logger.subLogger("control"));
-                    if (!isWebEnvironment) return [3, 9];
-                    return [4, initStartupContext(core.windows.my(), core.interop, (_m = core.appManager) === null || _m === void 0 ? void 0 : _m.myInstance)];
-                case 5:
-                    _r.sent();
-                    if (!((_p = (_o = builtCoreConfig.glue) === null || _o === void 0 ? void 0 : _o.layouts) === null || _p === void 0 ? void 0 : _p.autoRestore)) return [3, 7];
-                    return [4, (layoutsController === null || layoutsController === void 0 ? void 0 : layoutsController.restoreAutoSavedLayout())];
-                case 6:
-                    _r.sent();
-                    _r.label = 7;
-                case 7: return [4, hookCloseEvents(core, (_q = builtCoreConfig.glue) !== null && _q !== void 0 ? _q : {}, control, layoutsController)];
-                case 8:
-                    _r.sent();
-                    _r.label = 9;
-                case 9: return [2, core];
+
+class AppManagerController {
+    constructor() {
+        this.registry = lib();
+        this.applications = [];
+        this.instances = [];
+    }
+    start(coreGlue, ioc) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("appManger.controller.web");
+            this.logger.trace("starting the web appManager controller");
+            this.publicWindowId = coreGlue.connection.transport.publicWindowId;
+            this.actualWindowId = coreGlue.interop.instance.windowId;
+            this.addOperationsExecutors();
+            this.ioc = ioc;
+            this.bridge = ioc.bridge;
+            this.platformRegistration = this.registerWithPlatform();
+            yield this.platformRegistration;
+            this.logger.trace("registration with the platform successful, attaching the appManager property to glue and returning");
+            const api = this.toApi();
+            coreGlue.appManager = api;
+        });
+    }
+    handleBridgeMessage(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.platformRegistration;
+            const operationName = appManagerOperationTypesDecoder.runWithException(args.operation);
+            const operation = operations$1[operationName];
+            if (!operation.execute) {
+                return;
+            }
+            let operationData = args.data;
+            if (operation.dataDecoder) {
+                operationData = operation.dataDecoder.runWithException(args.data);
+            }
+            return yield operation.execute(operationData);
+        });
+    }
+    onInstanceStarted(callback) {
+        return this.registry.add("instance-started", callback, this.instances);
+    }
+    onInstanceStopped(callback) {
+        return this.registry.add("instance-stopped", callback);
+    }
+    startApplication(appName, context, options) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const startOptions = {
+                name: appName,
+                waitForAGMReady: (_a = options === null || options === void 0 ? void 0 : options.waitForAGMReady) !== null && _a !== void 0 ? _a : true,
+                context,
+                top: options === null || options === void 0 ? void 0 : options.top,
+                left: options === null || options === void 0 ? void 0 : options.left,
+                width: options === null || options === void 0 ? void 0 : options.width,
+                height: options === null || options === void 0 ? void 0 : options.height,
+                relativeTo: options === null || options === void 0 ? void 0 : options.relativeTo,
+                relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection
+            };
+            const openResult = yield this.bridge.send("appManager", operations$1.applicationStart, startOptions);
+            const app = this.applications.find((a) => a.name === openResult.applicationName);
+            return this.ioc.buildInstance(openResult, app);
+        });
+    }
+    toApi() {
+        const api = {
+            myInstance: this.me,
+            inMemory: {
+                import: this.import.bind(this),
+                remove: this.remove.bind(this),
+                export: this.export.bind(this),
+                clear: this.clear.bind(this)
+            },
+            application: this.getApplication.bind(this),
+            applications: this.getApplications.bind(this),
+            instances: this.getInstances.bind(this),
+            onAppAdded: this.onAppAdded.bind(this),
+            onAppChanged: this.onAppChanged.bind(this),
+            onAppRemoved: this.onAppRemoved.bind(this),
+            onInstanceStarted: this.onInstanceStarted.bind(this),
+            onInstanceStopped: this.onInstanceStopped.bind(this)
+        };
+        return Object.freeze(api);
+    }
+    addOperationsExecutors() {
+        operations$1.applicationAdded.execute = this.handleApplicationAddedMessage.bind(this);
+        operations$1.applicationRemoved.execute = this.handleApplicationRemovedMessage.bind(this);
+        operations$1.applicationChanged.execute = this.handleApplicationChangedMessage.bind(this);
+        operations$1.instanceStarted.execute = this.handleInstanceStartedMessage.bind(this);
+        operations$1.instanceStopped.execute = this.handleInstanceStoppedMessage.bind(this);
+    }
+    onAppAdded(callback) {
+        return this.registry.add("application-added", callback, this.applications);
+    }
+    onAppRemoved(callback) {
+        return this.registry.add("application-removed", callback);
+    }
+    onAppChanged(callback) {
+        return this.registry.add("application-changed", callback);
+    }
+    handleApplicationAddedMessage(appData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.applications.some((app) => app.name === appData.name)) {
+                return;
+            }
+            const app = yield this.ioc.buildApplication(appData, []);
+            const instances = this.instances.filter((instance) => instance.application.name === app.name);
+            app.instances.push(...instances);
+            this.applications.push(app);
+            this.registry.execute("application-added", app);
+        });
+    }
+    handleApplicationRemovedMessage(appData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const appIndex = this.applications.findIndex((app) => app.name === appData.name);
+            if (appIndex < 0) {
+                return;
+            }
+            const app = this.applications[appIndex];
+            this.applications.splice(appIndex, 1);
+            this.registry.execute("application-removed", app);
+        });
+    }
+    handleApplicationChangedMessage(appData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const app = this.applications.find((app) => app.name === appData.name);
+            if (!app) {
+                return this.handleApplicationAddedMessage(appData);
+            }
+            app.title = appData.title;
+            app.version = appData.version;
+            app.icon = appData.icon;
+            app.caption = appData.caption;
+            app.userProperties = appData.userProperties;
+            this.registry.execute("application-changed", app);
+        });
+    }
+    handleInstanceStartedMessage(instanceData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.instances.some((instance) => instance.id === instanceData.id)) {
+                return;
+            }
+            const application = this.applications.find((app) => app.name === instanceData.applicationName);
+            if (!application) {
+                throw new Error(`Cannot add instance: ${instanceData.id}, because there is no application definition associated with it`);
+            }
+            const instance = this.ioc.buildInstance(instanceData, application);
+            this.instances.push(instance);
+            application.instances.push(instance);
+            this.registry.execute("instance-started", instance);
+        });
+    }
+    handleInstanceStoppedMessage(instanceData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const instance = this.instances.find((i) => i.id === instanceData.id);
+            if (instance) {
+                const instIdx = this.instances.findIndex((inst) => inst.id === instanceData.id);
+                this.instances.splice(instIdx, 1);
+            }
+            const application = this.applications.find((app) => app.instances.some((inst) => inst.id === instanceData.id));
+            if (application) {
+                const instIdxApps = application.instances.findIndex((inst) => inst.id === instanceData.id);
+                application.instances.splice(instIdxApps, 1);
+            }
+            if (!instance) {
+                return;
+            }
+            this.registry.execute("instance-stopped", instance);
+        });
+    }
+    import(definitions, mode = "replace") {
+        return __awaiter(this, void 0, void 0, function* () {
+            importModeDecoder.runWithException(mode);
+            if (!Array.isArray(definitions)) {
+                throw new Error("Import must be called with an array of definitions");
+            }
+            const parseResult = definitions.reduce((soFar, definition) => {
+                const decodeResult = allApplicationDefinitionsDecoder.run(definition);
+                if (!decodeResult.ok) {
+                    soFar.invalid.push({ app: definition === null || definition === void 0 ? void 0 : definition.name, error: JSON.stringify(decodeResult.error) });
+                }
+                else {
+                    soFar.valid.push(definition);
+                }
+                return soFar;
+            }, { valid: [], invalid: [] });
+            yield this.bridge.send("appManager", operations$1.import, { definitions: parseResult.valid, mode });
+            return {
+                imported: parseResult.valid.map((valid) => valid.name),
+                errors: parseResult.invalid
+            };
+        });
+    }
+    remove(name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            nonEmptyStringDecoder.runWithException(name);
+            yield this.bridge.send("appManager", operations$1.remove, { name });
+        });
+    }
+    clear() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.bridge.send("appManager", operations$1.clear, undefined);
+        });
+    }
+    export() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.bridge.send("appManager", operations$1.export, undefined);
+            return response.definitions;
+        });
+    }
+    getApplication(name) {
+        const verifiedName = nonEmptyStringDecoder.runWithException(name);
+        return this.applications.find((app) => app.name === verifiedName);
+    }
+    getApplications() {
+        return this.applications.slice();
+    }
+    getInstances() {
+        return this.instances.slice();
+    }
+    registerWithPlatform() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this.bridge.send("appManager", operations$1.appHello, { windowId: this.actualWindowId });
+            this.logger.trace("the platform responded to the hello message with a full list of apps");
+            this.applications = yield Promise.all(result.apps.map((app) => this.ioc.buildApplication(app, app.instances)));
+            this.instances = this.applications.reduce((instancesSoFar, app) => {
+                instancesSoFar.push(...app.instances);
+                return instancesSoFar;
+            }, []);
+            this.me = this.findMyInstance();
+            this.logger.trace(`all applications were parsed and saved. I am ${this.me ? "NOT a" : "a"} valid instance`);
+        });
+    }
+    findMyInstance() {
+        for (const app of this.applications) {
+            const foundInstance = app.instances.find((instance) => instance.id === this.publicWindowId);
+            if (foundInstance) {
+                return foundInstance;
+            }
+        }
+    }
+}
+
+class InstanceModel {
+    constructor(data, bridge, application) {
+        this.data = data;
+        this.bridge = bridge;
+        this.application = application;
+        this.myCtxKey = `___instance___${this.data.id}`;
+    }
+    toApi() {
+        const agm = this.bridge.getInteropInstance(this.data.id);
+        const api = {
+            id: this.data.id,
+            agm,
+            application: this.application,
+            stop: this.stop.bind(this),
+            getContext: this.getContext.bind(this)
+        };
+        this.me = Object.freeze(api);
+        return this.me;
+    }
+    getContext() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.bridge.contextLib.get(this.myCtxKey);
+        });
+    }
+    stop() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.bridge.send("appManager", operations$1.instanceStop, { id: this.data.id });
+        });
+    }
+}
+
+class ApplicationModel {
+    constructor(data, instances, controller) {
+        this.data = data;
+        this.instances = instances;
+        this.controller = controller;
+    }
+    toApi() {
+        const api = {
+            name: this.data.name,
+            title: this.data.title,
+            version: this.data.version,
+            icon: this.data.icon,
+            caption: this.data.caption,
+            userProperties: this.data.userProperties,
+            instances: this.instances,
+            start: this.start.bind(this),
+            onInstanceStarted: this.onInstanceStarted.bind(this),
+            onInstanceStopped: this.onInstanceStopped.bind(this)
+        };
+        this.me = api;
+        return this.me;
+    }
+    onInstanceStarted(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("OnInstanceStarted requires a single argument of type function");
+        }
+        this.controller.onInstanceStarted((instance) => {
+            if (instance.application.name === this.data.name) {
+                callback(instance);
             }
         });
-    }); };
+    }
+    onInstanceStopped(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("OnInstanceStarted requires a single argument of type function");
+        }
+        this.controller.onInstanceStopped((instance) => {
+            if (instance.application.name === this.data.name) {
+                callback(instance);
+            }
+        });
+    }
+    start(context, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.controller.startApplication(this.data.name, context, options);
+        });
+    }
+}
+
+const operations$2 = {
+    layoutAdded: { name: "layoutAdded", dataDecoder: glueLayoutDecoder },
+    layoutChanged: { name: "layoutChanged", dataDecoder: glueLayoutDecoder },
+    layoutRemoved: { name: "layoutRemoved", dataDecoder: glueLayoutDecoder },
+    get: { name: "get", dataDecoder: simpleLayoutConfigDecoder, resultDecoder: optionalSimpleLayoutResult },
+    getAll: { name: "getAll", dataDecoder: getAllLayoutsConfigDecoder, resultDecoder: allLayoutsSummariesResultDecoder },
+    export: { name: "export", dataDecoder: getAllLayoutsConfigDecoder, resultDecoder: allLayoutsFullConfigDecoder },
+    import: { name: "import", dataDecoder: layoutsImportConfigDecoder },
+    remove: { name: "remove", dataDecoder: simpleLayoutConfigDecoder }
+};
+
+class LayoutsController {
+    constructor() {
+        this.registry = lib();
+    }
+    start(coreGlue, ioc) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("layouts.controller.web");
+            this.logger.trace("starting the web layouts controller");
+            this.bridge = ioc.bridge;
+            this.addOperationsExecutors();
+            const api = this.toApi();
+            this.logger.trace("no need for platform registration, attaching the layouts property to glue and returning");
+            coreGlue.layouts = api;
+        });
+    }
+    handleBridgeMessage(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const operationName = layoutsOperationTypesDecoder.runWithException(args.operation);
+            const operation = operations$2[operationName];
+            if (!operation.execute) {
+                return;
+            }
+            let operationData = args.data;
+            if (operation.dataDecoder) {
+                operationData = operation.dataDecoder.runWithException(args.data);
+            }
+            return yield operation.execute(operationData);
+        });
+    }
+    toApi() {
+        const api = {
+            get: this.get.bind(this),
+            getAll: this.getAll.bind(this),
+            export: this.export.bind(this),
+            import: this.import.bind(this),
+            save: this.save.bind(this),
+            restore: this.restore.bind(this),
+            remove: this.remove.bind(this),
+            onAdded: this.onAdded.bind(this),
+            onChanged: this.onChanged.bind(this),
+            onRemoved: this.onRemoved.bind(this)
+        };
+        return Object.freeze(api);
+    }
+    addOperationsExecutors() {
+        operations$2.layoutAdded.execute = this.handleOnAdded.bind(this);
+        operations$2.layoutChanged.execute = this.handleOnChanged.bind(this);
+        operations$2.layoutRemoved.execute = this.handleOnRemoved.bind(this);
+    }
+    get(name, type) {
+        return __awaiter(this, void 0, void 0, function* () {
+            nonEmptyStringDecoder.runWithException(name);
+            layoutTypeDecoder.runWithException(type);
+            const result = yield this.bridge.send("layouts", operations$2.get, { name, type });
+            return result.layout;
+        });
+    }
+    getAll(type) {
+        return __awaiter(this, void 0, void 0, function* () {
+            layoutTypeDecoder.runWithException(type);
+            const result = yield this.bridge.send("layouts", operations$2.getAll, { type });
+            return result.summaries;
+        });
+    }
+    export(type) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (type) {
+                layoutTypeDecoder.runWithException(type);
+            }
+            const result = yield this.bridge.send("layouts", operations$2.export, { type: "Workspace" });
+            return result.layouts;
+        });
+    }
+    import(layouts, mode = "replace") {
+        return __awaiter(this, void 0, void 0, function* () {
+            importModeDecoder.runWithException(mode);
+            if (!Array.isArray(layouts)) {
+                throw new Error("Import must be called with an array of layouts");
+            }
+            const parseResult = layouts.reduce((soFar, layout) => {
+                const decodeResult = glueLayoutDecoder.run(layout);
+                if (decodeResult.ok) {
+                    soFar.valid.push(layout);
+                }
+                else {
+                    this.logger.warn(`A layout with name: ${layout.name} was not imported, because of error: ${JSON.stringify(decodeResult.error)}`);
+                }
+                return soFar;
+            }, { valid: [] });
+            yield this.bridge.send("layouts", operations$2.import, { layouts: parseResult.valid, mode });
+        });
+    }
+    save(layout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            newLayoutOptionsDecoder.runWithException(layout);
+            throw new Error("Save is not supported in Core at the moment");
+        });
+    }
+    restore(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            restoreOptionsDecoder.runWithException(options);
+            throw new Error("Restore is not supported in Core at the moment");
+        });
+    }
+    remove(type, name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            layoutTypeDecoder.runWithException(type);
+            nonEmptyStringDecoder.runWithException(name);
+            yield this.bridge.send("layouts", operations$2.remove, { type, name });
+        });
+    }
+    onAdded(callback) {
+        return this.registry.add(operations$2.layoutAdded.name, callback);
+    }
+    onChanged(callback) {
+        return this.registry.add(operations$2.layoutChanged.name, callback);
+    }
+    onRemoved(callback) {
+        return this.registry.add(operations$2.layoutRemoved.name, callback);
+    }
+    handleOnAdded(layout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.registry.execute(operations$2.layoutAdded.name, layout);
+        });
+    }
+    handleOnChanged(layout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.registry.execute(operations$2.layoutChanged.name, layout);
+        });
+    }
+    handleOnRemoved(layout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.registry.execute(operations$2.layoutRemoved.name, layout);
+        });
+    }
+}
+
+class NotificationsController {
+    start(coreGlue) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("notifications.controller.web");
+            this.logger.trace("starting the web notifications controller");
+            this.interop = coreGlue.interop;
+            const api = this.toApi();
+            coreGlue.notifications = api;
+            this.logger.trace("notifications are ready");
+        });
+    }
+    handleBridgeMessage() {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
+    toApi() {
+        const api = {
+            raise: this.raise.bind(this)
+        };
+        return Object.freeze(api);
+    }
+    raise(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!("Notification" in window)) {
+                throw new Error("this browser does not support desktop notification");
+            }
+            let permissionPromise;
+            if (Notification.permission === "granted") {
+                permissionPromise = Promise.resolve("granted");
+            }
+            else if (Notification.permission === "denied") {
+                permissionPromise = Promise.reject("no permissions from user");
+            }
+            else {
+                permissionPromise = Notification.requestPermission();
+            }
+            yield permissionPromise;
+            const notification = this.raiseUsingWebApi(options);
+            if (options.clickInterop) {
+                const interopOptions = options.clickInterop;
+                notification.onclick = () => {
+                    var _a, _b;
+                    this.interop.invoke(interopOptions.method, (_a = interopOptions === null || interopOptions === void 0 ? void 0 : interopOptions.arguments) !== null && _a !== void 0 ? _a : {}, (_b = interopOptions === null || interopOptions === void 0 ? void 0 : interopOptions.target) !== null && _b !== void 0 ? _b : "best");
+                };
+            }
+            return notification;
+        });
+    }
+    raiseUsingWebApi(options) {
+        return new Notification(options.title);
+    }
+}
+
+const operations$3 = {
+    getIntents: { name: "getIntents", resultDecoder: wrappedIntentsDecoder },
+    findIntent: { name: "findIntent", dataDecoder: wrappedIntentFilterDecoder, resultDecoder: wrappedIntentsDecoder },
+    raiseIntent: { name: "raiseIntent", dataDecoder: intentRequestDecoder, resultDecoder: intentResultDecoder }
+};
+
+class IntentsController {
+    constructor() {
+        this.myIntents = new Set();
+        this.GlueWebIntentsPrefix = "Tick42.FDC3.Intents.";
+    }
+    start(coreGlue, ioc) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("intents.controller.web");
+            this.logger.trace("starting the web intents controller");
+            this.bridge = ioc.bridge;
+            this.interop = coreGlue.interop;
+            const api = this.toApi();
+            this.logger.trace("no need for platform registration, attaching the intents property to glue and returning");
+            coreGlue.intents = api;
+        });
+    }
+    handleBridgeMessage(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const operationName = intentsOperationTypesDecoder.runWithException(args.operation);
+            const operation = operations$3[operationName];
+            if (!operation.execute) {
+                return;
+            }
+            let operationData = args.data;
+            if (operation.dataDecoder) {
+                operationData = operation.dataDecoder.runWithException(args.data);
+            }
+            return yield operation.execute(operationData);
+        });
+    }
+    toApi() {
+        const api = {
+            raise: this.raise.bind(this),
+            all: this.all.bind(this),
+            addIntentListener: this.addIntentListener.bind(this),
+            find: this.find.bind(this)
+        };
+        return Object.freeze(api);
+    }
+    raise(request) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const requestObj = raiseRequestDecoder.runWithException(request);
+            let data;
+            if (typeof requestObj === "string") {
+                data = {
+                    intent: requestObj
+                };
+            }
+            else {
+                data = requestObj;
+            }
+            const result = yield this.bridge.send("intents", operations$3.raiseIntent, data);
+            return result;
+        });
+    }
+    all() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this.bridge.send("intents", operations$3.getIntents, undefined);
+            return result.intents;
+        });
+    }
+    addIntentListener(intent, handler) {
+        addIntentListenerIntentDecoder.runWithException(intent);
+        if (typeof handler !== "function") {
+            throw new Error("Cannot add intent listener, because the provided handler is not a function!");
+        }
+        let subscribed = true;
+        const intentName = typeof intent === "string" ? intent : intent.intent;
+        const methodName = `${this.GlueWebIntentsPrefix}${intentName}`;
+        const alreadyRegistered = this.myIntents.has(intentName);
+        if (alreadyRegistered) {
+            throw new Error(`Intent listener for intent ${intentName} already registered!`);
+        }
+        this.myIntents.add(intentName);
+        const result = {
+            unsubscribe: () => {
+                subscribed = false;
+                try {
+                    this.interop.unregister(methodName);
+                    this.myIntents.delete(intentName);
+                }
+                catch (error) {
+                    this.logger.trace(`Unsubscribed intent listener, but ${methodName} unregistration failed!`);
+                }
+            }
+        };
+        const flags = typeof intent === "string" ? { intent } : intent;
+        this.interop.register({ name: methodName, flags }, (args) => {
+            if (subscribed) {
+                return handler(args);
+            }
+        });
+        return result;
+    }
+    find(intentFilter) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let data = undefined;
+            if (typeof intentFilter !== "undefined") {
+                const intentFilterObj = findFilterDecoder.runWithException(intentFilter);
+                if (typeof intentFilterObj === "string") {
+                    data = {
+                        filter: {
+                            name: intentFilterObj
+                        }
+                    };
+                }
+                else if (typeof intentFilterObj === "object") {
+                    data = {
+                        filter: intentFilterObj
+                    };
+                }
+            }
+            const result = yield this.bridge.send("intents", operations$3.findIntent, data);
+            return result.intents;
+        });
+    }
+}
+
+class ChannelsController {
+    constructor() {
+        this.registry = lib();
+        this.GlueWebChannelsPrefix = "___channel___";
+        this.SubsKey = "subs";
+        this.ChangedKey = "changed";
+    }
+    start(coreGlue) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.logger = coreGlue.logger.subLogger("channels.controller.web");
+            this.logger.trace("starting the web channels controller");
+            this.contexts = coreGlue.contexts;
+            this.logger.trace("no need for platform registration, attaching the channels property to glue and returning");
+            const api = this.toApi();
+            coreGlue.channels = api;
+        });
+    }
+    handleBridgeMessage() {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
+    toApi() {
+        const api = {
+            subscribe: this.subscribe.bind(this),
+            subscribeFor: this.subscribeFor.bind(this),
+            publish: this.publish.bind(this),
+            all: this.all.bind(this),
+            list: this.list.bind(this),
+            get: this.get.bind(this),
+            join: this.join.bind(this),
+            leave: this.leave.bind(this),
+            current: this.current.bind(this),
+            my: this.my.bind(this),
+            changed: this.changed.bind(this),
+            onChanged: this.onChanged.bind(this),
+            add: this.add.bind(this)
+        };
+        return Object.freeze(api);
+    }
+    createContextName(channelName) {
+        return `${this.GlueWebChannelsPrefix}${channelName}`;
+    }
+    getAllChannelNames() {
+        const contextNames = this.contexts.all();
+        const channelContextNames = contextNames.filter((contextName) => contextName.startsWith(this.GlueWebChannelsPrefix));
+        const channelNames = channelContextNames.map((channelContextName) => channelContextName.replace(this.GlueWebChannelsPrefix, ""));
+        return channelNames;
+    }
+    unsubscribe() {
+        if (this.unsubscribeFunc) {
+            this.unsubscribeFunc();
+            this.unsubscribeFunc = undefined;
+        }
+    }
+    switchToChannel(name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.unsubscribe();
+            this.currentChannelName = name;
+            if (typeof name !== "undefined") {
+                const contextName = this.createContextName(name);
+                this.unsubscribeFunc = yield this.contexts.subscribe(contextName, (context, _, __, ___, extraData) => {
+                    this.registry.execute(this.SubsKey, context.data, context, extraData === null || extraData === void 0 ? void 0 : extraData.updaterId);
+                });
+            }
+            this.registry.execute(this.ChangedKey, name);
+        });
+    }
+    updateData(name, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const contextName = this.createContextName(name);
+            if (this.contexts.setPathSupported) {
+                const pathValues = Object.keys(data).map((key) => {
+                    return {
+                        path: `data.${key}`,
+                        value: data[key]
+                    };
+                });
+                yield this.contexts.setPaths(contextName, pathValues);
+            }
+            else {
+                yield this.contexts.update(contextName, { data });
+            }
+        });
+    }
+    subscribe(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("Cannot subscribe to channels, because the provided callback is not a function!");
+        }
+        return this.registry.add(this.SubsKey, callback);
+    }
+    subscribeFor(name, callback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const channelNames = this.getAllChannelNames();
+            channelNameDecoder(channelNames).runWithException(name);
+            if (typeof callback !== "function") {
+                throw new Error(`Cannot subscribe to channel ${name}, because the provided callback is not a function!`);
+            }
+            const contextName = this.createContextName(name);
+            return this.contexts.subscribe(contextName, (context, _, __, ___, extraData) => {
+                callback(context.data, context, extraData === null || extraData === void 0 ? void 0 : extraData.updaterId);
+            });
+        });
+    }
+    publish(data, name) {
+        if (typeof data !== "object") {
+            throw new Error("Cannot publish to channel, because the provided data is not an object!");
+        }
+        if (typeof name !== "undefined") {
+            const channelNames = this.getAllChannelNames();
+            channelNameDecoder(channelNames).runWithException(name);
+            return this.updateData(name, data);
+        }
+        if (typeof this.currentChannelName === "undefined") {
+            throw new Error("Cannot publish to channel, because not joined to a channel!");
+        }
+        return this.updateData(this.currentChannelName, data);
+    }
+    all() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const channelNames = this.getAllChannelNames();
+            return channelNames;
+        });
+    }
+    list() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const channelNames = this.getAllChannelNames();
+            const channelContexts = yield Promise.all(channelNames.map((channelName) => this.get(channelName)));
+            return channelContexts;
+        });
+    }
+    get(name) {
+        const channelNames = this.getAllChannelNames();
+        channelNameDecoder(channelNames).runWithException(name);
+        const contextName = this.createContextName(name);
+        return this.contexts.get(contextName);
+    }
+    join(name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const channelNames = this.getAllChannelNames();
+            channelNameDecoder(channelNames).runWithException(name);
+            yield this.switchToChannel(name);
+        });
+    }
+    leave() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.switchToChannel();
+        });
+    }
+    current() {
+        return this.currentChannelName;
+    }
+    my() {
+        return this.current();
+    }
+    changed(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("Cannot subscribe to channel changed, because the provided callback is not a function!");
+        }
+        return this.registry.add(this.ChangedKey, callback);
+    }
+    onChanged(callback) {
+        return this.changed(callback);
+    }
+    add(info) {
+        throw new Error("Method `add()` isn't implemented.");
+    }
+}
+
+class IoC {
+    constructor(coreGlue) {
+        this.coreGlue = coreGlue;
+        this.controllers = {
+            windows: this.windowsController,
+            appManager: this.appManagerController,
+            layouts: this.layoutsController,
+            notifications: this.notificationsController,
+            intents: this.intentsController,
+            channels: this.channelsController
+        };
+    }
+    get windowsController() {
+        if (!this._windowsControllerInstance) {
+            this._windowsControllerInstance = new WindowsController();
+        }
+        return this._windowsControllerInstance;
+    }
+    get appManagerController() {
+        if (!this._appManagerControllerInstance) {
+            this._appManagerControllerInstance = new AppManagerController();
+        }
+        return this._appManagerControllerInstance;
+    }
+    get layoutsController() {
+        if (!this._layoutsControllerInstance) {
+            this._layoutsControllerInstance = new LayoutsController();
+        }
+        return this._layoutsControllerInstance;
+    }
+    get notificationsController() {
+        if (!this._notificationsControllerInstance) {
+            this._notificationsControllerInstance = new NotificationsController();
+        }
+        return this._notificationsControllerInstance;
+    }
+    get intentsController() {
+        if (!this._intentsControllerInstance) {
+            this._intentsControllerInstance = new IntentsController();
+        }
+        return this._intentsControllerInstance;
+    }
+    get channelsController() {
+        if (!this._channelsControllerInstance) {
+            this._channelsControllerInstance = new ChannelsController();
+        }
+        return this._channelsControllerInstance;
+    }
+    get bridge() {
+        if (!this._bridgeInstance) {
+            this._bridgeInstance = new GlueBridge(this.coreGlue);
+        }
+        return this._bridgeInstance;
+    }
+    buildWebWindow(id, name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const model = new WebWindowModel(id, name, this.bridge);
+            const api = yield model.toApi();
+            return { id, model, api };
+        });
+    }
+    buildApplication(app, applicationInstances) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const application = (new ApplicationModel(app, [], this.appManagerController)).toApi();
+            const instances = applicationInstances.map((instanceData) => this.buildInstance(instanceData, application));
+            application.instances.push(...instances);
+            return application;
+        });
+    }
+    buildInstance(instanceData, app) {
+        return (new InstanceModel(instanceData, this.bridge, app)).toApi();
+    }
+}
+
+var version = "2.0.5";
+
+const createFactoryFunction = (coreFactoryFunction) => {
+    return (userConfig) => __awaiter(void 0, void 0, void 0, function* () {
+        const config = parseConfig(userConfig);
+        if (window.glue42gd) {
+            return enterprise(config);
+        }
+        checkSingleton();
+        const glue = yield PromiseWrap(() => coreFactoryFunction(config, { version }), 30000, "Glue Web initialization timed out, because core didn't resolve");
+        const logger = glue.logger.subLogger("web.main.controller");
+        const ioc = new IoC(glue);
+        yield ioc.bridge.start(ioc.controllers);
+        logger.trace("the bridge has been started, initializing all controllers");
+        yield Promise.all(Object.values(ioc.controllers).map((controller) => controller.start(glue, ioc)));
+        logger.trace("all controllers reported started, starting all additional libraries");
+        yield Promise.all(config.libraries.map((lib) => lib(glue, config)));
+        logger.trace("all libraries were started, glue is ready, returning it");
+        return glue;
+    });
 };
 
 /*! *****************************************************************************
@@ -54437,28 +53281,28 @@ and limitations under the License.
 ***************************************************************************** */
 /* global Reflect, Promise */
 
-var extendStatics$1 = function(d, b) {
-    extendStatics$1 = Object.setPrototypeOf ||
+var extendStatics = function(d, b) {
+    extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
         function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return extendStatics$1(d, b);
+    return extendStatics(d, b);
 };
 
-function __extends$1(d, b) {
-    extendStatics$1(d, b);
+function __extends(d, b) {
+    extendStatics(d, b);
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
-var __assign$2 = function() {
-    __assign$2 = Object.assign || function __assign(t) {
+var __assign$1 = function() {
+    __assign$1 = Object.assign || function __assign(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
         }
         return t;
     };
-    return __assign$2.apply(this, arguments);
+    return __assign$1.apply(this, arguments);
 };
 
 function __awaiter$1(thisArg, _arguments, P, generator) {
@@ -54470,7 +53314,7 @@ function __awaiter$1(thisArg, _arguments, P, generator) {
     });
 }
 
-function __generator$1(thisArg, body) {
+function __generator(thisArg, body) {
     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
@@ -54682,6 +53526,7 @@ function composeMsgForRootStateMetric(system) {
 }
 
 function gw3 (connection, config) {
+    var _this = this;
     if (!connection || typeof connection !== "object") {
         throw new Error("Connection is required parameter");
     }
@@ -54741,82 +53586,115 @@ function gw3 (connection, config) {
             replaySystem(ss);
         });
     };
-    var createSystem = function (system) {
-        if (system.parent === undefined) {
-            return;
-        }
-        joinPromise.then(function () {
-            var metric = {
-                name: normalizeMetricName(system.path.join("/") + "/" + system.name + "/State"),
-                type: "object",
-                composite: {
-                    Description: {
-                        type: "string",
-                        description: "",
-                    },
-                    Value: {
-                        type: "number",
-                        description: "",
-                    },
-                },
-                description: "System state",
-                context: {},
-            };
-            var createMetricsMsg = {
-                type: "define",
-                metrics: [metric],
-            };
-            session.send(createMetricsMsg);
-        });
-    };
-    var updateSystem = function (system, state) {
-        joinPromise.then(function () {
-            var shadowedUpdateMetric = {
-                type: "publish",
-                values: [{
+    var createSystem = function (system) { return __awaiter$1(_this, void 0, void 0, function () {
+        var metric, createMetricsMsg;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (system.parent === undefined) {
+                        return [2];
+                    }
+                    return [4, joinPromise];
+                case 1:
+                    _a.sent();
+                    metric = {
                         name: normalizeMetricName(system.path.join("/") + "/" + system.name + "/State"),
-                        value: {
-                            Description: state.description,
-                            Value: state.state,
+                        type: "object",
+                        composite: {
+                            Description: {
+                                type: "string",
+                                description: "",
+                            },
+                            Value: {
+                                type: "number",
+                                description: "",
+                            },
                         },
-                        timestamp: Date.now(),
-                    }],
-            };
-            session.send(shadowedUpdateMetric);
-            var stateObj = composeMsgForRootStateMetric(system);
-            var rootMetric = {
-                type: "publish",
-                peer_id: connection.peerId,
-                values: [{
-                        name: "/State",
-                        value: {
-                            Description: stateObj.description,
-                            Value: stateObj.value,
-                        },
-                        timestamp: Date.now(),
-                    }],
-            };
-            session.send(rootMetric);
-        });
-    };
-    var createMetric = function (metric) {
-        var metricClone = cloneMetric(metric);
-        joinPromise.then(function () {
-            var m = serializeMetric(metricClone);
-            var createMetricsMsg = {
-                type: "define",
-                metrics: [m],
-            };
-            session.send(createMetricsMsg);
-            if (typeof metricClone.value !== "undefined") {
-                updateMetricCore(metricClone);
+                        description: "System state",
+                        context: {},
+                    };
+                    createMetricsMsg = {
+                        type: "define",
+                        metrics: [metric],
+                    };
+                    session.send(createMetricsMsg);
+                    return [2];
             }
         });
-    };
-    var updateMetric = function (metric) {
-        var metricClone = cloneMetric(metric);
-        joinPromise.then(function () { return updateMetricCore(metricClone); });
-    };
+    }); };
+    var updateSystem = function (system, state) { return __awaiter$1(_this, void 0, void 0, function () {
+        var shadowedUpdateMetric, stateObj, rootMetric;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, joinPromise];
+                case 1:
+                    _a.sent();
+                    shadowedUpdateMetric = {
+                        type: "publish",
+                        values: [{
+                                name: normalizeMetricName(system.path.join("/") + "/" + system.name + "/State"),
+                                value: {
+                                    Description: state.description,
+                                    Value: state.state,
+                                },
+                                timestamp: Date.now(),
+                            }],
+                    };
+                    session.send(shadowedUpdateMetric);
+                    stateObj = composeMsgForRootStateMetric(system);
+                    rootMetric = {
+                        type: "publish",
+                        peer_id: connection.peerId,
+                        values: [{
+                                name: "/State",
+                                value: {
+                                    Description: stateObj.description,
+                                    Value: stateObj.value,
+                                },
+                                timestamp: Date.now(),
+                            }],
+                    };
+                    session.send(rootMetric);
+                    return [2];
+            }
+        });
+    }); };
+    var createMetric = function (metric) { return __awaiter$1(_this, void 0, void 0, function () {
+        var metricClone, m, createMetricsMsg;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    metricClone = cloneMetric(metric);
+                    return [4, joinPromise];
+                case 1:
+                    _a.sent();
+                    m = serializeMetric(metricClone);
+                    createMetricsMsg = {
+                        type: "define",
+                        metrics: [m],
+                    };
+                    session.send(createMetricsMsg);
+                    if (typeof metricClone.value !== "undefined") {
+                        updateMetricCore(metricClone);
+                    }
+                    return [2];
+            }
+        });
+    }); };
+    var updateMetric = function (metric) { return __awaiter$1(_this, void 0, void 0, function () {
+        var metricClone;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    metricClone = cloneMetric(metric);
+                    return [4, joinPromise];
+                case 1:
+                    _a.sent();
+                    updateMetricCore(metricClone);
+                    return [2];
+            }
+        });
+    }); };
     var updateMetricCore = function (metric) {
         if (canUpdate()) {
             var value = getMetricValueByType(metric);
@@ -54828,13 +53706,14 @@ function gw3 (connection, config) {
                         timestamp: Date.now(),
                     }],
             };
-            session.send(publishMetricsMsg);
+            return session.sendFireAndForget(publishMetricsMsg);
         }
+        return Promise.resolve();
     };
     var cloneMetric = function (metric) {
-        var metricClone = __assign$2({}, metric);
+        var metricClone = __assign$1({}, metric);
         if (typeof metric.value === "object" && metric.value !== null) {
-            metricClone.value = __assign$2({}, metric.value);
+            metricClone.value = __assign$1({}, metric.value);
         }
         return metricClone;
     };
@@ -54901,13 +53780,13 @@ var BaseMetric = (function () {
     });
     BaseMetric.prototype.update = function (newValue) {
         this.value = newValue;
-        this.transport.updateMetric(this);
+        return this.transport.updateMetric(this);
     };
     return BaseMetric;
 }());
 
 var NumberMetric = (function (_super) {
-    __extends$1(NumberMetric, _super);
+    __extends(NumberMetric, _super);
     function NumberMetric(definition, system, transport, value) {
         return _super.call(this, definition, system, transport, value, MetricTypes.NUMBER) || this;
     }
@@ -54927,13 +53806,13 @@ var NumberMetric = (function (_super) {
 }(BaseMetric));
 
 var ObjectMetric = (function (_super) {
-    __extends$1(ObjectMetric, _super);
+    __extends(ObjectMetric, _super);
     function ObjectMetric(definition, system, transport, value) {
         return _super.call(this, definition, system, transport, value, MetricTypes.OBJECT) || this;
     }
     ObjectMetric.prototype.update = function (newValue) {
         this.mergeValues(newValue);
-        this.transport.updateMetric(this);
+        return this.transport.updateMetric(this);
     };
     ObjectMetric.prototype.mergeValues = function (values) {
         var _this = this;
@@ -54947,7 +53826,7 @@ var ObjectMetric = (function (_super) {
 }(BaseMetric));
 
 var StringMetric = (function (_super) {
-    __extends$1(StringMetric, _super);
+    __extends(StringMetric, _super);
     function StringMetric(definition, system, transport, value) {
         return _super.call(this, definition, system, transport, value, MetricTypes.STRING) || this;
     }
@@ -54955,7 +53834,7 @@ var StringMetric = (function (_super) {
 }(BaseMetric));
 
 var TimestampMetric = (function (_super) {
-    __extends$1(TimestampMetric, _super);
+    __extends(TimestampMetric, _super);
     function TimestampMetric(definition, system, transport, value) {
         return _super.call(this, definition, system, transport, value, MetricTypes.TIMESTAMP) || this;
     }
@@ -55026,7 +53905,9 @@ function system(name, repo, protocol, parent, description) {
                 throw new Error("A metric named " + metricDef.name + " is already defined with different type.");
             }
             if (typeof value !== "undefined") {
-                existing.update(value);
+                existing
+                    .update(value)
+                    .catch(function () { });
             }
             return existing;
         }
@@ -55161,12 +54042,16 @@ var NullProtocol = (function () {
     NullProtocol.prototype.init = function (repo) {
     };
     NullProtocol.prototype.createSystem = function (system) {
+        return Promise.resolve();
     };
     NullProtocol.prototype.updateSystem = function (metric, state) {
+        return Promise.resolve();
     };
     NullProtocol.prototype.createMetric = function (metric) {
+        return Promise.resolve();
     };
     NullProtocol.prototype.updateMetric = function (metric) {
+        return Promise.resolve();
     };
     return NullProtocol;
 }());
@@ -55327,7 +54212,12 @@ function createRegistry$1(options) {
                 }
                 return acc;
             }, []);
-            callbacks[key] = allForKey;
+            if (allForKey.length === 0) {
+                delete callbacks[key];
+            }
+            else {
+                callbacks[key] = allForKey;
+            }
         };
     }
     function execute(key) {
@@ -55389,12 +54279,12 @@ function createRegistry$1(options) {
     };
 }
 createRegistry$1.default = createRegistry$1;
-var lib$2 = createRegistry$1;
+var lib$1 = createRegistry$1;
 
 var InProcTransport = (function () {
     function InProcTransport(settings, logger) {
         var _this = this;
-        this.registry = lib$2();
+        this.registry = lib$1();
         this.gw = settings.facade;
         this.gw.connect(function (_client, message) {
             _this.messageHandler(message);
@@ -55449,7 +54339,7 @@ var SharedWorkerTransport = (function () {
     function SharedWorkerTransport(workerFile, logger) {
         var _this = this;
         this.logger = logger;
-        this.registry = lib$2();
+        this.registry = lib$1();
         this.worker = new SharedWorker(workerFile);
         this.worker.port.onmessage = function (e) {
             _this.messageHandler(e.data);
@@ -55606,14 +54496,12 @@ function timer (timerName) {
     return timerObj;
 }
 
-var dummyRequire = function () { return undefined; };
-var requireFunc = Utils.isNode() ? __webpack_require__("fStp") : dummyRequire;
-var WebSocketConstructor = Utils.isNode() ? requireFunc("ws") : window.WebSocket;
+var WebSocketConstructor = Utils.isNode() ? __webpack_require__(/*! ws */ "f3NI") : window.WebSocket;
 var WS = (function () {
     function WS(settings, logger) {
         this.startupTimer = timer("connection");
         this._running = true;
-        this._registry = lib$2();
+        this._registry = lib$1();
         this.wsRequests = [];
         this.settings = settings;
         this.logger = logger;
@@ -55690,7 +54578,7 @@ var WS = (function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var _a;
             var _this = this;
-            return __generator$1(this, function (_b) {
+            return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         this.startupTimer.mark("opening-socket");
@@ -55787,59 +54675,59 @@ var WS = (function () {
     return WS;
 }());
 
-function createCommonjsModule$1(fn, module) {
+function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
 // Found this seed-based random generator somewhere
 // Based on The Central Randomizer 1.3 (C) 1997 by Paul Houle (houle@msc.cornell.edu)
 
-var seed$1 = 1;
+var seed = 1;
 
 /**
  * return a random number based on a seed
  * @param seed
  * @returns {number}
  */
-function getNextValue$1() {
-    seed$1 = (seed$1 * 9301 + 49297) % 233280;
-    return seed$1/(233280.0);
+function getNextValue() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed/(233280.0);
 }
 
-function setSeed$2(_seed_) {
-    seed$1 = _seed_;
+function setSeed(_seed_) {
+    seed = _seed_;
 }
 
-var randomFromSeed$1 = {
-    nextValue: getNextValue$1,
-    seed: setSeed$2
+var randomFromSeed = {
+    nextValue: getNextValue,
+    seed: setSeed
 };
 
-var ORIGINAL$1 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
-var alphabet$1;
-var previousSeed$1;
+var ORIGINAL = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-';
+var alphabet;
+var previousSeed;
 
-var shuffled$1;
+var shuffled;
 
-function reset$1() {
-    shuffled$1 = false;
+function reset() {
+    shuffled = false;
 }
 
-function setCharacters$1(_alphabet_) {
+function setCharacters(_alphabet_) {
     if (!_alphabet_) {
-        if (alphabet$1 !== ORIGINAL$1) {
-            alphabet$1 = ORIGINAL$1;
-            reset$1();
+        if (alphabet !== ORIGINAL) {
+            alphabet = ORIGINAL;
+            reset();
         }
         return;
     }
 
-    if (_alphabet_ === alphabet$1) {
+    if (_alphabet_ === alphabet) {
         return;
     }
 
-    if (_alphabet_.length !== ORIGINAL$1.length) {
-        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL$1.length + ' unique characters. You submitted ' + _alphabet_.length + ' characters: ' + _alphabet_);
+    if (_alphabet_.length !== ORIGINAL.length) {
+        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL.length + ' unique characters. You submitted ' + _alphabet_.length + ' characters: ' + _alphabet_);
     }
 
     var unique = _alphabet_.split('').filter(function(item, ind, arr){
@@ -55847,50 +54735,50 @@ function setCharacters$1(_alphabet_) {
     });
 
     if (unique.length) {
-        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL$1.length + ' unique characters. These characters were not unique: ' + unique.join(', '));
+        throw new Error('Custom alphabet for shortid must be ' + ORIGINAL.length + ' unique characters. These characters were not unique: ' + unique.join(', '));
     }
 
-    alphabet$1 = _alphabet_;
-    reset$1();
+    alphabet = _alphabet_;
+    reset();
 }
 
-function characters$1(_alphabet_) {
-    setCharacters$1(_alphabet_);
-    return alphabet$1;
+function characters(_alphabet_) {
+    setCharacters(_alphabet_);
+    return alphabet;
 }
 
-function setSeed$1$1(seed) {
-    randomFromSeed$1.seed(seed);
-    if (previousSeed$1 !== seed) {
-        reset$1();
-        previousSeed$1 = seed;
+function setSeed$1(seed) {
+    randomFromSeed.seed(seed);
+    if (previousSeed !== seed) {
+        reset();
+        previousSeed = seed;
     }
 }
 
-function shuffle$1() {
-    if (!alphabet$1) {
-        setCharacters$1(ORIGINAL$1);
+function shuffle() {
+    if (!alphabet) {
+        setCharacters(ORIGINAL);
     }
 
-    var sourceArray = alphabet$1.split('');
+    var sourceArray = alphabet.split('');
     var targetArray = [];
-    var r = randomFromSeed$1.nextValue();
+    var r = randomFromSeed.nextValue();
     var characterIndex;
 
     while (sourceArray.length > 0) {
-        r = randomFromSeed$1.nextValue();
+        r = randomFromSeed.nextValue();
         characterIndex = Math.floor(r * sourceArray.length);
         targetArray.push(sourceArray.splice(characterIndex, 1)[0]);
     }
     return targetArray.join('');
 }
 
-function getShuffled$1() {
-    if (shuffled$1) {
-        return shuffled$1;
+function getShuffled() {
+    if (shuffled) {
+        return shuffled;
     }
-    shuffled$1 = shuffle$1();
-    return shuffled$1;
+    shuffled = shuffle();
+    return shuffled;
 }
 
 /**
@@ -55898,30 +54786,30 @@ function getShuffled$1() {
  * @param index
  * @returns {string}
  */
-function lookup$1(index) {
-    var alphabetShuffled = getShuffled$1();
+function lookup(index) {
+    var alphabetShuffled = getShuffled();
     return alphabetShuffled[index];
 }
 
-var alphabet_1$1 = {
-    characters: characters$1,
-    seed: setSeed$1$1,
-    lookup: lookup$1,
-    shuffled: getShuffled$1
+var alphabet_1 = {
+    characters: characters,
+    seed: setSeed$1,
+    lookup: lookup,
+    shuffled: getShuffled
 };
 
-var crypto$1 = typeof window === 'object' && (window.crypto || window.msCrypto); // IE 11 uses window.msCrypto
+var crypto = typeof window === 'object' && (window.crypto || window.msCrypto); // IE 11 uses window.msCrypto
 
-function randomByte$1() {
-    if (!crypto$1 || !crypto$1.getRandomValues) {
+function randomByte() {
+    if (!crypto || !crypto.getRandomValues) {
         return Math.floor(Math.random() * 256) & 0x30;
     }
     var dest = new Uint8Array(1);
-    crypto$1.getRandomValues(dest);
+    crypto.getRandomValues(dest);
     return dest[0] & 0x30;
 }
 
-var randomByteBrowser$1 = randomByte$1;
+var randomByteBrowser = randomByte;
 
 function encode(lookup, number) {
     var loopCounter = 0;
@@ -55930,7 +54818,7 @@ function encode(lookup, number) {
     var str = '';
 
     while (!done) {
-        str = str + lookup( ( (number >> (4 * loopCounter)) & 0x0f ) | randomByteBrowser$1() );
+        str = str + lookup( ( (number >> (4 * loopCounter)) & 0x0f ) | randomByteBrowser() );
         done = number < (Math.pow(16, loopCounter + 1 ) );
         loopCounter++;
     }
@@ -55945,7 +54833,7 @@ var encode_1 = encode;
  * @param id - the shortid-generated id.
  */
 function decode(id) {
-    var characters = alphabet_1$1.shuffled();
+    var characters = alphabet_1.shuffled();
     return {
         version: characters.indexOf(id.substr(0, 1)) & 0x0f,
         worker: characters.indexOf(id.substr(1, 1)) & 0x0f
@@ -55954,12 +54842,12 @@ function decode(id) {
 
 var decode_1 = decode;
 
-function isShortId$1(id) {
+function isShortId(id) {
     if (!id || typeof id !== 'string' || id.length < 6 ) {
         return false;
     }
 
-    var characters = alphabet_1$1.characters();
+    var characters = alphabet_1.characters();
     var len = id.length;
     for(var i = 0; i < len;i++) {
         if (characters.indexOf(id[i]) === -1) {
@@ -55969,9 +54857,9 @@ function isShortId$1(id) {
     return true;
 }
 
-var isValid$1 = isShortId$1;
+var isValid = isShortId;
 
-var lib$1$1 = createCommonjsModule$1(function (module) {
+var lib$1$1 = createCommonjsModule(function (module) {
 
 
 
@@ -56016,12 +54904,12 @@ function generate() {
         previousSeconds = seconds;
     }
 
-    str = str + encode_1(alphabet_1$1.lookup, version);
-    str = str + encode_1(alphabet_1$1.lookup, clusterWorkerId);
+    str = str + encode_1(alphabet_1.lookup, version);
+    str = str + encode_1(alphabet_1.lookup, clusterWorkerId);
     if (counter > 0) {
-        str = str + encode_1(alphabet_1$1.lookup, counter);
+        str = str + encode_1(alphabet_1.lookup, counter);
     }
-    str = str + encode_1(alphabet_1$1.lookup, seconds);
+    str = str + encode_1(alphabet_1.lookup, seconds);
 
     return str;
 }
@@ -56034,7 +54922,7 @@ function generate() {
  * @param seed Integer value to seed the random alphabet.  ALWAYS USE THE SAME SEED or you might get overlaps.
  */
 function seed(seedValue) {
-    alphabet_1$1.seed(seedValue);
+    alphabet_1.seed(seedValue);
     return module.exports;
 }
 
@@ -56056,10 +54944,10 @@ function worker(workerId) {
  */
 function characters(newCharacters) {
     if (newCharacters !== undefined) {
-        alphabet_1$1.characters(newCharacters);
+        alphabet_1.characters(newCharacters);
     }
 
-    return alphabet_1$1.shuffled();
+    return alphabet_1.shuffled();
 }
 
 
@@ -56070,7 +54958,7 @@ module.exports.seed = seed;
 module.exports.worker = worker;
 module.exports.characters = characters;
 module.exports.decode = decode_1;
-module.exports.isValid = isValid$1;
+module.exports.isValid = isValid;
 });
 var lib_1 = lib$1$1.generate;
 var lib_2 = lib$1$1.seed;
@@ -56079,7 +54967,7 @@ var lib_4 = lib$1$1.characters;
 var lib_5 = lib$1$1.decode;
 var lib_6 = lib$1$1.isValid;
 
-var shortid$1 = lib$1$1;
+var shortid = lib$1$1;
 
 function domainSession (domain, connection, logger, successMessages, errorMessages) {
     if (domain == null) {
@@ -56091,7 +54979,7 @@ function domainSession (domain, connection, logger, successMessages, errorMessag
     var tryReconnecting = false;
     var _latestOptions;
     var _connectionOn = false;
-    var callbacks = lib$2();
+    var callbacks = lib$1();
     connection.disconnected(handleConnectionDisconnected);
     connection.loggedIn(handleConnectionLoggedIn);
     connection.on("success", function (msg) { return handleSuccessMessage(msg); });
@@ -56218,7 +55106,7 @@ function domainSession (domain, connection, logger, successMessages, errorMessag
         entry.success(msg);
     }
     function getNextRequestId() {
-        return shortid$1();
+        return shortid();
     }
     function send(msg, tag, options) {
         options = options || {};
@@ -56253,7 +55141,7 @@ function domainSession (domain, connection, logger, successMessages, errorMessag
         msg.request_id = msg.request_id ? msg.request_id : getNextRequestId();
         msg.domain = msg.domain || domain;
         msg.peer_id = connection.peerId;
-        connection.send(msg);
+        return connection.send(msg);
     }
     return {
         join: join,
@@ -56298,7 +55186,7 @@ var GW3ProtocolImpl = (function () {
         this.datePrefixLen = this.datePrefix.length;
         this.dateMinLen = this.datePrefixLen + 1;
         this.datePrefixFirstChar = this.datePrefix[0];
-        this.registry = lib$2();
+        this.registry = lib$1();
         this._isLoggedIn = false;
         this.shouldTryLogin = true;
         this.initialLogin = true;
@@ -56376,7 +55264,7 @@ var GW3ProtocolImpl = (function () {
     GW3ProtocolImpl.prototype.login = function (config, reconnect) {
         return __awaiter$1(this, void 0, void 0, function () {
             var authentication, token, e_1, _a, helloMsg, sendOptions, welcomeMsg, msg, token, _b, err_1;
-            return __generator$1(this, function (_c) {
+            return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
                         this.logger.debug("logging in...");
@@ -56491,7 +55379,7 @@ var GW3ProtocolImpl = (function () {
                     case 17: return [3, 12];
                     case 18:
                         this.initialLogin = false;
-                        this.logger.info("login successful with peerId " + welcomeMsg.peer_id);
+                        this.logger.debug("login successful with peerId " + welcomeMsg.peer_id);
                         this.connection.peerId = welcomeMsg.peer_id;
                         this.connection.resolvedIdentity = welcomeMsg.resolved_identity;
                         this.connection.availableDomains = welcomeMsg.available_domains;
@@ -56518,7 +55406,7 @@ var GW3ProtocolImpl = (function () {
     GW3ProtocolImpl.prototype.logout = function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var promises;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         this.logger.debug("logging out...");
@@ -56568,7 +55456,7 @@ var GW3ProtocolImpl = (function () {
             }
             this.connection.login(this.loginConfig, true)
                 .catch(function () {
-                setTimeout(_this.handleDisconnected, 1000);
+                setTimeout(_this.handleDisconnected.bind(_this), _this.settings.reconnectInterval || 1000);
             });
         }
     };
@@ -56688,13 +55576,391 @@ var MessageReplayerImpl = (function () {
     return MessageReplayerImpl;
 }());
 
+var PromisePlus$1 = function (executor, timeoutMilliseconds, timeoutMessage) {
+    return new Promise(function (resolve, reject) {
+        var timeout = setTimeout(function () {
+            var message = timeoutMessage || "Promise timeout hit: " + timeoutMilliseconds;
+            reject(message);
+        }, timeoutMilliseconds);
+        var providedPromise = new Promise(executor);
+        providedPromise
+            .then(function (result) {
+            clearTimeout(timeout);
+            resolve(result);
+        })
+            .catch(function (error) {
+            clearTimeout(timeout);
+            reject(error);
+        });
+    });
+};
+
+var WebPlatformTransport = (function () {
+    function WebPlatformTransport(settings, logger, identity) {
+        this.settings = settings;
+        this.logger = logger;
+        this.identity = identity;
+        this.parentReady = false;
+        this.iAmConnected = false;
+        this.rejected = false;
+        this.children = [];
+        this.parentPingTimeout = 3000;
+        this.connectionRequestTimeout = 5000;
+        this.defaultTargetString = "*";
+        this.registry = lib$1();
+        this.messages = {
+            connectionAccepted: { name: "connectionAccepted", handle: this.handleConnectionAccepted.bind(this) },
+            connectionRejected: { name: "connectionRejected", handle: this.handleConnectionRejected.bind(this) },
+            connectionRequest: { name: "connectionRequest", handle: this.handleConnectionRequest.bind(this) },
+            parentReady: { name: "parentReady", handle: this.handleParentReady.bind(this) },
+            parentPing: { name: "parentPing", handle: this.handleParentPing.bind(this) },
+            platformPing: { name: "platformPing", handle: this.handlePlatformPing.bind(this) },
+            platformUnload: { name: "platformUnload", handle: this.handlePlatformUnload.bind(this) },
+            platformReady: { name: "platformReady", handle: this.handlePlatformReady.bind(this) },
+            clientUnload: { name: "clientUnload", handle: this.handleClientUnload.bind(this) }
+        };
+        this.setUpMessageListener();
+        this.setUpUnload();
+        if (!this.settings.port) {
+            this.parent = window.opener || window.top;
+            this.parentType = window.opener ? "opener" :
+                window.name.indexOf("#wsp") !== -1 ? "workspace" : "top";
+        }
+    }
+    Object.defineProperty(WebPlatformTransport.prototype, "transportWindowId", {
+        get: function () {
+            return this.publicWindowId;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    WebPlatformTransport.prototype.sendObject = function (msg) {
+        return __awaiter$1(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                if (!this.port) {
+                    throw new Error("Cannot send message, because the port was not opened yet");
+                }
+                this.port.postMessage(msg);
+                return [2];
+            });
+        });
+    };
+    Object.defineProperty(WebPlatformTransport.prototype, "isObjectBasedTransport", {
+        get: function () {
+            return true;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    WebPlatformTransport.prototype.onMessage = function (callback) {
+        return this.registry.add("onMessage", callback);
+    };
+    WebPlatformTransport.prototype.send = function () {
+        return Promise.reject("not supported");
+    };
+    WebPlatformTransport.prototype.onConnectedChanged = function (callback) {
+        return this.registry.add("onConnectedChanged", callback);
+    };
+    WebPlatformTransport.prototype.open = function () {
+        return __awaiter$1(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.logger.debug("opening a connection to the web platform gateway.");
+                        return [4, this.connect()];
+                    case 1:
+                        _a.sent();
+                        this.notifyStatusChanged(true);
+                        return [2];
+                }
+            });
+        });
+    };
+    WebPlatformTransport.prototype.close = function () {
+        return Promise.resolve();
+    };
+    WebPlatformTransport.prototype.name = function () {
+        return "web-platform";
+    };
+    WebPlatformTransport.prototype.reconnect = function () {
+        return Promise.resolve();
+    };
+    WebPlatformTransport.prototype.connect = function () {
+        return __awaiter$1(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (this.parentReady) {
+                            this.logger.debug("cancelling connection attempt, because this client's parent has already given a ready signal");
+                            return [2];
+                        }
+                        if (this.settings.port) {
+                            this.logger.debug("opening an internal web platform connection");
+                            this.port = this.settings.port;
+                            this.publicWindowId = this.settings.windowId;
+                            if (this.identity) {
+                                this.identity.windowId = this.publicWindowId;
+                            }
+                            this.port.onmessage = function (event) { return _this.registry.execute("onMessage", event.data); };
+                            this.logger.debug("internal web platform connection completed");
+                            return [2];
+                        }
+                        if (!this.parentType || !this.parent) {
+                            throw new Error("Cannot initiate a connection, because there is no opener, no top and no port.");
+                        }
+                        this.logger.debug("opening a " + (this.parentType === "opener" ? "child" : "grandchild") + " client web platform connection");
+                        return [4, this.waitParent(this.parent, this.parentType)];
+                    case 1:
+                        _a.sent();
+                        return [4, this.initiateRemoteConnection(this.parent, this.parentType)];
+                    case 2:
+                        _a.sent();
+                        this.logger.debug("the " + (this.parentType === "opener" ? "child" : "grandchild") + " client is connected");
+                        return [2];
+                }
+            });
+        });
+    };
+    WebPlatformTransport.prototype.initiateRemoteConnection = function (target, parentType) {
+        var _this = this;
+        return PromisePlus$1(function (resolve, reject) {
+            _this.connectionResolve = resolve;
+            _this.connectionReject = reject;
+            _this.myClientId = shortid();
+            var bridgeInstanceId = _this.parentType === "workspace" ? window.name.substring(0, window.name.indexOf("#wsp")) : window.name;
+            var request = {
+                glue42core: {
+                    type: _this.messages.connectionRequest.name,
+                    clientId: _this.myClientId,
+                    clientType: parentType === "top" || parentType === "workspace" ? "grandChild" : "child",
+                    bridgeInstanceId: bridgeInstanceId
+                }
+            };
+            _this.logger.debug("sending connection request to " + parentType);
+            target.postMessage(request, _this.defaultTargetString);
+        }, this.connectionRequestTimeout, "The connection to the opener/top window timed out");
+    };
+    WebPlatformTransport.prototype.waitParent = function (target, parentType) {
+        var _this = this;
+        return PromisePlus$1(function (resolve) {
+            _this.parentPingResolve = resolve;
+            var message = {
+                glue42core: {
+                    type: parentType === "opener" ? _this.messages.platformPing.name : _this.messages.parentPing.name
+                }
+            };
+            _this.logger.debug("checking for " + parentType + " window availability");
+            target.postMessage(message, _this.defaultTargetString);
+        }, this.parentPingTimeout, "Cannot initiate glue, because this window was not opened or created by a glue client");
+    };
+    WebPlatformTransport.prototype.setUpMessageListener = function () {
+        var _this = this;
+        if (this.settings.port) {
+            this.logger.debug("skipping generic message listener, because this is an internal client");
+            return;
+        }
+        window.addEventListener("message", function (event) {
+            var _a;
+            var data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42core;
+            if (!data || _this.rejected) {
+                return;
+            }
+            if (!_this.checkMessageTypeValid(data.type)) {
+                _this.logger.error("cannot handle the incoming glue42 core message, because the type is invalid: " + data.type);
+                return;
+            }
+            var messageType = data.type;
+            _this.logger.debug("received valid glue42core message of type: " + messageType);
+            _this.messages[messageType].handle(event);
+        });
+    };
+    WebPlatformTransport.prototype.setUpUnload = function () {
+        var _this = this;
+        if (this.settings.port) {
+            this.logger.debug("skipping unload event listener, because this is an internal client");
+            return;
+        }
+        window.addEventListener("beforeunload", function () {
+            var _a, _b;
+            var message = {
+                glue42core: {
+                    type: _this.messages.clientUnload.name,
+                    data: {
+                        clientId: _this.myClientId,
+                        ownWindowId: (_a = _this.identity) === null || _a === void 0 ? void 0 : _a.windowId
+                    }
+                }
+            };
+            if (_this.parent) {
+                _this.parent.postMessage(message, _this.defaultTargetString);
+            }
+            (_b = _this.port) === null || _b === void 0 ? void 0 : _b.postMessage(message);
+        });
+    };
+    WebPlatformTransport.prototype.handleParentReady = function () {
+        this.logger.debug("handling the ready signal from the parent, by resoling the pending promise.");
+        this.parentReady = true;
+        if (this.parentPingResolve) {
+            this.parentPingResolve();
+            delete this.parentPingResolve;
+            return;
+        }
+        this.logger.debug("silently handling the ready signal from the top parent, because there is no defined promise");
+    };
+    WebPlatformTransport.prototype.handlePlatformReady = function () {
+        this.logger.debug("the web platform gave the ready signal");
+        this.parentReady = true;
+        if (this.parentPingResolve) {
+            this.parentPingResolve();
+            delete this.parentPingResolve;
+            return;
+        }
+        this.logger.debug("silently handling the ready signal from the top parent, because there is no defined promise");
+    };
+    WebPlatformTransport.prototype.handleConnectionAccepted = function (event) {
+        var _a;
+        var data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42core;
+        if (this.myClientId === data.clientId) {
+            return this.handleAcceptanceOfMyRequest(data);
+        }
+        return this.handleAcceptanceOfGrandChildRequest(data, event);
+    };
+    WebPlatformTransport.prototype.handleAcceptanceOfMyRequest = function (data) {
+        var _this = this;
+        this.logger.debug("handling a connection accepted signal targeted at me.");
+        if (!data.port) {
+            this.logger.error("cannot set up my connection, because I was not provided with a port");
+            return;
+        }
+        this.publicWindowId = this.parentType === "opener" ? window.name :
+            this.parentType === "top" ? data.parentWindowId :
+                window.name.substring(0, window.name.indexOf("#wsp"));
+        if (this.identity && this.parentType !== "top") {
+            this.identity.windowId = this.publicWindowId;
+        }
+        if (this.identity && data.appName) {
+            this.identity.application = data.appName;
+            this.identity.applicationName = data.appName;
+        }
+        this.port = data.port;
+        this.port.onmessage = function (e) { return _this.registry.execute("onMessage", e.data); };
+        if (this.connectionResolve) {
+            this.logger.debug("my connection is set up, calling the connection resolve.");
+            this.connectionResolve();
+            delete this.connectionResolve;
+            return;
+        }
+        this.logger.error("unable to call the connection resolve, because no connection promise was found");
+    };
+    WebPlatformTransport.prototype.handleAcceptanceOfGrandChildRequest = function (data, event) {
+        this.logger.debug("handling a connection accepted signal targeted at a grandchild: " + data.clientId);
+        var child = this.children.find(function (c) { return c.grandChildId === data.clientId; });
+        if (!child) {
+            this.logger.error("cannot handle connection accepted for grandchild: " + data.clientId + ", because there is no grandchild with this id");
+            return;
+        }
+        child.connected = true;
+        this.logger.debug("the grandchild connection for " + data.clientId + " is set up, forwarding the success message and the gateway port");
+        data.parentWindowId = this.publicWindowId;
+        child.source.postMessage(event.data, child.origin, [data.port]);
+        return;
+    };
+    WebPlatformTransport.prototype.handleConnectionRejected = function () {
+        this.logger.debug("handling a connection rejection. Most likely the reason is that this window was not created by a glue API call");
+        if (this.connectionReject) {
+            this.connectionReject("The platform connection was rejected. Most likely because this window was not created by a glue API call");
+            delete this.connectionReject;
+        }
+    };
+    WebPlatformTransport.prototype.handleConnectionRequest = function (event) {
+        var source = event.source;
+        var data = event.data.glue42core;
+        if (!data.clientType || data.clientType !== "grandChild") {
+            return this.rejectConnectionRequest(source, event.origin, "rejecting a connection request, because the source was not opened by a glue API call");
+        }
+        if (!data.clientId) {
+            return this.rejectConnectionRequest(source, event.origin, "rejecting a connection request, because the source did not provide a valid id");
+        }
+        if (this.parentType !== "opener" || !this.parent) {
+            return this.rejectConnectionRequest(source, event.origin, "Cannot forward the connection request, because no direct connection to the platform was found");
+        }
+        this.logger.debug("handling a connection request for a grandchild: " + data.clientId);
+        this.children.push({ grandChildId: data.clientId, source: source, connected: false, origin: event.origin });
+        this.logger.debug("grandchild: " + data.clientId + " is prepared, forwarding connection request to the platform");
+        this.parent.postMessage(event.data, this.defaultTargetString);
+    };
+    WebPlatformTransport.prototype.handleParentPing = function (event) {
+        if (!this.parentReady) {
+            this.logger.debug("my parent is not ready, I am ignoring the parent ping");
+            return;
+        }
+        if (!this.iAmConnected) {
+            this.logger.debug("i am not fully connected yet, I am ignoring the parent ping");
+            return;
+        }
+        var message = {
+            glue42core: {
+                type: this.messages.parentReady.name
+            }
+        };
+        var source = event.source;
+        this.logger.debug("responding to a parent ping with a ready message");
+        source.postMessage(message, event.origin);
+    };
+    WebPlatformTransport.prototype.handlePlatformUnload = function (event) {
+        this.logger.debug("detected a web platform unload");
+        this.parentReady = false;
+        if (this.children.length) {
+            this.logger.debug("forwarding the platform unload to all known children and starting platform discovery polling");
+            this.children.forEach(function (child) { return child.source.postMessage(event.data, child.origin); });
+        }
+        this.notifyStatusChanged(false, "Gateway unloaded");
+    };
+    WebPlatformTransport.prototype.handleClientUnload = function (event) {
+        var data = event.data.glue42core;
+        if (!data.clientId) {
+            this.logger.warn("cannot process grand child unload, because the provided id was not valid");
+            return;
+        }
+        var foundChild = this.children.find(function (child) { return child.grandChildId === data.clientId; });
+        if (!foundChild) {
+            this.logger.warn("cannot process grand child unload, because this client is unaware of this grandchild");
+            return;
+        }
+        this.logger.debug("handling grandchild unload for id: " + data.clientId);
+        this.children = this.children.filter(function (child) { return child.grandChildId !== data.clientId; });
+    };
+    WebPlatformTransport.prototype.handlePlatformPing = function () {
+        this.logger.error("cannot handle platform ping, because this is not a platform calls handling component");
+    };
+    WebPlatformTransport.prototype.notifyStatusChanged = function (status, reason) {
+        this.iAmConnected = status;
+        this.registry.execute("onConnectedChanged", status, reason);
+    };
+    WebPlatformTransport.prototype.checkMessageTypeValid = function (typeToValidate) {
+        return typeof typeToValidate === "string" && !!this.messages[typeToValidate];
+    };
+    WebPlatformTransport.prototype.rejectConnectionRequest = function (source, origin, reason) {
+        this.rejected = true;
+        this.logger.error(reason);
+        var rejection = {
+            glue42core: {
+                type: this.messages.connectionRejected.name
+            }
+        };
+        source.postMessage(rejection, origin);
+    };
+    return WebPlatformTransport;
+}());
+
 var Connection = (function () {
     function Connection(settings, logger) {
         this.settings = settings;
         this.logger = logger;
         this.messageHandlers = {};
         this.ids = 1;
-        this.registry = lib$2();
+        this.registry = lib$1();
         this._connected = false;
         this.isTrace = false;
         settings = settings || {};
@@ -56706,6 +55972,9 @@ var Connection = (function () {
         else if (settings.sharedWorker) {
             this.transport = new SharedWorkerTransport(settings.sharedWorker, logger.subLogger("shared-worker"));
         }
+        else if (settings.webPlatform) {
+            this.transport = new WebPlatformTransport(settings.webPlatform, logger.subLogger("web-platform"), settings.identity);
+        }
         else if (settings.ws !== undefined) {
             this.transport = new WS(settings, logger.subLogger("ws"));
         }
@@ -56713,7 +55982,7 @@ var Connection = (function () {
             throw new Error("No connection information specified");
         }
         this.isTrace = logger.canPublish("trace");
-        logger.info("starting with " + this.transport.name() + " transport");
+        logger.debug("starting with " + this.transport.name() + " transport");
         this.protocol = new GW3ProtocolImpl(this, settings, logger.subLogger("protocol"));
         this.transport.onConnectedChanged(this.handleConnectionChanged.bind(this));
         this.transport.onMessage(this.handleTransportMessage.bind(this));
@@ -56781,7 +56050,7 @@ var Connection = (function () {
     Connection.prototype.login = function (authRequest, reconnect) {
         return __awaiter$1(this, void 0, void 0, function () {
             var identity;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4, this.transport.open()];
                     case 1:
@@ -56796,7 +56065,7 @@ var Connection = (function () {
     };
     Connection.prototype.logout = function () {
         return __awaiter$1(this, void 0, void 0, function () {
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4, this.protocol.logout()];
                     case 1:
@@ -57049,10 +56318,10 @@ var ContextMessageReplaySpec = {
     }
 };
 
-var version$2 = "5.2.0";
+var version$1 = "5.4.0";
 
 function prepareConfig (configuration, ext, glue42gd) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     var nodeStartingContext;
     if (Utils.isNode()) {
         var startingContextString = process.env._GD_STARTING_CONTEXT_;
@@ -57060,12 +56329,12 @@ function prepareConfig (configuration, ext, glue42gd) {
             try {
                 nodeStartingContext = JSON.parse(startingContextString);
             }
-            catch (_e) {
+            catch (_f) {
             }
         }
     }
     function getConnection() {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         var gwConfig = configuration.gateway;
         var protocolVersion = (_a = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.protocolVersion) !== null && _a !== void 0 ? _a : 3;
         var reconnectInterval = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.reconnectInterval;
@@ -57074,6 +56343,7 @@ function prepareConfig (configuration, ext, glue42gd) {
         var ws = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.ws;
         var sharedWorker = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.sharedWorker;
         var inproc = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.inproc;
+        var webPlatform = (_b = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.webPlatform) !== null && _b !== void 0 ? _b : undefined;
         if (glue42gd) {
             ws = glue42gd.gwURL;
         }
@@ -57097,7 +56367,7 @@ function prepareConfig (configuration, ext, glue42gd) {
                 environment = glue42gd.env.env;
                 region = glue42gd.env.region;
             }
-            uniqueAppName = (_b = glue42gd.application) !== null && _b !== void 0 ? _b : "glue-app";
+            uniqueAppName = (_c = glue42gd.application) !== null && _c !== void 0 ? _c : "glue-app";
             instanceId = glue42gd.appInstanceId;
         }
         else if (Utils.isNode()) {
@@ -57108,10 +56378,7 @@ function prepareConfig (configuration, ext, glue42gd) {
                 instanceId = nodeStartingContext.instanceId;
             }
         }
-        else {
-            windowId = window.name || shortid$1();
-        }
-        var replaySpecs = (_d = (_c = configuration.gateway) === null || _c === void 0 ? void 0 : _c.replaySpecs) !== null && _d !== void 0 ? _d : [];
+        var replaySpecs = (_e = (_d = configuration.gateway) === null || _d === void 0 ? void 0 : _d.replaySpecs) !== null && _e !== void 0 ? _e : [];
         replaySpecs.push(ContextMessageReplaySpec);
         return {
             identity: {
@@ -57122,11 +56389,12 @@ function prepareConfig (configuration, ext, glue42gd) {
                 process: pid,
                 region: region,
                 environment: environment,
-                api: ext.version || version$2
+                api: ext.version || version$1
             },
             reconnectInterval: reconnectInterval,
             ws: ws,
             sharedWorker: sharedWorker,
+            webPlatform: webPlatform,
             inproc: inproc,
             protocolVersion: protocolVersion,
             reconnectAttempts: reconnectAttempts,
@@ -57140,7 +56408,7 @@ function prepareConfig (configuration, ext, glue42gd) {
         if (glue42gd) {
             return glue42gd.applicationName;
         }
-        var uid = shortid$1();
+        var uid = shortid();
         if (Utils.isNode()) {
             if (nodeStartingContext) {
                 return nodeStartingContext.applicationConfig.name;
@@ -57153,7 +56421,7 @@ function prepareConfig (configuration, ext, glue42gd) {
         return uid;
     }
     function getAuth() {
-        var _a, _b;
+        var _a, _b, _c;
         if (typeof configuration.auth === "string") {
             return {
                 token: configuration.auth
@@ -57167,7 +56435,7 @@ function prepareConfig (configuration, ext, glue42gd) {
                 gatewayToken: nodeStartingContext.gwToken
             };
         }
-        if (((_a = configuration.gateway) === null || _a === void 0 ? void 0 : _a.inproc) || ((_b = configuration.gateway) === null || _b === void 0 ? void 0 : _b.sharedWorker)) {
+        if (((_a = configuration.gateway) === null || _a === void 0 ? void 0 : _a.webPlatform) || ((_b = configuration.gateway) === null || _b === void 0 ? void 0 : _b.inproc) || ((_c = configuration.gateway) === null || _c === void 0 ? void 0 : _c.sharedWorker)) {
             return {
                 username: "glue42", password: "glue42"
             };
@@ -57176,7 +56444,7 @@ function prepareConfig (configuration, ext, glue42gd) {
     function getLogger() {
         var _a, _b;
         var config = configuration.logger;
-        var defaultLevel = "error";
+        var defaultLevel = "warn";
         if (!config) {
             config = defaultLevel;
         }
@@ -57193,15 +56461,25 @@ function prepareConfig (configuration, ext, glue42gd) {
         };
     }
     var connection = getConnection();
+    var application = getApplication();
+    if (typeof window !== "undefined") {
+        var windowAsAny = window;
+        var containerApplication = windowAsAny.htmlContainer ?
+            windowAsAny.htmlContainer.containerName + "." + windowAsAny.htmlContainer.application : (_a = windowAsAny === null || windowAsAny === void 0 ? void 0 : windowAsAny.glue42gd) === null || _a === void 0 ? void 0 : _a.application;
+        if (containerApplication) {
+            application = containerApplication;
+        }
+    }
     return {
-        bus: (_a = configuration.bus) !== null && _a !== void 0 ? _a : false,
+        bus: (_b = configuration.bus) !== null && _b !== void 0 ? _b : false,
+        application: application,
         auth: getAuth(),
         logger: getLogger(),
         connection: connection,
-        metrics: (_b = configuration.metrics) !== null && _b !== void 0 ? _b : true,
-        contexts: (_c = configuration.contexts) !== null && _c !== void 0 ? _c : true,
-        version: ext.version || version$2,
-        libs: (_d = ext.libs) !== null && _d !== void 0 ? _d : [],
+        metrics: (_c = configuration.metrics) !== null && _c !== void 0 ? _c : true,
+        contexts: (_d = configuration.contexts) !== null && _d !== void 0 ? _d : true,
+        version: ext.version || version$1,
+        libs: (_e = ext.libs) !== null && _e !== void 0 ? _e : [],
         customLogger: configuration.customLogger
     };
 }
@@ -57233,46 +56511,55 @@ var GW3ContextData = (function () {
     return GW3ContextData;
 }());
 
-function applyContextDelta(context, delta) {
-    if (!delta) {
-        return context;
-    }
-    if (delta.reset) {
-        context = __assign$2({}, delta.reset);
-        return context;
-    }
-    context = deepClone(context, undefined);
-    if (delta.commands) {
-        for (var _i = 0, _a = delta.commands; _i < _a.length; _i++) {
-            var command = _a[_i];
-            if (command.type === "remove") {
-                deletePath(context, command.path);
+function applyContextDelta(context, delta, logger) {
+    try {
+        if (logger === null || logger === void 0 ? void 0 : logger.canPublish("trace")) {
+            logger === null || logger === void 0 ? void 0 : logger.trace("applying context delta " + JSON.stringify(delta) + " on context " + JSON.stringify(context));
+        }
+        if (!delta) {
+            return context;
+        }
+        if (delta.reset) {
+            context = __assign$1({}, delta.reset);
+            return context;
+        }
+        context = deepClone(context, undefined);
+        if (delta.commands) {
+            for (var _i = 0, _a = delta.commands; _i < _a.length; _i++) {
+                var command = _a[_i];
+                if (command.type === "remove") {
+                    deletePath(context, command.path);
+                }
+                else if (command.type === "set") {
+                    setValueToPath(context, command.value, command.path);
+                }
             }
-            else if (command.type === "set") {
-                setValueToPath(context, command.value, command.path);
-            }
+            return context;
+        }
+        var added_1 = delta.added;
+        var updated_1 = delta.updated;
+        var removed = delta.removed;
+        if (added_1) {
+            Object.keys(added_1).forEach(function (key) {
+                context[key] = added_1[key];
+            });
+        }
+        if (updated_1) {
+            Object.keys(updated_1).forEach(function (key) {
+                mergeObjectsProperties(key, context, updated_1);
+            });
+        }
+        if (removed) {
+            removed.forEach(function (key) {
+                delete context[key];
+            });
         }
         return context;
     }
-    var added = delta.added;
-    var updated = delta.updated;
-    var removed = delta.removed;
-    if (added) {
-        Object.keys(added).forEach(function (key) {
-            context[key] = added[key];
-        });
+    catch (e) {
+        logger === null || logger === void 0 ? void 0 : logger.error("error applying context delta " + JSON.stringify(delta) + " on context " + JSON.stringify(context), e);
+        return context;
     }
-    if (updated) {
-        Object.keys(updated).forEach(function (key) {
-            mergeObjectsProperties(key, context, updated);
-        });
-    }
-    if (removed) {
-        removed.forEach(function (key) {
-            delete context[key];
-        });
-    }
-    return context;
 }
 function deepClone(obj, hash) {
     hash = hash || new WeakMap();
@@ -57360,14 +56647,28 @@ function setValueToPath(obj, value, path) {
         if (!obj[pathArr[i]]) {
             obj[pathArr[i]] = {};
         }
+        if (typeof obj[pathArr[i]] !== "object") {
+            obj[pathArr[i]] = {};
+        }
         obj = obj[pathArr[i]];
     }
     obj[pathArr[i]] = value;
+}
+function isSubset(superObj, subObj) {
+    return Object.keys(subObj).every(function (ele) {
+        if (typeof subObj[ele] === "object") {
+            return isSubset((superObj === null || superObj === void 0 ? void 0 : superObj[ele]) || {}, subObj[ele] || {});
+        }
+        return subObj[ele] === (superObj === null || superObj === void 0 ? void 0 : superObj[ele]);
+    });
 }
 function deletePath(obj, path) {
     var pathArr = path.split(".");
     var i;
     for (i = 0; i < pathArr.length - 1; i++) {
+        if (!obj[pathArr[i]]) {
+            return;
+        }
         obj = obj[pathArr[i]];
     }
     delete obj[pathArr[i]];
@@ -57427,6 +56728,13 @@ var GW3Bridge = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(GW3Bridge.prototype, "setPathSupported", {
+        get: function () {
+            return this.protocolVersion >= 2;
+        },
+        enumerable: true,
+        configurable: true
+    });
     GW3Bridge.prototype.dispose = function () {
         for (var _i = 0, _a = this._gw3Subscriptions; _i < _a.length; _i++) {
             var sub = _a[_i];
@@ -57451,20 +56759,13 @@ var GW3Bridge = (function () {
         })
             .then(function (createContextMsg) {
             _this._contextNameToId[name] = createContextMsg.context_id;
-            if (!_this._contextIdToName[createContextMsg.context_id]) {
-                _this._contextIdToName[createContextMsg.context_id] = name;
-                var contextData = _this._contextNameToData[name] || new GW3ContextData(createContextMsg.context_id, name, true, undefined);
-                contextData.isAnnounced = true;
-                contextData.name = name;
-                contextData.contextId = createContextMsg.context_id;
-                _this._contextNameToData[name] = contextData;
-                contextData.context = createContextMsg.data;
-                contextData.sentExplicitSubscription = true;
-                if (contextData.context) {
-                    _this.invokeUpdateCallbacks(contextData, contextData.context, undefined);
-                }
-                return _this.update(name, data).then(function () { return createContextMsg.context_id; });
-            }
+            _this._contextIdToName[createContextMsg.context_id] = name;
+            var contextData = _this._contextNameToData[name] || new GW3ContextData(createContextMsg.context_id, name, true, undefined);
+            contextData.isAnnounced = true;
+            contextData.name = name;
+            contextData.contextId = createContextMsg.context_id;
+            contextData.context = data;
+            _this._contextNameToData[name] = contextData;
             return createContextMsg.context_id;
         });
     };
@@ -57478,7 +56779,7 @@ var GW3Bridge = (function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var contextData, currentContext, calculatedDelta;
             var _this = this;
-            return __generator$1(this, function (_b) {
+            return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         contextData = this._contextNameToData[name];
@@ -57535,10 +56836,16 @@ var GW3Bridge = (function () {
         });
     };
     GW3Bridge.prototype.setPath = function (name, path, value) {
+        if (!this.setPathSupported) {
+            return Promise.reject("glue.contexts.setPath operation is not supported, use Glue42 3.10 or later");
+        }
         return this.setPaths(name, [{ path: path, value: value }]);
     };
     GW3Bridge.prototype.setPaths = function (name, pathValues) {
         var _this = this;
+        if (!this.setPathSupported) {
+            return Promise.reject("glue.contexts.setPaths operation is not supported, use Glue42 3.10 or later");
+        }
         var contextData = this._contextNameToData[name];
         if (!contextData || !contextData.isAnnounced) {
             var obj = {};
@@ -57551,7 +56858,12 @@ var GW3Bridge = (function () {
         var commands = [];
         for (var _a = 0, pathValues_2 = pathValues; _a < pathValues_2.length; _a++) {
             var pathValue = pathValues_2[_a];
-            commands.push({ type: "set", path: pathValue.path, value: pathValue.value });
+            if (pathValue.value === null) {
+                commands.push({ type: "remove", path: pathValue.path });
+            }
+            else {
+                commands.push({ type: "set", path: pathValue.path, value: pathValue.value });
+            }
         }
         return this._gw3Session
             .send({
@@ -57574,7 +56886,7 @@ var GW3Bridge = (function () {
         if (contextData && !contextData.hasCallbacks()) {
             return new Promise(function (resolve, _) { return __awaiter$1(_this, void 0, void 0, function () {
                 var _this = this;
-                return __generator$1(this, function (_a) {
+                return __generator(this, function (_a) {
                     this.subscribe(name, function (data, _d, _r, un) {
                         _this.unsubscribe(un);
                         resolve(data);
@@ -57601,21 +56913,23 @@ var GW3Bridge = (function () {
         contextData.updateCallbacks[thisCallbackSubscriptionNumber] = callback;
         if (!hadCallbacks) {
             if (!contextData.joinedActivity) {
-                if (contextData.context &&
-                    contextData.sentExplicitSubscription) {
-                    callback(contextData.context, contextData.context, [], thisCallbackSubscriptionNumber);
+                if (contextData.context && contextData.sentExplicitSubscription) {
+                    var clone = deepClone(contextData.context);
+                    callback(clone, clone, [], thisCallbackSubscriptionNumber);
                     return Promise.resolve(thisCallbackSubscriptionNumber);
                 }
                 return this.sendSubscribe(contextData)
                     .then(function () { return thisCallbackSubscriptionNumber; });
             }
             else {
-                callback(contextData.context, contextData.context, [], thisCallbackSubscriptionNumber);
+                var clone = deepClone(contextData.context);
+                callback(clone, clone, [], thisCallbackSubscriptionNumber);
                 return Promise.resolve(thisCallbackSubscriptionNumber);
             }
         }
         else {
-            callback(contextData.context, contextData.context, [], thisCallbackSubscriptionNumber);
+            var clone = deepClone(contextData.context);
+            callback(clone, clone, [], thisCallbackSubscriptionNumber);
             return Promise.resolve(thisCallbackSubscriptionNumber);
         }
     };
@@ -57641,12 +56955,24 @@ var GW3Bridge = (function () {
             }
         }
     };
+    GW3Bridge.prototype.destroy = function (name) {
+        var contextData = this._contextNameToData[name];
+        if (!contextData) {
+            return Promise.reject("context with " + name + " does not exist");
+        }
+        return this._gw3Session
+            .send({
+            type: GW_MESSAGE_DESTROY_CONTEXT,
+            domain: "global",
+            context_id: contextData.contextId,
+        }).then(function (_) { return undefined; });
+    };
     GW3Bridge.prototype.handleUpdated = function (contextData, delta, extraData) {
         var oldContext = contextData.context;
-        contextData.context = applyContextDelta(contextData.context, delta);
+        contextData.context = applyContextDelta(contextData.context, delta, this._logger);
         if (this._contextNameToData[contextData.name] === contextData &&
             !deepEqual(oldContext, contextData.context)) {
-            this.invokeUpdateCallbacks(contextData, contextData.context, delta, extraData);
+            this.invokeUpdateCallbacks(contextData, delta, extraData);
         }
     };
     GW3Bridge.prototype.subscribeToContextCreatedMessages = function () {
@@ -57754,7 +57080,7 @@ var GW3Bridge = (function () {
             contextData.context = contextUpdatedMsg.context_snapshot || {};
         }
         else if (updatedMessageType === GW_MESSAGE_CONTEXT_UPDATED) {
-            contextData.context = applyContextDelta(contextData.context, contextUpdatedMsg.delta);
+            contextData.context = applyContextDelta(contextData.context, contextUpdatedMsg.delta, this._logger);
         }
         else {
             throw new Error("Unrecognized context update message " + updatedMessageType);
@@ -57762,16 +57088,32 @@ var GW3Bridge = (function () {
         if (justSeen ||
             !deepEqual(contextData.context, oldContext) ||
             updatedMessageType === GW_MESSAGE_SUBSCRIBED_CONTEXT) {
-            this.invokeUpdateCallbacks(contextData, contextData.context, contextUpdatedMsg.delta, { updaterId: contextUpdatedMsg.updater_id });
+            this.invokeUpdateCallbacks(contextData, contextUpdatedMsg.delta, { updaterId: contextUpdatedMsg.updater_id });
         }
     };
-    GW3Bridge.prototype.invokeUpdateCallbacks = function (contextData, data, delta, extraData) {
+    GW3Bridge.prototype.invokeUpdateCallbacks = function (contextData, delta, extraData) {
         delta = delta || { added: {}, updated: {}, reset: {}, removed: [] };
+        if (delta.commands) {
+            delta.added = delta.updated = delta.reset = {};
+            delta.removed = [];
+            for (var _i = 0, _a = delta.commands; _i < _a.length; _i++) {
+                var command = _a[_i];
+                if (command.type === "remove") {
+                    if (command.path.indexOf(".") === -1) {
+                        delta.removed.push(command.path);
+                    }
+                    setValueToPath(delta.updated, null, command.path);
+                }
+                else if (command.type === "set") {
+                    setValueToPath(delta.updated, command.value, command.path);
+                }
+            }
+        }
         for (var updateCallbackIndex in contextData.updateCallbacks) {
             if (contextData.updateCallbacks.hasOwnProperty(updateCallbackIndex)) {
                 try {
                     var updateCallback = contextData.updateCallbacks[updateCallbackIndex];
-                    updateCallback(deepClone(data), Object.assign({}, delta.added || {}, delta.updated || {}, delta.reset || {}), delta.removed, parseInt(updateCallbackIndex, 10), extraData);
+                    updateCallback(deepClone(contextData.context), Object.assign({}, delta.added || {}, delta.updated || {}, delta.reset || {}), delta.removed, parseInt(updateCallbackIndex, 10), extraData);
                 }
                 catch (err) {
                     this._logger.debug("callback error: " + JSON.stringify(err));
@@ -57889,28 +57231,47 @@ var ContextsModule = (function () {
     ContextsModule.prototype.all = function () {
         return this._bridge.all();
     };
-    ContextsModule.prototype.update = function (name, delta) {
+    ContextsModule.prototype.update = function (name, data) {
         this.checkName(name);
-        return this._bridge.update(name, delta);
+        this.checkData(data);
+        return this._bridge.update(name, data);
     };
     ContextsModule.prototype.set = function (name, data) {
         this.checkName(name);
+        this.checkData(data);
         return this._bridge.set(name, data);
     };
     ContextsModule.prototype.setPath = function (name, path, data) {
         this.checkName(name);
-        if (!path || path === "") {
+        this.checkPath(path);
+        var isTopLevelPath = path === "";
+        if (isTopLevelPath) {
+            this.checkData(data);
             return this.set(name, data);
         }
         return this._bridge.setPath(name, path, data);
     };
     ContextsModule.prototype.setPaths = function (name, paths) {
         this.checkName(name);
+        if (!Array.isArray(paths)) {
+            throw new Error("Please provide the paths as an array of PathValues!");
+        }
+        for (var _i = 0, paths_1 = paths; _i < paths_1.length; _i++) {
+            var _a = paths_1[_i], path = _a.path, value = _a.value;
+            this.checkPath(path);
+            var isTopLevelPath = path === "";
+            if (isTopLevelPath) {
+                this.checkData(value);
+            }
+        }
         return this._bridge.setPaths(name, paths);
     };
     ContextsModule.prototype.subscribe = function (name, callback) {
         var _this = this;
         this.checkName(name);
+        if (typeof callback !== "function") {
+            throw new Error("Please provide the callback as a function!");
+        }
         return this._bridge
             .subscribe(name, function (data, delta, removed, key, extraData) { return callback(data, delta, removed, function () { return _this._bridge.unsubscribe(key); }, extraData); })
             .then(function (key) {
@@ -57920,15 +57281,36 @@ var ContextsModule = (function () {
         });
     };
     ContextsModule.prototype.get = function (name) {
+        this.checkName(name);
         return this._bridge.get(name);
     };
     ContextsModule.prototype.ready = function () {
         return Promise.resolve(this);
     };
+    ContextsModule.prototype.destroy = function (name) {
+        this.checkName(name);
+        return this._bridge.destroy(name);
+    };
+    Object.defineProperty(ContextsModule.prototype, "setPathSupported", {
+        get: function () {
+            return this._bridge.setPathSupported;
+        },
+        enumerable: true,
+        configurable: true
+    });
     ContextsModule.prototype.checkName = function (name) {
-        if (typeof name !== "string" ||
-            name === "") {
-            throw new Error("'name' must be non-empty string, got '" + name + "'");
+        if (typeof name !== "string" || name === "") {
+            throw new Error("Please provide the name as a non-empty string!");
+        }
+    };
+    ContextsModule.prototype.checkPath = function (path) {
+        if (typeof path !== "string") {
+            throw new Error("Please provide the path as a dot delimited string!");
+        }
+    };
+    ContextsModule.prototype.checkData = function (data) {
+        if (typeof data !== "object") {
+            throw new Error("Please provide the data as an object!");
         }
     };
     return ContextsModule;
@@ -58057,7 +57439,7 @@ var Client = (function () {
     Client.prototype.servers = function (methodFilter) {
         var filterCopy = methodFilter === undefined
             ? undefined
-            : __assign$2({}, methodFilter);
+            : __assign$1({}, methodFilter);
         return this.getServers(filterCopy).map(function (serverMethodMap) {
             return serverMethodMap.server.instance;
         });
@@ -58067,7 +57449,7 @@ var Client = (function () {
             methodFilter = { name: methodFilter };
         }
         else {
-            methodFilter = __assign$2({}, methodFilter);
+            methodFilter = __assign$1({}, methodFilter);
         }
         return this.getMethods(methodFilter);
     };
@@ -58102,19 +57484,19 @@ var Client = (function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var getInvokePromise;
             var _this = this;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 getInvokePromise = function () { return __awaiter$1(_this, void 0, void 0, function () {
                     var methodDefinition, serversMethodMap, err_1, method, errorObj, timeout, additionalOptionsCopy, invokePromises, invocationMessages, results, allRejected;
                     var _this = this;
-                    var _a;
-                    return __generator$1(this, function (_b) {
-                        switch (_b.label) {
+                    var _a, _b, _c;
+                    return __generator(this, function (_d) {
+                        switch (_d.label) {
                             case 0:
                                 if (typeof methodFilter === "string") {
                                     methodDefinition = { name: methodFilter };
                                 }
                                 else {
-                                    methodDefinition = __assign$2({}, methodFilter);
+                                    methodDefinition = __assign$1({}, methodFilter);
                                 }
                                 if (!methodDefinition.name) {
                                     return [2, Promise.reject("Method definition is required. Please, provide either a unique string for a method name or a \u201CmethodDefinition\u201D object with a required \u201Cname\u201D property.")];
@@ -58151,16 +57533,16 @@ var Client = (function () {
                                 }
                                 serversMethodMap = this.getServerMethodsByFilterAndTarget(methodDefinition, target);
                                 if (!(serversMethodMap.length === 0)) return [3, 4];
-                                _b.label = 1;
+                                _d.label = 1;
                             case 1:
-                                _b.trys.push([1, 3, , 4]);
+                                _d.trys.push([1, 3, , 4]);
                                 return [4, this.tryToAwaitForMethods(methodDefinition, target, additionalOptions)];
                             case 2:
-                                serversMethodMap = _b.sent();
+                                serversMethodMap = _d.sent();
                                 return [3, 4];
                             case 3:
-                                err_1 = _b.sent();
-                                method = __assign$2(__assign$2({}, methodDefinition), { getServers: function () { return []; }, supportsStreaming: false, objectTypes: (_a = methodDefinition.objectTypes) !== null && _a !== void 0 ? _a : [] });
+                                err_1 = _d.sent();
+                                method = __assign$1(__assign$1({}, methodDefinition), { getServers: function () { return []; }, supportsStreaming: false, objectTypes: (_a = methodDefinition.objectTypes) !== null && _a !== void 0 ? _a : [], flags: (_c = (_b = methodDefinition.flags) === null || _b === void 0 ? void 0 : _b.metadata) !== null && _c !== void 0 ? _c : {} });
                                 errorObj = {
                                     method: method,
                                     called_with: argumentObj,
@@ -58174,7 +57556,7 @@ var Client = (function () {
                                 timeout = additionalOptions.methodResponseTimeoutMs;
                                 additionalOptionsCopy = additionalOptions;
                                 invokePromises = serversMethodMap.map(function (serversMethodPair) {
-                                    var invId = shortid$1();
+                                    var invId = shortid();
                                     var method = serversMethodPair.methods[0];
                                     var server = serversMethodPair.server;
                                     var invokePromise = _this.protocol.client.invoke(invId, method, argumentObj, server, additionalOptionsCopy);
@@ -58189,7 +57571,7 @@ var Client = (function () {
                                 });
                                 return [4, Promise.all(invokePromises)];
                             case 5:
-                                invocationMessages = _b.sent();
+                                invocationMessages = _d.sent();
                                 results = this.getInvocationResultObj(invocationMessages, methodDefinition, argumentObj);
                                 allRejected = invocationMessages.every(function (result) { return result.status === InvokeStatus.Error; });
                                 if (allRejected) {
@@ -58329,38 +57711,24 @@ var Client = (function () {
                 && prop !== "identifier"
                 && prop[0] !== "_";
         });
-        return filterProps.reduce(function (isMatch, prop) {
+        return filterProps.every(function (prop) {
+            var isMatch;
             var filterValue = filter[prop];
             var repoMethodValue = repoMethod[prop];
-            if (prop === "objectTypes") {
-                var containsAllFromFilter = function (filterObjTypes, repoObjectTypes) {
-                    var objTypeToContains = filterObjTypes.reduce(function (object, objType) {
-                        object[objType] = false;
-                        return object;
-                    }, {});
-                    repoObjectTypes.forEach(function (repoObjType) {
-                        if (objTypeToContains[repoObjType] !== undefined) {
-                            objTypeToContains[repoObjType] = true;
-                        }
+            switch (prop) {
+                case "objectTypes":
+                    isMatch = (filterValue || []).every(function (filterValueEl) {
+                        return (repoMethodValue || []).includes(filterValueEl);
                     });
-                    var filterIsFullfilled = function () { return Object.keys(objTypeToContains).reduce(function (isFullfiled, objType) {
-                        if (!objTypeToContains[objType]) {
-                            isFullfiled = false;
-                        }
-                        return isFullfiled;
-                    }, true); };
-                    return filterIsFullfilled();
-                };
-                if (filterValue.length > repoMethodValue.length
-                    || containsAllFromFilter(filterValue, repoMethodValue) === false) {
-                    isMatch = false;
-                }
-            }
-            else if (String(filterValue).toLowerCase() !== String(repoMethodValue).toLowerCase()) {
-                isMatch = false;
+                    break;
+                case "flags":
+                    isMatch = isSubset(repoMethodValue || {}, filterValue || {});
+                    break;
+                default:
+                    isMatch = String(filterValue).toLowerCase() === String(repoMethodValue).toLowerCase();
             }
             return isMatch;
-        }, true);
+        });
     };
     Client.prototype.getMethods = function (methodFilter) {
         var _this = this;
@@ -58407,7 +57775,7 @@ var Client = (function () {
             });
         }
         return servers.reduce(function (prev, current) {
-            var methodsForServer = _this.repo.getServerMethodsById(current.id);
+            var methodsForServer = Object.values(current.methods);
             var matchingMethods = methodsForServer.filter(function (method) {
                 return _this.methodMatch(methodFilter, method);
             });
@@ -58584,6 +57952,7 @@ var ServerStream = (function () {
     };
     Object.defineProperty(ServerStream.prototype, "definition", {
         get: function () {
+            var _a;
             var def2 = this._repoMethod.definition;
             return {
                 accepts: def2.accepts,
@@ -58593,6 +57962,7 @@ var ServerStream = (function () {
                 objectTypes: def2.objectTypes,
                 returns: def2.returns,
                 supportsStreaming: def2.supportsStreaming,
+                flags: (_a = def2.flags) === null || _a === void 0 ? void 0 : _a.metadata,
             };
         },
         enumerable: true,
@@ -58638,7 +58008,7 @@ var Server = (function () {
                 streamMethodDefinition = { name: "" + streamDef };
             }
             else {
-                streamMethodDefinition = __assign$2({}, streamDef);
+                streamMethodDefinition = __assign$1({}, streamDef);
             }
             if (!streamMethodDefinition.name) {
                 return reject("The \u201Cname\u201D property is required for the \u201CstreamDefinition\u201D object and must be unique. Stream definition: " + JSON.stringify(streamMethodDefinition));
@@ -58694,7 +58064,7 @@ var Server = (function () {
         }
         var wrappedCallbackFunction = function (context, resultCallback) { return __awaiter$1(_this, void 0, void 0, function () {
             var result, resultValue, e_1;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         _a.trys.push([0, 4, , 5]);
@@ -58766,7 +58136,7 @@ var Server = (function () {
         if (forStream === void 0) { forStream = false; }
         return __awaiter$1(this, void 0, void 0, function () {
             var methodDefinition, methodToBeRemoved;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         if (methodFilter === undefined) {
@@ -58805,7 +58175,7 @@ var Server = (function () {
     Server.prototype.unregisterWithPredicate = function (filterPredicate, forStream) {
         return __awaiter$1(this, void 0, void 0, function () {
             var methodsOrStreamsToRemove;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         methodsOrStreamsToRemove = this.serverRepository.getList()
@@ -58843,7 +58213,7 @@ var Server = (function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var timeout;
             var _this = this;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 timeout = new Promise(function (resolve) { return setTimeout(resolve, 5000); });
                 this.currentlyUnregistering[methodName] = Promise.race([promise, timeout]).then(function () {
                     delete _this.currentlyUnregistering[methodName];
@@ -58856,14 +58226,14 @@ var Server = (function () {
         return __awaiter$1(this, void 0, void 0, function () {
             var methodDefinition, unregisterInProgress, nameAlreadyExists, repoMethod;
             var _this = this;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         if (typeof method === "string") {
                             methodDefinition = { name: "" + method };
                         }
                         else {
-                            methodDefinition = __assign$2({}, method);
+                            methodDefinition = __assign$1({}, method);
                         }
                         if (!methodDefinition.name) {
                             return [2, Promise.reject("Please, provide a (unique) string value for the \u201Cname\u201D property in the \u201CmethodDefinition\u201D object: " + JSON.stringify(method))];
@@ -58931,11 +58301,14 @@ var Server = (function () {
 }());
 
 var InstanceWrapper = (function () {
-    function InstanceWrapper(instance, connection) {
+    function InstanceWrapper(API, instance, connection) {
         var _this = this;
-        this.wrapped = {
-            getMethods: getMethods,
-            getStreams: getStreams,
+        this.wrapped = {};
+        this.wrapped.getMethods = function () {
+            return API.methodsForInstance(this);
+        };
+        this.wrapped.getStreams = function () {
+            return API.methodsForInstance(this).filter(function (m) { return m.supportsStreaming; });
         };
         if (instance) {
             this.refreshWrappedObject(instance);
@@ -58962,7 +58335,7 @@ var InstanceWrapper = (function () {
         var _a, _b, _c;
         this.wrapped.user = resolvedIdentity.user;
         this.wrapped.instance = resolvedIdentity.instance;
-        this.wrapped.application = (_a = resolvedIdentity.application) !== null && _a !== void 0 ? _a : shortid$1();
+        this.wrapped.application = (_a = resolvedIdentity.application) !== null && _a !== void 0 ? _a : shortid();
         this.wrapped.applicationName = resolvedIdentity.applicationName;
         this.wrapped.pid = (_c = (_b = resolvedIdentity.pid) !== null && _b !== void 0 ? _b : resolvedIdentity.process) !== null && _c !== void 0 ? _c : Math.floor(Math.random() * 10000000000);
         this.wrapped.machine = resolvedIdentity.machine;
@@ -58976,21 +58349,25 @@ var InstanceWrapper = (function () {
     };
     return InstanceWrapper;
 }());
-function getMethods() {
-    var _a;
-    return (_a = InstanceWrapper.API) === null || _a === void 0 ? void 0 : _a.methodsForInstance(this);
-}
-function getStreams() {
-    var _a;
-    return (_a = InstanceWrapper.API) === null || _a === void 0 ? void 0 : _a.methodsForInstance(this).filter(function (m) { return m.supportsStreaming; });
-}
 
+var hideMethodSystemFlags = function (method) {
+    return __assign$1(__assign$1({}, method), { flags: method.flags.metadata || {} });
+};
 var ClientRepository = (function () {
-    function ClientRepository(logger) {
+    function ClientRepository(logger, API) {
         this.logger = logger;
+        this.API = API;
         this.servers = {};
         this.methodsCount = {};
-        this.callbacks = lib$2();
+        this.callbacks = lib$1();
+        var peerId = this.API.instance.peerId;
+        this.myServer = {
+            id: peerId,
+            methods: {},
+            instance: this.API.instance,
+            wrapper: this.API.unwrappedInstance,
+        };
+        this.servers[peerId] = this.myServer;
     }
     ClientRepository.prototype.addServer = function (info, serverId) {
         this.logger.debug("adding server " + serverId);
@@ -58998,7 +58375,7 @@ var ClientRepository = (function () {
         if (current) {
             return current.id;
         }
-        var wrapper = new InstanceWrapper(info);
+        var wrapper = new InstanceWrapper(this.API, info);
         var serverEntry = {
             id: serverId,
             methods: {},
@@ -59026,6 +58403,7 @@ var ClientRepository = (function () {
         this.callbacks.execute("onServerRemoved", server.instance, reason);
     };
     ClientRepository.prototype.addServerMethod = function (serverId, method) {
+        var _a;
         var server = this.servers[serverId];
         if (!server) {
             throw new Error("server does not exists");
@@ -59046,6 +58424,7 @@ var ClientRepository = (function () {
             accepts: method.input_signature,
             returns: method.result_signature,
             supportsStreaming: typeof method.flags !== "undefined" ? method.flags.streaming : false,
+            flags: (_a = method.flags) !== null && _a !== void 0 ? _a : {},
             getServers: function () {
                 return that.getServersByMethod(identifier);
             }
@@ -59054,12 +58433,13 @@ var ClientRepository = (function () {
         methodDefinition.display_name = methodDefinition.displayName;
         methodDefinition.version = methodDefinition.version;
         server.methods[method.id] = methodDefinition;
+        var clientMethodDefinition = hideMethodSystemFlags(methodDefinition);
         if (!this.methodsCount[identifier]) {
             this.methodsCount[identifier] = 0;
-            this.callbacks.execute("onMethodAdded", methodDefinition);
+            this.callbacks.execute("onMethodAdded", clientMethodDefinition);
         }
         this.methodsCount[identifier] = this.methodsCount[identifier] + 1;
-        this.callbacks.execute("onServerMethodAdded", server.instance, methodDefinition);
+        this.callbacks.execute("onServerMethodAdded", server.instance, clientMethodDefinition);
         return methodDefinition;
     };
     ClientRepository.prototype.removeServerMethod = function (serverId, methodId) {
@@ -59069,41 +58449,18 @@ var ClientRepository = (function () {
         }
         var method = server.methods[methodId];
         delete server.methods[methodId];
+        var clientMethodDefinition = hideMethodSystemFlags(method);
         this.methodsCount[method.identifier] = this.methodsCount[method.identifier] - 1;
         if (this.methodsCount[method.identifier] === 0) {
-            this.callbacks.execute("onMethodRemoved", method);
+            this.callbacks.execute("onMethodRemoved", clientMethodDefinition);
         }
-        this.callbacks.execute("onServerMethodRemoved", server.instance, method);
+        this.callbacks.execute("onServerMethodRemoved", server.instance, clientMethodDefinition);
     };
     ClientRepository.prototype.getMethods = function () {
-        var _this = this;
-        var allMethods = {};
-        Object.keys(this.servers).forEach(function (serverId) {
-            var server = _this.servers[serverId];
-            Object.keys(server.methods).forEach(function (methodId) {
-                var method = server.methods[methodId];
-                allMethods[method.identifier] = method;
-            });
-        });
-        var methodsAsArray = Object.keys(allMethods).map(function (id) {
-            return allMethods[id];
-        });
-        return methodsAsArray;
+        return this.extractMethodsFromServers(Object.values(this.servers)).map(hideMethodSystemFlags);
     };
     ClientRepository.prototype.getServers = function () {
-        var _this = this;
-        var allServers = [];
-        Object.keys(this.servers).forEach(function (serverId) {
-            var server = _this.servers[serverId];
-            allServers.push(server);
-        });
-        return allServers;
-    };
-    ClientRepository.prototype.getServerMethodsById = function (serverId) {
-        var server = this.servers[serverId];
-        return Object.keys(server.methods).map(function (id) {
-            return server.methods[id];
-        });
+        return Object.values(this.servers).map(this.hideServerMethodSystemFlags);
     };
     ClientRepository.prototype.onServerAdded = function (callback) {
         var unsubscribeFunc = this.callbacks.add("onServerAdded", callback);
@@ -59147,14 +58504,17 @@ var ClientRepository = (function () {
         return unsubscribeFunc;
     };
     ClientRepository.prototype.getServerById = function (id) {
-        return this.servers[id];
+        return this.hideServerMethodSystemFlags(this.servers[id]);
     };
     ClientRepository.prototype.reset = function () {
+        var _a;
         var _this = this;
         Object.keys(this.servers).forEach(function (key) {
             _this.removeServerById(key, "reset");
         });
-        this.servers = {};
+        this.servers = (_a = {},
+            _a[this.myServer.id] = this.myServer,
+            _a);
         this.methodsCount = {};
     };
     ClientRepository.prototype.createMethodIdentifier = function (methodInfo) {
@@ -59163,13 +58523,10 @@ var ClientRepository = (function () {
         return (methodInfo.name + accepts + returns).toLowerCase();
     };
     ClientRepository.prototype.getServersByMethod = function (identifier) {
-        var _this = this;
         var allServers = [];
-        Object.keys(this.servers).forEach(function (serverId) {
-            var server = _this.servers[serverId];
-            Object.keys(server.methods).forEach(function (methodId) {
-                var methodInfo = server.methods[methodId];
-                if (methodInfo.identifier === identifier) {
+        Object.values(this.servers).forEach(function (server) {
+            Object.values(server.methods).forEach(function (method) {
+                if (method.identifier === identifier) {
                     allServers.push(server.instance);
                 }
             });
@@ -59189,6 +58546,20 @@ var ClientRepository = (function () {
             unsubCalled = true;
             unsubscribeFunc();
         };
+    };
+    ClientRepository.prototype.hideServerMethodSystemFlags = function (server) {
+        var clientMethods = {};
+        Object.entries(server.methods).forEach(function (_a) {
+            var name = _a[0], method = _a[1];
+            clientMethods[name] = hideMethodSystemFlags(method);
+        });
+        return __assign$1(__assign$1({}, server), { methods: clientMethods });
+    };
+    ClientRepository.prototype.extractMethodsFromServers = function (servers) {
+        var methods = Object.values(servers).reduce(function (clientMethods, server) {
+            return __spreadArrays(clientMethods, Object.values(server.methods));
+        }, []);
+        return methods;
     };
     return ClientRepository;
 }());
@@ -59242,7 +58613,7 @@ var ServerStreaming$1 = (function () {
         this.repository = repository;
         this.serverRepository = serverRepository;
         this.ERR_URI_SUBSCRIPTION_FAILED = "com.tick42.agm.errors.subscription.failure";
-        this.callbacks = lib$2();
+        this.callbacks = lib$1();
         this.nextStreamId = 0;
         session.on("add-interest", function (msg) {
             _this.handleAddInterest(msg);
@@ -59504,7 +58875,7 @@ var ServerProtocol = (function () {
         this.clientRepository = clientRepository;
         this.serverRepository = serverRepository;
         this.logger = logger;
-        this.callbacks = lib$2();
+        this.callbacks = lib$1();
         this.streaming = new ServerStreaming$1(session, clientRepository, serverRepository);
         this.session.on("invoke", function (msg) { return _this.handleInvokeMessage(msg); });
     }
@@ -59515,8 +58886,9 @@ var ServerProtocol = (function () {
     };
     ServerProtocol.prototype.register = function (repoMethod, isStreaming) {
         var _this = this;
+        var _a;
         var methodDef = repoMethod.definition;
-        var flags = { streaming: isStreaming || false };
+        var flags = Object.assign({}, { metadata: (_a = methodDef.flags) !== null && _a !== void 0 ? _a : {} }, { streaming: isStreaming || false });
         var registerMsg = {
             type: "register",
             methods: [{
@@ -59570,7 +58942,7 @@ var ServerProtocol = (function () {
     ServerProtocol.prototype.unregister = function (method) {
         return __awaiter$1(this, void 0, void 0, function () {
             var msg;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         msg = {
@@ -60222,9 +59594,9 @@ var Interop = (function () {
         if (typeof configuration.waitTimeoutMs !== "number") {
             configuration.waitTimeoutMs = 30 * 1000;
         }
-        InstanceWrapper.API = this;
-        this.instance = new InstanceWrapper(undefined, connection).unwrap();
-        this.clientRepository = new ClientRepository(configuration.logger.subLogger("cRep"));
+        this.unwrappedInstance = new InstanceWrapper(this, undefined, connection);
+        this.instance = this.unwrappedInstance.unwrap();
+        this.clientRepository = new ClientRepository(configuration.logger.subLogger("cRep"), this);
         this.serverRepository = new ServerRepository();
         var protocolPromise;
         if (connection.protocolVersion === 3) {
@@ -60287,6 +59659,16 @@ var Interop = (function () {
     };
     Interop.prototype.invoke = function (methodFilter, argumentObj, target, additionalOptions, success, error) {
         return this.client.invoke(methodFilter, argumentObj, target, additionalOptions, success, error);
+    };
+    Interop.prototype.waitForMethod = function (name) {
+        var pw = new PromiseWrapper();
+        var unsubscribe = this.client.methodAdded(function (m) {
+            if (m.name === name) {
+                unsubscribe();
+                pw.resolve(m);
+            }
+        });
+        return pw.promise;
     };
     return Interop;
 }());
@@ -60505,7 +59887,7 @@ var GlueCore = function (userConfig, ext) {
             canUpdateMetric: canUpdateMetric,
             system: "Glue42",
             service: (_b = identity === null || identity === void 0 ? void 0 : identity.service) !== null && _b !== void 0 ? _b : "metrics-service",
-            instance: (_d = (_c = identity === null || identity === void 0 ? void 0 : identity.instance) !== null && _c !== void 0 ? _c : identity === null || identity === void 0 ? void 0 : identity.windowId) !== null && _d !== void 0 ? _d : shortid$1(),
+            instance: (_d = (_c = identity === null || identity === void 0 ? void 0 : identity.instance) !== null && _c !== void 0 ? _c : identity === null || identity === void 0 ? void 0 : identity.windowId) !== null && _d !== void 0 ? _d : shortid(),
             disableAutoAppSystem: disableAutoAppSystem,
             pagePerformanceMetrics: typeof config !== "boolean" ? config === null || config === void 0 ? void 0 : config.pagePerformanceMetrics : undefined
         });
@@ -60545,7 +59927,7 @@ var GlueCore = function (userConfig, ext) {
     function setupBus() {
         return __awaiter$1(this, void 0, void 0, function () {
             var initTimer;
-            return __generator$1(this, function (_a) {
+            return __generator(this, function (_a) {
                 if (!internalConfig.bus) {
                     return [2, Promise.resolve()];
                 }
@@ -60590,7 +59972,7 @@ var GlueCore = function (userConfig, ext) {
             _interop.invoke("T42.ACS.Feedback", feedbackInfo, "best");
         };
         var info = {
-            coreVersion: version$2,
+            coreVersion: version$1,
             version: internalConfig.version
         };
         glueInitTimer.stop();
@@ -60658,8 +60040,8 @@ var GlueCore = function (userConfig, ext) {
         if (glue.agm) {
             var deprecatedDecorator = function (fn, wrong, proper) {
                 return function () {
-                    console.warn("glue.js - 'glue.agm." + wrong + "' method is deprecated, use 'glue.interop." + proper + "' instead.");
-                    fn.apply(glue.agm, arguments);
+                    glue.logger.warn("glue.js - 'glue.agm." + wrong + "' method is deprecated, use 'glue.interop." + proper + "' instead.");
+                    return fn.apply(glue.agm, arguments);
                 };
             };
             var agmAny = glue.agm;
@@ -60691,16 +60073,15 @@ var GlueCore = function (userConfig, ext) {
 if (typeof window !== "undefined") {
     window.GlueCore = GlueCore;
 }
-GlueCore.version = version$2;
+GlueCore.version = version$1;
 GlueCore.default = GlueCore;
 
-var glueWebFactory = createFactoryFunction(GlueCore);
+const glueWebFactory = createFactoryFunction(GlueCore);
 if (typeof window !== "undefined") {
-    var windowAny = window;
+    const windowAny = window;
     windowAny.GlueWeb = glueWebFactory;
     delete windowAny.GlueCore;
 }
-glueWebFactory.default = glueWebFactory;
 glueWebFactory.version = version;
 
 /* harmony default export */ __webpack_exports__["default"] = (glueWebFactory);
