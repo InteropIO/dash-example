@@ -5,35 +5,46 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Raising Notification</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Raising Notification</h3>
-    <p>
-        Python Dash application integrated with Glue42. The application demonstrates how to raise notifications. When
-        the application runs in a browser (Glue42 Core) then a browser notification appears. When the application runs
-        in Glue42 Enterprise then a Glue42 Notification appears.
-    </p>
-    <p>
-        Use the input fields to assign a title and body to the notification. Click "Raise Notification" button to raise
-        a new notification.
-    </p>
-    <p>
-        Checkout the source code in <code>app.py</code> for details.
-    </p>
 
-    <a href="/app" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">
-        Open App
-    </a>
+    <div id="example-description">
+        <h3>Raising Notification</h3>
+        <p>
+            Python Dash application integrated with Glue42. The application demonstrates how to raise notifications.
+            When
+            the application runs in a browser (Glue42 Core) then a browser notification appears. When the application
+            runs
+            in Glue42 Enterprise then a Glue42 Notification appears.
+        </p>
+        <p>
+            Use the input fields to assign a title and body to the notification. Click "Raise Notification" button to
+            raise
+            a new notification.
+        </p>
+        <p>
+            Checkout the source code in <code>app.py</code> for details.
+        </p>
+    </div>
 
-    <div style="display: flex">
-        <iframe src="/app" style="height: 600px"></iframe>
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+        </div>
+
+        <p>Start the applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 
