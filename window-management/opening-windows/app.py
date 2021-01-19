@@ -5,6 +5,7 @@ import dash_core_components as dcc
 import dash_glue
 from run import server
 from flask import request
+import time
 
 def is_number(s):
     try:
@@ -45,7 +46,8 @@ def raise_notification(n_clicks, widthValue, heightValue):
         height = float(heightValue) if is_number(heightValue) else height_default
 
         return { 
-            "title": "win1", 
+            "title": "win1",
+            "name": str(time.time()),
             "url": url,
             "options": {
                 "width": width, 
