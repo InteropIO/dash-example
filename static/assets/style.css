@@ -1,0 +1,23 @@
+h4#glueSpan {
+    display: inline;
+}
+
+#applications-list {
+    padding-left: 0;
+    list-style-type: none;
+}
+
+#applications-list li {
+    margin-bottom: 1rem;
+}
+
+#example-description {
+    border: 1px solid black;
+    padding: 1rem;
+}
+
+#main-app {
+    border: 1px solid black;
+    padding: 1rem;
+    margin-top: 1rem;
+}
