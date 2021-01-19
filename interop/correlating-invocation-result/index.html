@@ -5,48 +5,57 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Correlating Invocation Result</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Correlating an Invocation with a Result</h3>
-    <p>
-        Python Dash applications integrated with Glue42. The applications demonstrate how to assign a unique invocation
-        ID and to make a correlation between a returned result and some data stored when the method is called (sharing
-        data between the callback that triggers the invocation and the callback that handles the returned result).
-    </p>
 
-    <p>
-        On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates their
-        total and returns the result. Click the "Sum" button in Application A to invoke this method and print the result
-        from invocation.
-    </p>
-    <p>
-        When invoking the method, Application A sets a unique invocation ID and uses dcc.Store component to share the
-        start time of invocation with the callback that handles the returned result. When the "Sum" returns, along with
-        the result the handler callback also receives the invocation ID. As a result, we get the start time of
-        invocation from dcc.Store and calculate the elapsed time for execution.
-    </p>
-    <p>
-        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
-    </p>
-    <ul>
-        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application A</a>
-        </li>
-        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application B</a>
-        </li>
-    </ul>
+    <div id="example-description">
+        <h3>Correlating an Invocation with a Result</h3>
+        <p>
+            Python Dash applications integrated with Glue42. The applications demonstrate how to assign a unique
+            invocation
+            ID and to make a correlation between a returned result and some data stored when the method is called
+            (sharing
+            data between the callback that triggers the invocation and the callback that handles the returned result).
+        </p>
 
-    <div style="display: flex">
-        <iframe src="/app-a" style="height: 600px"></iframe>
-        <iframe src="/app-b" style="height: 600px"></iframe>
+        <p>
+            On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates
+            their
+            total and returns the result. Click the "Sum" button in Application A to invoke this method and print the
+            result
+            from invocation.
+        </p>
+        <p>
+            When invoking the method, Application A sets a unique invocation ID and uses dcc.Store component to share
+            the
+            start time of invocation with the callback that handles the returned result. When the "Sum" returns, along
+            with
+            the result the handler callback also receives the invocation ID. As a result, we get the start time of
+            invocation from dcc.Store and calculate the elapsed time for execution.
+        </p>
+        <p>
+            Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+        </p>
+    </div>
+
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+        </div>
+
+        <p>Start the applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 
