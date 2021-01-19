@@ -2,37 +2,46 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
-import dash_glue
+import dash_glue42
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/")
 
-app.layout = dash_glue.glue42(id='glue42', children=[
-    # A component which is responsible to invoke the "SendMessage" interop method.
-    dash_glue.methodInvoke(id="invoke-send-message"),
+app.layout = dash_glue42.Glue42(id="glue42", children=[
+    dash_glue42.MethodInvoke(id="g42-invoke-send-message"),
 
-    html.H3('Application A (Interoperability between Dash and JavaScript)'),
+    html.H3("Application A (Interoperability between Dash and JavaScript)"),
     html.Hr(),
 
     html.Div(
         [
-            html.Div('Message: '),
-            dcc.Input(id='message', type='text', value="Send you daily report!"),
-            html.Button(id='send-message', n_clicks = 0, children = 'Send')
+            html.Div("Message: "),
+            dcc.Input(id="message", type="text", autoComplete="off",
+                      value="Send you daily report!"),
+            html.Button(id="send-message", children="Send")
         ]
     )
 ])
 
-# Callback that triggers "SendMessage" invocation. "SendMessage" is a void method, so we do not expect to receive a result.
+
 @app.callback(
-    Output('invoke-send-message', 'call'), 
-    [Input('send-message', 'n_clicks')],
-    [State('message', 'value')]
+    Output("g42-invoke-send-message", "invoke"),
+    Input("send-message", "n_clicks"),
+    State("message", "value"),
+    prevent_initial_call=True
 )
-def send_message(n_clicks, message):
-    if n_clicks != 0:
-        return { "definition": { "name": "SendMessage" }, "argumentObj": { "message": message } }
+def send_message(_, message):
+    """Triggers an invocation of the "SendMessage" interop method."""
 
-if __name__ == '__main__':
-    app.run_server(debug=True, host='localhost', port='8050')
+    return {
+        "definition": {
+            "name": "SendMessage"
+        },
+        "argumentObj": {
+            "message": message
+        }
+    }
 
+
+if __name__ == "__main__":
+    app.run_server(debug=True, host="localhost", port="8050")

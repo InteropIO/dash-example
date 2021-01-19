@@ -5,39 +5,51 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Interoperability between Dash and JavaScript</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Interoperability between Dash and JavaScript</h3>
-    <p>
-        Python Dash and JavaScript applications integrated with Glue42. The applications demonstrate interoperability
-        between a Dash and JavaScript applications. The Dash application invokes an interop method registered in the
-        JavaScript application.
-    </p>
-    <p>
-        On load, Application B (the JavaScript application) registers a method called "SendMessage" which accepts a
-        parameter "message". Click the "Send" button in Application A (the Dash application) to invoke this method. The
-        value in the input field labeled "Message" will be printed in Application B.
-    </p>
-    <p>
-        Checkout the source code in <code>app_a.py</code> and <code>app-b/index.js</code> for details.
-    </p>
-    <ul>
-        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application A</a></li>
-        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application B</a></li>
-    </ul>
 
-    <div style="display: flex">
-        <iframe src="/app-a" style="height: 600px"></iframe>
-        <iframe src="/app-b" style="height: 600px"></iframe>
+    <div id="example-description">
+        <h3>Interoperability between Dash and JavaScript</h3>
+        <p>
+            Python Dash and JavaScript applications integrated with Glue42. The applications demonstrate
+            interoperability
+            between Dash and JavaScript applications. The Dash application invokes an Interop method registered in the
+            JavaScript application.
+        </p>
+        <p>
+            On load, Application B (the JavaScript application) registers a method called "SendMessage" which accepts a
+            parameter "message". Click the "Send" button in Application A (the Dash application) to invoke this method.
+            The
+            value in the input field labeled "Message" will be printed in Application B.
+        </p>
+        <p>
+            Checkout the source code in <code>app_a.py</code> and <code>app-b/index.js</code> for details.
+        </p>
+    </div>
+
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform)</h4>
+        </div>
+
+        <p>Open applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <div style="display: flex">
+            <iframe src="/app-a" class="app"></iframe>
+            <iframe src="/app-b" class="app"></iframe>
+        </div>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 

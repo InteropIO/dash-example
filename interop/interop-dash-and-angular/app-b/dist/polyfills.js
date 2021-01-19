@@ -7,7 +7,7 @@
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Workspace\Tick42-Glue-Desktop\GlueDash\glue-dash-example\interop\interop-dash-and-ng\app-b\src\polyfills.ts */"hN/g");
+module.exports = __webpack_require__(/*! C:\Workspace\Tick42-Glue-Desktop\GlueDash\glue-dash-example\interop\interop-dash-and-angular\app-b\src\polyfills.ts */"hN/g");
 
 
 /***/ }),

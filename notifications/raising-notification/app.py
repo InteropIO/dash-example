@@ -2,43 +2,52 @@ import dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
-import dash_glue
+import dash_glue42
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
 
-app.layout = dash_glue.glue42(id='glue42', children=[
-    html.H3('Raising Notification'),
+app.layout = dash_glue42.Glue42(id="glue42", children=[
+    dash_glue42.Notifications(id="g42-notifications"),
+
+    html.H3("Raising Notification"),
     html.Hr(),
 
-    html.H4('Enter a notification details below:'),
+    html.H4("Enter a notification details:"),
     html.Div(
         [
             html.Label("Title: "),
-            dcc.Input(id='notification-title', type='text', value="Alert")
+            dcc.Input(id="notification-title", autoComplete="off",
+                      type="text", value="Alert")
         ]
     ),
 
     html.Div(
         [
             html.Label("Body: "),
-            dcc.Input(id='notification-body', type='text', value="Send daily report"),
+            dcc.Input(id="notification-body", autoComplete="off",
+                      type="text", value="Send daily report")
 
         ]
     ),
-    
-    html.Button(id='raise-notification', n_clicks = 0, children = 'Raise Notification')
+
+    html.Button(id="raise-notification", children="Raise Notification")
 ])
 
+
 @app.callback(
-    Output('glue42', 'raiseNotification'), 
-    [Input('raise-notification', 'n_clicks')], 
-    [State("notification-title", "value"), State("notification-body", "value")]
+    Output("g42-notifications", "raise"),
+    Input("raise-notification", "n_clicks"),
+    State("notification-title", "value"),
+    State("notification-body", "value"),
+    prevent_initial_call=True
 )
-def raise_notification(n_clicks, title, body):
-    if n_clicks != 0:
-        return { "title": title, "body": body }
+def raise_notification(_, title, body):
+    return {
+        "title": title,
+        "body": body
+    }
 
-if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port='8050')
 
+if __name__ == "__main__":
+    app.run_server(debug=True, host="0.0.0.0", port="8050")

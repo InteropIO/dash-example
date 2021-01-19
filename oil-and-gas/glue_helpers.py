@@ -1,7 +1,9 @@
 from datetime import date, timedelta
 
-# Returns an object with an Interop method definition and arguments for creating an item of any type(email, meeting) in Outlook.
+
 def create_outlook_item(item):
+    """Returns an object with an Interop method definition and arguments for creating an item of any type (email, meeting) in Outlook."""
+
     return {
         "definition": {
             "name": "T42.Outlook.CreateItem"
@@ -9,18 +11,20 @@ def create_outlook_item(item):
         "argumentObj": item
     }
 
-# Returns an object with an Interop method definition and arguments for showing/sending an item of any type(email, meeting) in Outlook.
-def show_outlook_item(item_id, send_automatically):
-    '''
-        Use the "action" property in displaySettings to control:
-        - Default - Outlook pops up a window
-        - Send - The item(meeting/appointment/email) is automatically sent.
-        - ShowAndSend (only for email)- Outlook pops up a window, waits for actionDelayMSecs amount ot time and sends automatically.
-        - ShowAndDiscard (only for email)- Outlook pops up a window, waits for actionDelayMSecs amount ot time and discards the email automatically.
 
-        When appling an action type either "ShowAndSend" or "ShowAndDiscard" use actionDelayMSecs to control how much time Outlook should keep the window opened.
+def show_outlook_item(item_id, send_automatically):
+    """
+        Returns an object with an Interop method definition and arguments for showing/sending an item of any type (email, meeting) in Outlook.
+
+        Use the "action" property in displaySettings to control:
+        - Default - Outlook pops up a window.
+        - Send - The item (meeting/appointment/email) is automatically sent.
+        - ShowAndSend (only for email) - Outlook pops up a window, waits for actionDelayMSecs amount ot time and sends automatically.
+        - ShowAndDiscard (only for email) - Outlook pops up a window, waits for actionDelayMSecs amount ot time and discards the email automatically.
+
+        When applying an action type "ShowAndSend" or "ShowAndDiscard", use actionDelayMSecs to control how much time Outlook should keep the window opened.
         Default actionDelayMSecs is 1000 ms.
-    '''
+    """
 
     args = {
         "ItemID": item_id,
@@ -37,8 +41,10 @@ def show_outlook_item(item_id, send_automatically):
         "argumentObj": args
     }
 
-# Returns an object with an Interop method definition and arguments for creating a new meeting in Outlook. 
-def create_outlook_meeting(subject = "", body = "", recipients=None):
+
+def create_outlook_meeting(subject="", body="", recipients=None):
+    """Returns an object with an Interop method definition and arguments for creating a new meeting in Outlook."""
+
     if recipients is None:
         recipients = []
 
@@ -58,8 +64,10 @@ def create_outlook_meeting(subject = "", body = "", recipients=None):
 
     return create_outlook_item(item)
 
-# Returns an object with an Interop method definition and arguments for creating a new email in Outlook. 
-def create_outlook_email(subject = "", body = "", recipients=None):
+
+def create_outlook_email(subject="", body="", recipients=None):
+    """Returns an object with an Interop method definition and arguments for creating a new email in Outlook."""
+
     if recipients is None:
         recipients = []
 

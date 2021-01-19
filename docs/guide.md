@@ -1,10 +1,10 @@
-# What is this
+# Overview
 
-This file describes an example implemented with Glue42-Dash library. The example contains two Dash and one JavaScript applications. The three apps exchange messages through Glue42.
+This file describes an example implemented with the Glue42 Dash library. The example contains two Dash and one JavaScript applications. The three apps exchange messages through Glue42.
 
 # Shared Context
 
-The example demonstrates how an application (Dash App 1) updates a shared context object and how another application (Dash App 2) subscribes for updates from that shared context.
+The example demonstrates how an application (Dash App 1) updates a shared context object and how another application (Dash App 2) subscribes for updates of that shared context.
 
 Type a value into the input field in Dash App 1 to update the context. The same value will be printed in Dash App 2.
 
@@ -14,7 +14,7 @@ Type a value into the input field in Dash App 1 to update the context. The same 
 
 ## Registering and Invoking Methods
 
-Dash App 1 and Dash App 2 demonstrate how to register, invoke and consume result from interop methods.
+Dash App 1 and Dash App 2 demonstrate how to register, invoke and consume results from Interop methods.
 
 On load, Dash App 2 registers a method called "Sum" which accepts two numbers as arguments and calculates their sum. Click the "Sum" button in Dash App 1 to invoke this method. 
 
@@ -24,9 +24,9 @@ The result will be calculated in Dash App 2 and returned so it can be printed in
 
 ## Targeting
 
-The three applications (Dash App 1, Dash App 2 and JS App 3) demonstrate targeting interop servers when invoking interop methods.
+The three applications (Dash App 1, Dash App 2 and JS App 3) demonstrate targeting Interop servers when invoking Interop methods.
 
-On load, Dash App 2 and JS App 3 register a method with the same name - "Send.Message". Clicking the button "Send Message" in Dash App 1 invokes the method by targeting all the servers offering it (meaning all the servers that have registered it). As a result Dash App 2 and JS App 3 will print the value from the input field.
+On load, Dash App 2 and JS App 3 register a method with the same name - "Send.Message". Clicking the button "Send Message" in Dash App 1 invokes the method by targeting all servers offering it (meaning all servers that have registered it). As a result Dash App 2 and JS App 3 will print the value from the input field.
 
 ![targeting-all](./targeting-all.PNG)
 

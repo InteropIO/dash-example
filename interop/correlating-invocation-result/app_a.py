@@ -1,74 +1,90 @@
 import dash
+from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
 import uuid
 import time
-import dash_glue
+import dash_glue42
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/")
 
-app.layout = dash_glue.glue42(id='glue42', children=[
-    # A component which is responsible to invoke the "Sum" interop method.
-    dash_glue.methodInvoke(id="invoke-sum"),
+app.layout = dash_glue42.Glue42(id="glue42", children=[
+    dash_glue42.MethodInvoke(id="g42-invoke-sum"),
 
-    # We will use the Store to share data between the callback that triggers "Sum" invocation and the callback handling "Sum" results.
-    dcc.Store('invocation-time-store', data={}),
+    # We will use the Store component to share data between the callback that triggers the "Sum" method invocation
+    # and the callback handling the "Sum" results.
+    dcc.Store("invocation-time-store", data={}),
 
-    html.H3('Application A (Correlating an Invocation with a Returned Result)'),
+    html.H3("Application A (Correlating an Invocation with a Returned Result)"),
     html.Hr(),
 
     html.Div([
-        dcc.Input(id='number-a', type='text', value=37),
-        dcc.Input(id='number-b', type='text', value=5),
-        html.Button(id='sum-numbers', n_clicks = 0, children = 'Sum' )
+        dcc.Input(id="number-a", type="text", autoComplete="off", value=37),
+        dcc.Input(id="number-b", type="text", autoComplete="off", value=5),
+        html.Button(id="sum-numbers-btn", children="Sum")
     ]),
-    html.Span(id='sum-numbers-result')
+    html.P(id="sum-numbers-result"),
+    html.P(id="elapsed-time"),
 ])
 
-# Callback that triggers "Sum" invocation.
+
 @app.callback(
-    [Output('invocation-time-store', 'data'), Output('invoke-sum', 'call')], 
-    [Input('sum-numbers', 'n_clicks')], 
-    [State('number-a', 'value'), State('number-b', 'value'), State('invocation-time-store', 'data')]
+    [
+        Output("invocation-time-store", "data"),
+        Output("g42-invoke-sum", "invoke")
+    ],
+    Input("sum-numbers-btn", "n_clicks"),
+    State("number-a", "value"),
+    State("number-b", "value"),
+    State("invocation-time-store", "data"),
+    prevent_initial_call=True
 )
-def sum_numbers(n_clicks, a, b, invocationsDict):
-    if n_clicks != 0:
-        invocationId = str(uuid.uuid4())
-        
-        invocationTime = time.time()
-        invocationsDict[invocationId] = invocationTime
+def sum_numbers(_, a, b, invocations_dict):
+    """Triggers an invocation of the "Sum" interop method."""
 
-        return [
-            invocationsDict,
-            { "invocationId": invocationId, "definition": { "name": "Sum" }, "argumentObj": { "a": a, "b": b } }
-        ]
+    invocationId = str(uuid.uuid4())
+    invocationTime = time.time()
+    invocations_dict[invocationId] = invocationTime
 
-    return [invocationsDict, None]
+    return invocations_dict, {
+        "invocationId": invocationId,
+        "definition": {
+            "name": "Sum"
+        },
+        "argumentObj": {"a": a, "b": b}
+    }
 
-# Callback that handles "Sum" result.
 @app.callback(
-    Output('sum-numbers-result', 'children'), 
-    [Input('invoke-sum', 'result')],
-    [State('invocation-time-store', 'data')]
+    [
+        Output("sum-numbers-result", "children"),
+        Output("elapsed-time", "children")
+    ],
+    Input("g42-invoke-sum", "result"),
+    State("invocation-time-store", "data")
 )
-def sum_numbers_result_handler(result, invocationsDict):
-    if result is not None:
-        # An error is assigned when method invocation fails.
-        hasError = result["error"] is not None
-        if hasError == True:
-            return result["error"]["message"]        
-        else:
-            invocationId = result["invocationId"]
-            invocationTime = invocationsDict[invocationId]
+def sum_result_handler(result, invocations_dict):
+    """Handles the returned results from a "Sum" interop method invocation."""
 
-            result = result["invocationResult"]["returned"]["sum"]
+    if result is None:
+        raise PreventUpdate
 
-            elapsed_time = time.time() - invocationTime
+    # An error is assigned when method invocation fails.
+    hasError = result.get("error") is not None
+    if hasError:
+        error = result.get("error", {})
+        return [error.get("message", ""), '']
+    else:
+        invocationId = result["invocationId"]
+        invocationTime = invocations_dict[invocationId]
 
-            return 'Sum is {}. Invocation time {}'.format(result, elapsed_time)
+        result = result["invocationResult"]["returned"]["sum"]
 
-if __name__ == '__main__':
-    app.run_server(debug=True, host='localhost', port='8050')
+        elapsed_time = time.time() - invocationTime
 
+        return ["Sum is {}.".format(result), "Response elapsed time {} seconds.".format(elapsed_time)]
+
+
+if __name__ == "__main__":
+    app.run_server(debug=True, host="localhost", port="8050")

@@ -1,7 +1,7 @@
-import dash_glue
+import dash_glue42
 import dash
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 import dash_html_components as html
 import dash_core_components as dcc
 from dash.exceptions import PreventUpdate
@@ -12,25 +12,27 @@ from run import server
 with open("data/clients.json", encoding="utf-8") as f:
     clients_data = json.load(f)
 
-app = dash.Dash(__name__, 
-    server=server, 
-    routes_pathname_prefix='/clients/',
-    external_stylesheets=[dbc.themes.BOOTSTRAP]
-)
+app = dash.Dash(__name__,
+                server=server,
+                routes_pathname_prefix="/clients/",
+                external_stylesheets=[dbc.themes.BOOTSTRAP]
+                )
 
-# Dropdown option, that will be used to leave the current channel.
-no_channel = { "label": "No Channel", "value": "" }
+# Dropdown option that will be used to leave the current Channel.
+no_channel = {"label": "No Channel", "value": ""}
 
 CONTENT_STYLE = {
     "padding": "10px 15px",
 }
 
-SELECTED_CLIENT_CONTEXT = 'SelectedClient'
+SELECTED_CLIENT_CONTEXT = "SelectedClient"
+
 
 def format_client_name(client):
     first_name = client.get("firstName")
     last_name = client.get("lastName")
     return f"{first_name} {last_name}"
+
 
 def client_details_card():
     return dbc.Card(dbc.CardBody(
@@ -43,23 +45,37 @@ def client_details_card():
         ]
     ))
 
-# To use Channels API, we need to enable channels in the config.
-app.layout = dash_glue.glue42(id='glue42', config={ "channels": True }, children=[
 
-    dash_glue.context(id=SELECTED_CLIENT_CONTEXT),
-    dash_glue.channels(id="glue42-channels"),
+glue_settings = {
+    "web": {
+        "config": {
+            "channels": True
+        }
+    },
+    "desktop": {
+        "config": {
+            "channels": True
+        }
+    }
+}
+
+# To use the Channels API, we need to enable Channels in the config.
+app.layout = dash_glue42.Glue42(id="glue42", settings=glue_settings, children=[
+
+    dash_glue42.Context(id=SELECTED_CLIENT_CONTEXT),
+    dash_glue42.Channels(id="g42-channels"),
 
     # UI
     html.Div(id="page-content", style=CONTENT_STYLE, children=[
         html.Div(className="d-flex justify-content-between", children=[
             html.H1("Clients"),
 
-            html.Div(children=[
-                html.Label('Select Channel: '),
-                dcc.Dropdown(id='channels-list'),
+            html.Div(id="channels-selector", children=[
+                html.Label("Select Channel: "),
+                dcc.Dropdown(id="channels-list", clearable=False),
             ]),
         ],
-        style={
+            style={
             "margin-bottom": "5px",
         }),
 
@@ -82,71 +98,110 @@ app.layout = dash_glue.glue42(id='glue42', config={ "channels": True }, children
     ])
 ])
 
+
 def find_client(client_id):
     for client in clients_data:
         if client["id"] == client_id:
             return client
     return None
 
-def channels_to_dpd_options(channels_info):
-    if channels_info is not None:
-        options = map(lambda channel: { "label": channel["name"], "value": channel["name"] }, channels_info)
+
+@app.callback(
+    Output("channels-selector", "style"),
+    Input("glue42", "isEnterprise")
+)
+def channels_selector_visibility(isEnterprise):
+    show_selector = (isEnterprise is None) or not isEnterprise
+    visibility = "visible" if show_selector else "hidden"
+
+    return {
+        "visibility": visibility
+    }
+
+
+def channels_to_dpd_options(channels):
+    if channels is not None:
+        options = map(lambda channel: {
+                      "label": channel, "value": channel}, channels)
         return [no_channel] + list(options)
 
     return [no_channel]
 
-# Discovering the list of all channels.
-@app.callback(Output('channels-list', 'options'), [Input('glue42-channels', 'channelsInfo')])
-def update_channels_list(channels_info):
-    return channels_to_dpd_options(channels_info)
 
-# Logic whether to join a channel or leave the current one.
-@app.callback(Output('glue42-channels', 'change'), [Input('channels-list', 'value')])
-def change_channel(channel_name):
-    if channel_name is not None:
-        if channel_name == no_channel["value"]:
-            return { 'action': 'leave' }
-        else:
-            return { 'action': 'join', 'channelName': channel_name }
+@app.callback(
+    Output("channels-list", "options"),
+    Input("g42-channels", "all")
+)
+def update_channels_list(all_channels):
+    """Discovering all Channels."""
+
+    return channels_to_dpd_options(all_channels)
+
+
+@app.callback(
+    Output("g42-channels", "join"),
+    Input("channels-list", "value")
+)
+def join_channel(channel_name):
+    if channel_name == no_channel["value"]:
+        raise PreventUpdate
+
+    return {
+        "name": channel_name
+    }
+
+
+@app.callback(
+    Output("g42-channels", "leave"),
+    Input("channels-list", "value")
+)
+def leave_channel(channel_name):
+    if channel_name == no_channel["value"]:
+        return {}
+
+    raise PreventUpdate
+
 
 @app.callback(
     [
-        Output(SELECTED_CLIENT_CONTEXT, 'outgoing'),
-        Output('glue42-channels', 'outgoing')
-    ], 
-    [Input(client["id"], 'n_clicks') for client in clients_data]
+        Output(SELECTED_CLIENT_CONTEXT, "update"),
+        Output("g42-channels", "publish")
+    ],
+    [Input(client["id"], "n_clicks") for client in clients_data]
 )
 def handle_client_clicked(*buttons):
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
 
-    # Button id is mapped to client's id.
-    client_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    # Button ID is mapped to the client ID.
+    client_id = ctx.triggered[0]["prop_id"].split(".")[0]
     client = find_client(client_id)
     if client is None:
         raise PreventUpdate
 
     return update_context(client_id) + publish_in_channel(client_id)
 
+
 @app.callback(
     [
-        Output('client-name', 'children'),
-        Output('client-portfolio-value', 'children'),
-        Output('client-email', 'children'),
-        Output('client-phone', 'children'),
-        Output('client-details', 'children'), 
-        Output('client-collapse', 'is_open')
-    ], 
-    [Input('glue42-channels', 'incoming')]
+        Output("client-name", "children"),
+        Output("client-portfolio-value", "children"),
+        Output("client-email", "children"),
+        Output("client-phone", "children"),
+        Output("client-details", "children"),
+        Output("client-collapse", "is_open")
+    ],
+    Input("g42-channels", "my")
 )
-def channel_data_changed(value):
-    if (value is None) or (not ("data" in value)) or (value["data"] is None):
+def channel_data_changed(channel):
+    if (channel is None) or (not ("data" in channel)) or (channel["data"] is None):
         return update_client_card(None)
 
-    client_id = value["data"].get("clientId")
+    client_id = channel["data"].get("clientId")
     client = find_client(client_id)
     return update_client_card(client)
+
 
 def update_client_card(client):
     open_card = True
@@ -165,16 +220,18 @@ def update_client_card(client):
         open_card
     ]
 
+
 def publish_in_channel(client_id):
-    return [{ 
+    return [{
         "data": {
-            "clientId": client_id 
+            "clientId": client_id
         }
     }]
 
+
 def update_context(client_id):
-    return [{ "clientId": client_id }]
+    return [{"clientId": client_id}]
 
-if __name__ == '__main__':
-    app.run_server(debug=True, host='localhost', port='8050')
 
+if __name__ == "__main__":
+    app.run_server(debug=True, host="localhost", port="8050")

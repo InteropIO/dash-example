@@ -6,7 +6,7 @@ export class Glue42Service {
   constructor(private readonly glueStore: Glue42Store) { }
 
   public get glueAvailable(): boolean {
-    return !this.glueStore.initError;
+    return !this.glueStore.getInitError();
   }
 
   public subscribeToSelectedClient(handler: ({ clientId }: { clientId: string }) => void): Promise<() => void> {
@@ -18,6 +18,6 @@ export class Glue42Service {
       return Promise.reject('Glue42 was not initialized.');
     }
 
-    this.glueStore.glue.contexts.subscribe('SelectedClient', handler);
+    this.glueStore.getGlue().contexts.subscribe('SelectedClient', handler);
   }
 }

@@ -1,5 +1,5 @@
-from flask import Flask, render_template, send_from_directory
+from flask import Flask
 
-server = Flask(__name__, template_folder = ".", static_url_path = "/")
+server = Flask(__name__, template_folder=".", static_url_path="/")
 
 import app

@@ -7,6 +7,8 @@ import ClientDetails from './ClientDetails';
 import StocksTable from './StocksTable';
 import ChannelSelectorWidget from "./ChannelSelectorWidget"
 
+const isGlueEnterprise = window.glue42gd != null;
+
 function Stocks() {
     const [stocks, setStocks] = useState([]);
     const [{ clientId, client }, setClient] = useState({});
@@ -62,12 +64,12 @@ function Stocks() {
         <div className="container-fluid">
             <div className="d-flex justify-content-between">
                 <h1 id="title" className="text-center">Portfolio</h1>
-                <ChannelSelectorWidget
+                {isGlueEnterprise ? null : <ChannelSelectorWidget
                     key={true}
                     channelNamesAndColors={channelNamesAndColors}
                     onChannelSelected={onChannelSelected}
                     onDefaultChannelSelected={setDefaultClient}
-                />
+                />}
             </div>
             <div className="row">
                 <div className="col-md-12">

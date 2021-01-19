@@ -1,19 +1,16 @@
-from flask import Flask, render_template, send_from_directory
-import os.path as path
+import os
+import sys
 
-server = Flask(__name__, template_folder = ".", static_url_path = "/")
+sys.path.append(os.path.abspath("../../server"))
+from server_helpers import createServer
+
+local_dir = os.path.dirname(os.path.realpath(__file__))
+
+server = createServer({
+    "template_folder": local_dir,
+    "static_url_path": "/",
+    "local_dir": local_dir
+})
 
 import app_a
 import app_b
-
-@server.route("/")
-@server.route("/notification-click")
-def index():
-    return render_template('index.html')
-
-@server.route("/glue/<path:filename>")
-def glue_configs(filename):
-    d = path.abspath(path.join(__file__ ,"../../../"))
-    glue_dir = path.join(d, 'static\glue')
-
-    return send_from_directory(glue_dir, filename)
