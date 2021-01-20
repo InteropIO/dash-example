@@ -5,6 +5,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 
 import GlueWeb from '@glue42/web';
+import GlueDesktop from '@glue42/desktop';
 import { Glue42Ng } from '@glue42/ng';
 import { Glue42Service } from './glue.service';
 import { DataService } from './data.service';
@@ -18,11 +19,15 @@ import { DataService } from './data.service';
     HttpClientModule,
 
     Glue42Ng.forRoot({
-      factory: GlueWeb,
       holdInit: true,
-      config: {
-        appManager: 'full',
-        application: 'app-b'
+      web: {
+        factory: GlueWeb
+      },
+      desktop: {
+        factory: GlueDesktop,
+        config: {
+          appManager: 'full'
+        }
       }
     })
   ],

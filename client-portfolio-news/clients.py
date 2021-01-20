@@ -44,7 +44,20 @@ def client_details_card():
     ))
 
 # To use Channels API, we need to enable channels in the config.
-app.layout = dash_glue.glue42(id='glue42', config={ "channels": True }, children=[
+glue_settings = {
+    'web': {
+        'config': {
+            'channels': True
+        }
+    },
+    'desktop': {
+        'config': {
+            'channels': True
+        }
+    }
+}
+
+app.layout = dash_glue.glue42(id='glue42', settings=glue_settings, children=[
 
     dash_glue.context(id=SELECTED_CLIENT_CONTEXT),
     dash_glue.channels(id="glue42-channels"),

@@ -11,14 +11,38 @@ data_path = path.abspath(path.join('data'))
 def index():
     return render_template('index.html')
 
-# Glue42 Core assets
-@server.route("/glue/<path:filename>")
-def glue_configs(filename):
+@server.route("/local/<path:filename>")
+def local_scripts(filename):
+    local_dir = path.dirname(path.realpath(__file__))
 
-    d = path.abspath(path.join(__file__ ,"../../"))
-    glue_dir = path.join(d, 'static\glue')
+    return send_from_directory(local_dir, filename)
+
+@server.route("/scripts/<path:filename>")
+def shared_scripts(filename):
+    shared_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../")),
+        'static/scripts'
+    )
+
+    return send_from_directory(shared_dir, filename)
+
+@server.route("/glue/<path:filename>")
+def static_glue(filename):
+    glue_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../")),
+        'static/glue'
+    )
 
     return send_from_directory(glue_dir, filename)
+
+@server.route("/assets/<path:filename>")
+def static_assets(filename):
+    assets_dir = path.join(
+        path.abspath(path.join(__file__ ,"../../")),
+        'static/assets'
+    )
+
+    return send_from_directory(assets_dir, filename)
 
 @server.route("/api/clients/")
 def clients_data():

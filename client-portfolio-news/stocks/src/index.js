@@ -1,14 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import GlueWeb from "@glue42/web";
+import GlueDesktop from "@glue42/desktop";
 import { GlueProvider } from '@glue42/react-hooks';
 import 'bootstrap/dist/css/bootstrap.css';
 import './index.css';
 import Stocks from './Stocks';
 import * as serviceWorker from './serviceWorker';
 
+const glueSettings = {
+    web: {
+        factory: GlueWeb
+    },
+    desktop: {
+        factory: GlueDesktop,
+        config: {
+            appManager: 'full'
+        }
+    }
+}
+
 ReactDOM.render(
-    <GlueProvider config={{ channels: true }} glueFactory={GlueWeb}>
+    <GlueProvider settings={glueSettings} glueFactory={GlueWeb}>
         <Stocks />
     </GlueProvider>,
     document.getElementById('root')
