@@ -1,6 +1,6 @@
 [
     {
-        "title": "Application A (Publish and Subscribe)",
+        "title": "Application A (Publish and Subscribe Channels)",
         "type": "window",
         "name": "app-a",
         "hidden": false,
@@ -14,7 +14,7 @@
         }
     },
     {
-        "title": "Application B (Publish and Subscribe)",
+        "title": "Application B (Publish and Subscribe Channels)",
         "type": "window",
         "name": "app-b",
         "hidden": false,

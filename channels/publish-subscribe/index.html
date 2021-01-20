@@ -5,41 +5,46 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Publish and Subscribe</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Publish and Subscribe Channels</h3>
-    <p>
-        Python Dash applications integrated with Glue42. Once multiple applications are on the same channel, they can
-        communicate by publishing and subscribing data to the channel. This is achieved through the shared context data
-        object that the applications monitor.
-    </p>
-    <p>
-        When the two applications are on the same channel, Application B can publish data that is received and logged by
-        Application A if it has subscribed for updates of the current channel. Note that if the applications are not
-        on the same channel the applications will not exchange any data.
-    </p>
-    <p>
-        Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
-    </p>
-    <ul>
-        <li><a href="/app-a" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application A</a>
-        </li>
-        <li><a href="/app-b" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Application B</a>
-        </li>
-    </ul>
+    <div id="example-description">
+        <h3>Publish and Subscribe Channels</h3>
+        <p>
+            Python Dash applications integrated with Glue42. Once multiple applications are on the same channel, they
+            can
+            communicate by publishing and subscribing data to the channel. This is achieved through the shared context
+            data
+            object that the applications monitor.
+        </p>
+        <p>
+            When the two applications are on the same channel, Application B can publish data that is received and
+            logged by
+            Application A if it has subscribed for updates of the current channel. Note that if the applications are not
+            on the same channel the applications will not exchange any data.
+        </p>
+        <p>
+            Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
+        </p>
+    </div>
 
-    <div style="display: flex">
-        <iframe src="/app-a" style="height: 600px"></iframe>
-        <iframe src="/app-b" style="height: 600px"></iframe>
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+        </div>
+
+        <p>Start the applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 
