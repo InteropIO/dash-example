@@ -5,35 +5,44 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Discovering and Navigating Channels</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Discovering and Navigating Channels</h3>
-    <p>
-        Python Dash application integrated with Glue42. The application demonstrates how to navigate through the
-        available channels. An application can be part of only one channel at a time. The example application also
-        demonstrates how to get the context (name, meta, data) of the current channel.
-    </p>
-    <p>
-        Use the dropdown to leave the current channel or select a new one. The background color of the dropdown reflects
-        the color of the current channel.
-    </p>
-    <p>
-        Checkout the source code in <code>app.py</code> for details.
-    </p>
+    <div id="example-description">
+        <h3>Discovering and Navigating Channels</h3>
+        <p>
+            Python Dash application integrated with Glue42. The application demonstrates how to navigate through the
+            available channels. An application can be part of only one channel at a time. The example application also
+            demonstrates how to get the context (name, meta, data) of the current channel.
+        </p>
+        <p>
+            Use the dropdown to leave the current channel or select a new one. The background color of the dropdown
+            reflects
+            the color of the current channel.
+        </p>
+        <p>
+            Checkout the source code in <code>app.py</code> for details.
+        </p>
+    </div>
 
-    <a href="/app" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">
-        Open App
-    </a>
 
-    <div style="display: flex">
-        <iframe src="/app" style="height: 600px"></iframe>
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+        </div>
+
+        <p>Start the applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 

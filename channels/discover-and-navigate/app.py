@@ -11,8 +11,21 @@ app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app/')
 # Dropdown option, that will be used to leave the current channel.
 no_channel = { "label": "No Channel", "value": "" }
 
+glue_settings = {
+    'web': {
+        'config': {
+            'channels': True
+        }
+    },
+    'desktop': {
+        'config': {
+            'channels': True
+        }
+    }
+}
+
 # To use Channels API, we need to enable channels in the config.
-app.layout = dash_glue.glue42(id='glue42', config={'channels': True}, children = [
+app.layout = dash_glue.glue42(id='glue42', settings=glue_settings, children = [
     # Instantialing the channels component.
     dash_glue.channels(id="glue42-channels"),
 
@@ -63,7 +76,7 @@ def channel_changed(value):
 
         return [
             { "backgroundColor": color },
-            "Current channel ({})'s data: {}".format(channel_name, dataAsJsonString)
+            "Current channel ({}). Data: {}".format(channel_name, dataAsJsonString)
         ]
 
     return [None, ""]
