@@ -67,7 +67,7 @@ app.layout = dash_glue.glue42(id='glue42', settings=glue_settings, children=[
         html.Div(className="d-flex justify-content-between", children=[
             html.H1("Clients"),
 
-            html.Div(children=[
+            html.Div(id='channels-selector', children=[
                 html.Label('Select Channel: '),
                 dcc.Dropdown(id='channels-list'),
             ]),
@@ -107,6 +107,15 @@ def channels_to_dpd_options(channels_info):
         return [no_channel] + list(options)
 
     return [no_channel]
+
+@app.callback(Output('channels-selector', 'style'), [Input('glue42', 'isEnterprise')])
+def channel_changed(isEnterprise):
+    show_selector = (isEnterprise is None) or isEnterprise == False
+    visibility = 'visible' if show_selector else 'hidden'
+
+    return { 
+        "visibility": visibility
+    }
 
 # Discovering the list of all channels.
 @app.callback(Output('channels-list', 'options'), [Input('glue42-channels', 'channelsInfo')])
