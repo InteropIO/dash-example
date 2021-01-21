@@ -68251,7 +68251,7 @@ function __awaiter(thisArg, _arguments, P, generator) {
 }
 
 const defaultConfig = {
-    logger: "trace",
+    logger: "info",
     gateway: { webPlatform: {} },
     libraries: []
 };
@@ -68259,7 +68259,7 @@ const parseConfig = (config) => {
     var _a;
     const combined = Object.assign({}, defaultConfig, config);
     if (combined.systemLogger) {
-        combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "trace";
+        combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "info";
     }
     return combined;
 };
@@ -69234,6 +69234,7 @@ const basicInstanceDataDecoder = object({
 const applicationStartConfigDecoder = object({
     name: nonEmptyStringDecoder,
     waitForAGMReady: boolean(),
+    id: optional(nonEmptyStringDecoder),
     context: optional(anyJson()),
     top: optional(number()),
     left: optional(number()),
@@ -70094,7 +70095,7 @@ class AppManagerController {
         return this.registry.add("instance-stopped", callback);
     }
     startApplication(appName, context, options) {
-        var _a;
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const startOptions = {
                 name: appName,
@@ -70105,7 +70106,8 @@ class AppManagerController {
                 width: options === null || options === void 0 ? void 0 : options.width,
                 height: options === null || options === void 0 ? void 0 : options.height,
                 relativeTo: options === null || options === void 0 ? void 0 : options.relativeTo,
-                relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection
+                relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection,
+                id: (_b = options) === null || _b === void 0 ? void 0 : _b.reuseId
             };
             const openResult = yield this.bridge.send("appManager", operations$1.applicationStart, startOptions);
             const app = this.applications.find((a) => a.name === openResult.applicationName);
@@ -70938,7 +70940,7 @@ class IoC {
     }
 }
 
-var version = "2.0.5";
+var version = "2.0.6";
 
 const createFactoryFunction = (coreFactoryFunction) => {
     return (userConfig) => __awaiter(void 0, void 0, void 0, function* () {

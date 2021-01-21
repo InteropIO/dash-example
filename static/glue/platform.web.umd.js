@@ -67,7 +67,7 @@
     }
 
     const defaultConfig = {
-        logger: "trace",
+        logger: "info",
         gateway: { webPlatform: {} },
         libraries: []
     };
@@ -75,7 +75,7 @@
         var _a;
         const combined = Object.assign({}, defaultConfig, config);
         if (combined.systemLogger) {
-            combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "trace";
+            combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "info";
         }
         return combined;
     };
@@ -1050,6 +1050,7 @@
     const applicationStartConfigDecoder = object({
         name: nonEmptyStringDecoder,
         waitForAGMReady: boolean(),
+        id: optional(nonEmptyStringDecoder),
         context: optional(anyJson()),
         top: optional(number()),
         left: optional(number()),
@@ -1910,7 +1911,7 @@
             return this.registry.add("instance-stopped", callback);
         }
         startApplication(appName, context, options) {
-            var _a;
+            var _a, _b;
             return __awaiter$1(this, void 0, void 0, function* () {
                 const startOptions = {
                     name: appName,
@@ -1921,7 +1922,8 @@
                     width: options === null || options === void 0 ? void 0 : options.width,
                     height: options === null || options === void 0 ? void 0 : options.height,
                     relativeTo: options === null || options === void 0 ? void 0 : options.relativeTo,
-                    relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection
+                    relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection,
+                    id: (_b = options) === null || _b === void 0 ? void 0 : _b.reuseId
                 };
                 const openResult = yield this.bridge.send("appManager", operations$1.applicationStart, startOptions);
                 const app = this.applications.find((a) => a.name === openResult.applicationName);
@@ -2754,7 +2756,7 @@
         }
     }
 
-    var version = "2.0.5";
+    var version = "2.0.6";
 
     const createFactoryFunction = (coreFactoryFunction) => {
         return (userConfig) => __awaiter$1(void 0, void 0, void 0, function* () {
@@ -11396,7 +11398,9 @@
         platformPing: { name: "platformPing" },
         platformReady: { name: "platformReady" },
         platformUnload: { name: "platformUnload" },
-        clientUnload: { name: "clientUnload" }
+        clientUnload: { name: "clientUnload" },
+        parentPing: { name: "parentPing" },
+        parentReady: { name: "parentReady" }
     };
     const GlueWebPlatformControlName$1 = "T42.Web.Platform.Control";
     const GlueWebPlatformStreamName$1 = "T42.Web.Platform.Stream";
@@ -12380,7 +12384,7 @@
         local: optional$1(array$1(allApplicationDefinitionsDecoder$1))
     });
     const layoutsConfigDecoder = object$1({
-        mode: oneOf$1(constant$1("idb"), constant$1("session")),
+        mode: optional$1(oneOf$1(constant$1("idb"), constant$1("session"))),
         local: optional$1(array$1(glueLayoutDecoder$1))
     });
     const channelsConfigDecoder = object$1({
@@ -13020,7 +13024,7 @@
 
     var cjs = deepmerge_1;
 
-    var version$3 = "1.0.4";
+    var version$3 = "1.0.5";
 
     class Platform {
         constructor(controller, config) {
@@ -23660,7 +23664,7 @@
             var _a, _b;
             return __awaiter(this, void 0, void 0, function* () {
                 const port = yield this.portsBridge.createInternalClient();
-                const logLevel = (_b = (_a = config === null || config === void 0 ? void 0 : config.systemLogger) === null || _a === void 0 ? void 0 : _a.level) !== null && _b !== void 0 ? _b : "trace";
+                const logLevel = (_b = (_a = config === null || config === void 0 ? void 0 : config.systemLogger) === null || _a === void 0 ? void 0 : _a.level) !== null && _b !== void 0 ? _b : "info";
                 return yield GlueCore$1({
                     application: "Platform",
                     gateway: { webPlatform: { port } },
@@ -23881,18 +23885,24 @@
                 if (data.type === Glue42CoreMessageTypes.platformPing.name) {
                     return this.handlePlatformPing(event.source, event.origin);
                 }
+                if (data.type === Glue42CoreMessageTypes.parentPing.name) {
+                    return this.handleParentPing(event.source, event.origin);
+                }
             });
         }
         handleRemoteConnectionRequest(source, origin, clientId, clientType, bridgeInstanceId) {
+            var _a;
             return __awaiter(this, void 0, void 0, function* () {
                 const channel = this.ioc.createMessageChannel();
                 yield this.gateway.connectClient(channel.port1, this.removeClient.bind(this));
                 const foundData = this.sessionStorage.getBridgeInstanceData(bridgeInstanceId);
                 const appName = foundData === null || foundData === void 0 ? void 0 : foundData.appName;
+                const myWindowId = (_a = this.sessionStorage.getWindowDataByName("Platform")) === null || _a === void 0 ? void 0 : _a.windowId;
                 const message = {
                     glue42core: {
                         type: Glue42CoreMessageTypes.connectionAccepted.name,
                         port: channel.port2,
+                        parentWindowId: myWindowId,
                         appName, clientId, clientType
                     }
                 };
@@ -23901,6 +23911,14 @@
                 }
                 source.postMessage(message, origin, [channel.port2]);
             });
+        }
+        handleParentPing(source, origin) {
+            const message = {
+                glue42core: {
+                    type: Glue42CoreMessageTypes.parentReady.name
+                }
+            };
+            source.postMessage(message, origin);
         }
         handlePlatformPing(source, origin) {
             const message = {
@@ -24909,6 +24927,7 @@
     });
     const applicationStartConfigDecoder$1 = object$1({
         name: nonEmptyStringDecoder$1,
+        id: optional$1(nonEmptyStringDecoder$1),
         context: optional$1(anyJson$1()),
         top: optional$1(number$1()),
         left: optional$1(number$1()),
@@ -25016,7 +25035,7 @@
             this.ioc.windowsController.cleanUpWindow(config.windowId);
         }
         handleApplicationStart(config, commandId) {
-            var _a, _b, _c, _d, _e, _f, _g;
+            var _a, _b, _c, _d, _e, _f, _g, _h;
             return __awaiter(this, void 0, void 0, function* () {
                 (_a = this.logger) === null || _a === void 0 ? void 0 : _a.trace(`[${commandId}] handling application start command for application: ${config.name}`);
                 const appDefinition = this.sessionStorage.getAllApps().find((app) => app.name === config.name);
@@ -25024,20 +25043,20 @@
                     throw new Error(`Cannot start an instance of application: ${config.name}, because it is not found.`);
                 }
                 const instance = {
-                    id: shortid$1.generate(),
+                    id: (_b = config.id) !== null && _b !== void 0 ? _b : shortid$1.generate(),
                     applicationName: config.name
                 };
                 const openBounds = yield this.getStartingBounds(appDefinition.createOptions, config, commandId);
                 const options = `left=${openBounds.left},top=${openBounds.top},width=${openBounds.width},height=${openBounds.height}`;
-                (_b = this.logger) === null || _b === void 0 ? void 0 : _b.trace(`[${commandId}] open arguments are valid, opening to bounds: ${options}`);
+                (_c = this.logger) === null || _c === void 0 ? void 0 : _c.trace(`[${commandId}] open arguments are valid, opening to bounds: ${options}`);
                 const childWindow = window.open(appDefinition.createOptions.url, instance.id, options);
                 if (!childWindow) {
                     throw new Error(`Cannot an instance with url: ${appDefinition.createOptions.url} for application: ${config.name}. The most likely reason is that the user has not approved popups or has a blocker.`);
                 }
                 this.sessionStorage.saveBridgeInstanceData({ windowId: instance.id, appName: instance.applicationName });
-                (_c = this.logger) === null || _c === void 0 ? void 0 : _c.trace(`[${commandId}] the new window has been opened successfully with id: ${instance.id}, checking for AGM ready and notifying windows`);
+                (_d = this.logger) === null || _d === void 0 ? void 0 : _d.trace(`[${commandId}] the new window has been opened successfully with id: ${instance.id}, checking for AGM ready and notifying windows`);
                 if (config.waitForAGMReady) {
-                    (_d = this.logger) === null || _d === void 0 ? void 0 : _d.trace(`[${commandId}] wait for AGM is set, configuring the lock`);
+                    (_e = this.logger) === null || _e === void 0 ? void 0 : _e.trace(`[${commandId}] wait for AGM is set, configuring the lock`);
                     this.setLock(instance.id);
                 }
                 yield this.notifyWindows(instance, config.context, childWindow);
@@ -25049,15 +25068,15 @@
                         throw new Error(`Application start for ${config.name} timed out waiting for client to initialize Glue`);
                     }
                 }
-                (_e = this.logger) === null || _e === void 0 ? void 0 : _e.trace(`[${commandId}] the windows controller has been successfully notified`);
+                (_f = this.logger) === null || _f === void 0 ? void 0 : _f.trace(`[${commandId}] the windows controller has been successfully notified`);
                 const processConfig = {
                     data: instance,
                     monitorState: config.waitForAGMReady ? undefined : { child: childWindow },
                     context: config.context
                 };
                 yield this.processNewInstance(processConfig);
-                (_f = this.logger) === null || _f === void 0 ? void 0 : _f.trace(`[${commandId}] the new instance with id ${instance.id} has been saved, announced and context set, lifting key two and responding to caller`);
-                (_g = this.locks[instance.id]) === null || _g === void 0 ? void 0 : _g.openKeyTwo();
+                (_g = this.logger) === null || _g === void 0 ? void 0 : _g.trace(`[${commandId}] the new instance with id ${instance.id} has been saved, announced and context set, lifting key two and responding to caller`);
+                (_h = this.locks[instance.id]) === null || _h === void 0 ? void 0 : _h.openKeyTwo();
                 return instance;
             });
         }
