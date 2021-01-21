@@ -10,12 +10,15 @@ import * as serviceWorker from './serviceWorker';
 
 const glueSettings = {
     web: {
-        factory: GlueWeb
+        factory: GlueWeb,
+        config: {
+            channels: 'full'
+        }
     },
     desktop: {
         factory: GlueDesktop,
         config: {
-            appManager: 'full'
+            channels: 'full'
         }
     }
 }

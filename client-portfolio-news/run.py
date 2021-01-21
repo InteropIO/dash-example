@@ -15,6 +15,8 @@ server = createServer({
 
 import clients
 
+data_path = os.path.abspath(os.path.join('data'))
+
 @server.route("/api/clients/")
 def clients_data():
     return send_from_directory(data_path, 'clients.json')
