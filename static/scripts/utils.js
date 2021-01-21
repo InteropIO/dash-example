@@ -22,7 +22,7 @@
 
     function toggleGlueAvailable() {
         document.getElementById("glueImg").src = "assets/connected.svg";
-        document.getElementById("glueSpan").textContent = "Main App (Web Platform) Connected";
+        document.getElementById("glueSpan").textContent = "Main App (Web Platform)";
     };
 
     window.toggleGlueAvailable = toggleGlueAvailable;

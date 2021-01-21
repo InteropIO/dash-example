@@ -2,22 +2,21 @@ h4#glueSpan {
     display: inline;
 }
 
-#applications-list {
-    padding-left: 0;
-    list-style-type: none;
-}
-
 #applications-list li {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 #example-description {
-    border: 1px solid black;
-    padding: 1rem;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
 }
 
 #main-app {
-    border: 1px solid black;
-    padding: 1rem;
-    margin-top: 1rem;
+    padding: 0.5rem;
+}
+
+iframe.app {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+    height: 500px;
 }

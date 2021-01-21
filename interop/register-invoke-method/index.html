@@ -40,16 +40,22 @@
     <div id="main-app">
         <div>
             <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
-            <h4 id="glueSpan">Main App (Web Platform) Disconnected</h4>
+            <h4 id="glueSpan">Main App (Web Platform)</h4>
         </div>
 
-        <p>Start the applications:</p>
+        <p>Open applications:</p>
         <ul id="applications-list">
             <!-- Example applications displayed dynamically -->
         </ul>
 
+        <div style="display: flex">
+            <iframe src="/app-a" class="app"></iframe>
+            <iframe src="/app-b" class="app"></iframe>
+        </div>
+
         <script src="/local/index.js"></script>
     </div>
 </body>
+
 
 </html>
