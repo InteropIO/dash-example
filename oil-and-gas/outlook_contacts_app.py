@@ -65,7 +65,7 @@ def get_contacts_by_outlook_id(ids, contacts):
     return result
 
 # Callback the will update the "contacts" shared context when dropdown selected values change.
-@app.callback(Output('contacts', 'outgoing'), [Input('contacts-select', 'value')], [State('contacts-store', 'data')])
+@app.callback(Output('contacts', 'update'), [Input('contacts-select', 'value')], [State('contacts-store', 'data')])
 def update_contacts_context(value, data):
     if (value is not None) and (data is not None):
         contacts = get_contacts_by_outlook_id(value, data["items"])

@@ -60,15 +60,13 @@ def change_channel(channel_name):
         else:
             return { 'action': 'join', 'channelName': channel_name }
 
-@app.callback(Output('channels-list', 'style'), [Input('glue42-channels', 'incoming')])
-def channel_changed(value):
-    if value is not None and value["channel"]:
-        channel = value["channel"]
+@app.callback(Output('channels-list', 'style'), [Input('glue42-channels', 'channel')])
+def channel_changed(channel):
+    if channel is not None:
         color = channel["meta"]["color"]
-        
         return { "backgroundColor": color }
 
-@app.callback(Output('glue42-channels', 'outgoing'), [Input('publish-data', 'n_clicks')])
+@app.callback(Output('glue42-channels', 'publish'), [Input('publish-data', 'n_clicks')])
 def publish_data(n_clicks):
     if n_clicks != 0:        
         now = time.time()

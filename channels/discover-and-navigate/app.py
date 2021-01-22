@@ -63,14 +63,13 @@ def change_channel(channel_name):
 
 @app.callback(
     [Output('channels-list', 'style'), Output('channel-data', 'children')],
-    [Input('glue42-channels', 'incoming')]
+    [Input('glue42-channels', 'channel')]
 )
-def channel_changed(value):
-    if value is not None and value["channel"]:
-        channel = value["channel"]
+def channel_changed(channel):
+    if channel is not None:
         channel_name = channel["name"]
         color = channel["meta"]["color"]
-        data = value["data"]
+        data = channel["data"]
 
         dataAsJsonString = json.dumps(data)
 

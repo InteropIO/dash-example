@@ -314,7 +314,7 @@ Water: ${water} bbl
 @app.callback(
     Output('invoke-create-meeting', 'call'), 
     [Input('create-meeting-button', 'n_clicks')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    [State("aggregate_data", "data"), State("contacts", "current"), State("outlook-checkbox", "value")]
 )
 def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
     if (n_clicks != 0) and (data is not None):
@@ -330,7 +330,7 @@ def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
 @app.callback(
     Output('invoke-show-meeting', 'call'), 
     [Input('invoke-create-meeting', 'result')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    [State("aggregate_data", "data"), State("contacts", "current"), State("outlook-checkbox", "value")]
 )
 def show_meeting(result, data, contactsContext, outlook_automatic):
     if result is None:
@@ -353,7 +353,7 @@ def show_meeting(result, data, contactsContext, outlook_automatic):
 @app.callback(
     Output('invoke-create-email', 'call'), 
     [Input('send-email-button', 'n_clicks')],
-    [State("aggregate_data", "data"), State("contacts", "incoming")]
+    [State("aggregate_data", "data"), State("contacts", "current")]
 )
 def create_email(n_clicks, data, contactsContext):
     if (n_clicks != 0) and (data is not None):
@@ -370,7 +370,7 @@ def create_email(n_clicks, data, contactsContext):
 @app.callback(
     Output('invoke-show-email', 'call'), 
     [Input('invoke-create-email', 'result')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    [State("aggregate_data", "data"), State("contacts", "current"), State("outlook-checkbox", "value")]
 )
 def show_email(result, data, contactsContext, outlook_automatic):
     if result is None:

@@ -21,11 +21,11 @@ app.layout = dash_glue.glue42(id='glue42', children = [
     ])
 ])
 
-@app.callback(Output('app-styling', 'outgoing'), [Input('bg-color', 'value')])
+@app.callback(Output('app-styling', 'update'), [Input('bg-color', 'value')])
 def update_app_styling_context(value):
-    return { "data": { "backgroundColor": value } }
+    return { "backgroundColor": value }
 
-@app.callback(Output('app-wrapper', 'style'), [Input('app-styling', 'incoming')])
+@app.callback(Output('app-wrapper', 'style'), [Input('app-styling', 'current')])
 def app_styling_context_changed_handler(context):
     if context is not None:
         bg_color = context['data']['backgroundColor']

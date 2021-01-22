@@ -133,8 +133,8 @@ def change_channel(channel_name):
 
 @app.callback(
     [
-        Output(SELECTED_CLIENT_CONTEXT, 'outgoing'),
-        Output('glue42-channels', 'outgoing')
+        Output(SELECTED_CLIENT_CONTEXT, 'update'),
+        Output('glue42-channels', 'publish')
     ], 
     [Input(client["id"], 'n_clicks') for client in clients_data]
 )
@@ -160,13 +160,13 @@ def handle_client_clicked(*buttons):
         Output('client-details', 'children'), 
         Output('client-collapse', 'is_open')
     ], 
-    [Input('glue42-channels', 'incoming')]
+    [Input('glue42-channels', 'channel')]
 )
-def channel_data_changed(value):
-    if (value is None) or (not ("data" in value)) or (value["data"] is None):
+def channel_data_changed(channel):
+    if (channel is None) or (not ("data" in channel)) or (channel["data"] is None):
         return update_client_card(None)
 
-    client_id = value["data"].get("clientId")
+    client_id = channel["data"].get("clientId")
     client = find_client(client_id)
     return update_client_card(client)
 
