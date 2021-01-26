@@ -29,14 +29,14 @@ def portfolio_data():
 def news_data():
     return send_from_directory(data_path, 'news.json')
 
-# Serving the React Application
+# Serving the React Application.
 stocks_blueprint = Blueprint('stocks', __name__, template_folder='', static_folder='stocks/build/', static_url_path='/stocks/')
 
 @stocks_blueprint.route("/stocks/")
 def stocks_app():
     return render_template("stocks/build/index.html", flask_token="stocks")
 
-# Serving the Angular Application
+# Serving the Angular Application.
 news_blueprint = Blueprint('news', __name__, template_folder='', static_folder='news/dist/', static_url_path='/news/dist/')
 
 @news_blueprint.route("/news/")

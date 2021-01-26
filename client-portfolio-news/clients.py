@@ -18,7 +18,7 @@ app = dash.Dash(__name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP]
 )
 
-# Dropdown option, that will be used to leave the current channel.
+# Dropdown option that will be used to leave the current Channel.
 no_channel = { "label": "No Channel", "value": "" }
 
 CONTENT_STYLE = {
@@ -43,7 +43,7 @@ def client_details_card():
         ]
     ))
 
-# To use Channels API, we need to enable channels in the config.
+# To use the Channels API, we need to enable Channels in the config.
 glue_settings = {
     'web': {
         'config': {
@@ -117,12 +117,12 @@ def channel_changed(isEnterprise):
         "visibility": visibility
     }
 
-# Discovering the list of all channels.
+# Discovering the list of all Channels.
 @app.callback(Output('channels-list', 'options'), [Input('glue42-channels', 'channelsInfo')])
 def update_channels_list(channels_info):
     return channels_to_dpd_options(channels_info)
 
-# Logic whether to join a channel or leave the current one.
+# Logic whether to join a Channel or leave the current one.
 @app.callback(Output('glue42-channels', 'change'), [Input('channels-list', 'value')])
 def change_channel(channel_name):
     if channel_name is not None:
@@ -143,7 +143,7 @@ def handle_client_clicked(*buttons):
     if not ctx.triggered:
         raise PreventUpdate
 
-    # Button id is mapped to client's id.
+    # Button ID is mapped to the client ID.
     client_id = ctx.triggered[0]['prop_id'].split('.')[0]
     client = find_client(client_id)
     if client is None:

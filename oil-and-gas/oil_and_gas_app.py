@@ -1,4 +1,4 @@
-# Import required libraries
+# Import required libraries.
 import pickle
 import copy
 import pathlib
@@ -14,10 +14,10 @@ from dash.exceptions import PreventUpdate
 from run import server
 from glue_helpers import create_outlook_meeting, show_outlook_item, create_outlook_email
 
-# Multi-dropdown options
+# Multi-dropdown options.
 from controls import COUNTIES, WELL_STATUSES, WELL_TYPES, WELL_COLORS
 
-# get relative data folder
+# Get relative data folder.
 PATH = pathlib.Path(__file__).parent
 DATA_PATH = PATH.joinpath("data").resolve()
 
@@ -28,7 +28,7 @@ app = dash.Dash(
     routes_pathname_prefix='/oil-and-gas/'
 )
 
-# Create controls
+# Create controls.
 county_options = [
     {"label": str(COUNTIES[county]), "value": str(county)} for county in COUNTIES
 ]
@@ -44,7 +44,7 @@ well_type_options = [
 ]
 
 
-# Load data
+# Load data.
 df = pd.read_csv(DATA_PATH.joinpath("wellspublic.csv"), low_memory=False)
 df["Date_Well_Completed"] = pd.to_datetime(df["Date_Well_Completed"])
 df = df[df["Date_Well_Completed"] > dt.datetime(1960, 1, 1)]
@@ -56,7 +56,7 @@ dataset = trim.to_dict(orient="index")
 points = pickle.load(open(DATA_PATH.joinpath("points.pkl"), "rb"))
 
 
-# Create global chart template
+# Create global chart template.
 mapbox_access_token = "pk.eyJ1IjoicGxvdGx5bWFwYm94IiwiYSI6ImNrOWJqb2F4djBnMjEzbG50amg0dnJieG4ifQ.Zme1-Uzoi75IaFbieBDl3A"
 
 layout = dict(
@@ -79,7 +79,7 @@ layout = dict(
 send_meeting_automatically = "send_meeting_automatically"
 send_email_automatically = "send_email_automatically"
 
-# Create app layout
+# Create app layout.
 app.layout = html.Div(
     [
         # Create an instance of Glue42.
@@ -101,7 +101,7 @@ app.layout = html.Div(
         ]),
 
         dcc.Store(id="aggregate_data"),
-        # empty Div to trigger javascript file for graph resizing
+        # Empty Div to trigger the JavaScript file for graph resizing.
         html.Div(id="output-clientside"),
         html.Div(
             [
@@ -310,7 +310,7 @@ Oil: ${oil} bbl
 Water: ${water} bbl
             '''
 
-# Callback that will create a meeting in Outlook via Glue42 Outlook Add-in.
+# Callback that will create a meeting in Outlook via the Glue42 Outlook Connector.
 @app.callback(
     Output('invoke-create-meeting', 'call'), 
     [Input('create-meeting-button', 'n_clicks')],
@@ -326,7 +326,7 @@ def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
         call = create_outlook_meeting(meeting_subject, meeting_body, recipients)
         return call
 
-# Callback that will show or send a meeting item created in Outlook via Glue42 Outlook Add-in.
+# Callback that will show or send a "meeting" item created in Outlook via the Glue42 Outlook Connector.
 @app.callback(
     Output('invoke-show-meeting', 'call'), 
     [Input('invoke-create-meeting', 'result')],
@@ -341,7 +341,7 @@ def show_meeting(result, data, contactsContext, outlook_automatic):
     if has_error:
         print('An error occurred when creating a meeting.', error)
     else:
-        # Once the "meeting" item is created, we can show the Outlook "Meeting" window or send automatically the meeting.
+        # Once the "meeting" item is created, we can show the Outlook "Meeting" window or send the meeting automatically.
         item = result["invocationResult"]["returned"]
         item_id = item.get("ItemID")
         send_automatically = True if (send_meeting_automatically in outlook_automatic) else False
@@ -349,7 +349,7 @@ def show_meeting(result, data, contactsContext, outlook_automatic):
         call = show_outlook_item(item_id, send_automatically)
         return call
 
-# Callback that will create an email in Outlook via Glue42 Outlook Add-in.
+# Callback that will create an email in Outlook via the Glue42 Outlook Connector.
 @app.callback(
     Output('invoke-create-email', 'call'), 
     [Input('send-email-button', 'n_clicks')],
@@ -366,7 +366,7 @@ def create_email(n_clicks, data, contactsContext):
         call = create_outlook_email(email_subject, email_body, recipients)
         return call
 
-# Callback that will show or send an email item created in Outlook via Glue42 Outlook Add-in.
+# Callback that will show or send an "email" item created in Outlook via the Glue42 Outlook Connector.
 @app.callback(
     Output('invoke-show-email', 'call'), 
     [Input('invoke-create-email', 'result')],
@@ -389,7 +389,7 @@ def show_email(result, data, contactsContext, outlook_automatic):
         call = show_outlook_item(item_id, send_automatically)
         return call
 
-# Helper functions
+# Helper functions.
 def human_format(num):
     if num == 0:
         return "0"
@@ -470,7 +470,7 @@ def produce_aggregate(selected, year_slider):
     return index, gas, oil, water
 
 
-# Create callbacks
+# Create callbacks.
 app.clientside_callback(
     ClientsideFunction(namespace="clientside", function_name="resize"),
     Output("output-clientside", "children"),

@@ -8,10 +8,10 @@ from run import server
 app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
 
 app.layout = dash_glue.glue42(id='glue42', children=[
-    # A component which is responsible to invoke the "Sum" interop method.
+    # A component which is responsible for invoking the "Sum" Interop method.
     dash_glue.methodInvoke(id="invoke-sum"),
 
-    # A component which is responsible to invoke the "SendMessage" interop method.
+    # A component which is responsible for invoking the "SendMessage" Interop method.
     dash_glue.methodInvoke(id="invoke-send-message"),
 
     html.H3('Application A (Registering and Invoking Methods)'),

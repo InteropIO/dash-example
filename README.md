@@ -1,14 +1,16 @@
-# What is this
+# Overview
 
-This repository contains examples of how to use the Glue42-Dash library. For convenience, the setup is created with pure python.
+This repository contains examples of how to use the Glue42 Dash library. For convenience, the setup is created with pure Python. Each example is individually separated in a folder and logically grouped under `/interop`, `/contexts` or `/notifications` folders.
 
-Each example is individually separated in a folder and logically grouped under `/interop`, `/contexts` or `/notifications` folders.
+# Documentation
 
-## Quickstart
+For more information on how to use the Glue42 Dash library, see the [official documentation](https://docs.glue42.com/getting-started/how-to/glue42-enable-your-app/python-dash/index.html).
 
-1. Make sure that you use the latest python 3 (3.8.4 as of this writing). On Windows 10, the installation from the Microsoft Store works.
+# Quick Start
 
-2. Setup and activate Python virtual environment in the root folder (more detailed instructions of how to setup Dash can be found here - https://dash.plotly.com/installation).
+1. Use the latest Python 3 (3.8.4 and later). On Windows 10 you can install it from the Microsoft Store.
+
+2. Setup and activate the Python virtual environment in the root folder (more detailed instructions on how to setup Dash can be found [here](https://dash.plotly.com/installation)):
 
 ```sh
 python -m virtualenv venv
@@ -19,15 +21,18 @@ source venv/bin/activate
 .\venv\Scripts\activate.bat
 ```
 
-3. Install required packages.
+3. Install required packages:
+
 ```sh
 pip install -r requirements.txt
-# local package - dash glue is not published yet
+# local package - Glue42 Dash is not published yet
 pip install dash_glue-0.0.3.tar.gz
 ```
 
-## Run an example locally
-1. Activate the virtual environment (if not yet).
+# Run an Example Locally
+
+1. Activate the virtual environment:
+
 ```sh
 # Unix
 source venv/bin/activate
@@ -35,10 +40,9 @@ source venv/bin/activate
 .\venv\Scripts\activate.bat
 ```
 
-2. Start a Flask server to host the applications of an example. Each example contains one or more Dash or JavaScript applications. There is also an index.html to help preview the applications in Glue42 Core. Go to an example folder (e.g. `/interop/register-invoke-method`) and run the following:
+2. Start a Flask server to host the applications of an example. Each example contains one or more Dash or JavaScript applications. There is also an `index.html` to help preview the applications in [**Glue42 Core**](https://glue42.com/core/). Go to an example folder (e.g. `/interop/register-invoke-method`) and run the following:
 
 ```sh
-
 # Unix
 export FLASK_APP=run.py
 # Windows
@@ -47,10 +51,63 @@ set FLASK_APP=run.py
 python -m flask run
 ```
 
-### Glue42 Core 
+# Running the Applications
 
-Open [http://localhost:5000](http://localhost:5000) in your browser.
+1. Install globally the `concurrently` package used by the startup script:
 
-### Glue42 Enterprise
+```
+npm install -g concurrently
+```
 
-To run the applications of an example in a Glue42 Enterprise environment, make sure to have Glue42 3.9 (or later) installed. Then, add the content of `apps-config.json` (each example folder contains one) to your application configuration ([read this document](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) if you have not done it before). Afterwards, you can launch the applications from the Glue42 toolbar. See the applications title to know what to search for (e.g. in `/interop/register-invoke-method` there is an application with a title *Application A (Register/Invoke Methods)*).
+2. Start the Flask servers hosting the applications:
+
+```
+npm start
+```
+
+Or if running on Windows:
+
+```
+npm run start_win
+```
+
+## Glue42 Core 
+
+Open [http://localhost:4242](http://localhost:4242) in your browser.
+
+## Glue42 Enterprise
+
+To run the two applications in a [**Glue42 Enterprise**](https://glue42.com/enterprise/) environment, make sure you have Glue42 3.9 (or later) installed and add the following entry to your [application configuration](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) files:
+
+```json
+[
+    {
+        "title": "Dash App 1",
+        "type": "window",
+        "name": "dash1",
+        "hidden": false,
+        "details": {
+            "url": "http://0.0.0.0:8050/",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    },
+    {
+        "title": "Dash App 2",
+        "type": "window",
+        "name": "dash2",
+        "hidden": false,
+        "details": {
+            "url": "http://0.0.0.0:8051/",
+            "top": 25,
+            "left": 0,
+            "height": 400,
+            "width": 400
+        }
+    }
+]
+```
+
+Launch the applications from the Glue42 Toolbar.

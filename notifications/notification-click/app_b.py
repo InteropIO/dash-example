@@ -22,7 +22,7 @@ app.layout = dash_glue.glue42(id='glue42', children = [
 @app.callback(Output('message', 'children'), [Input('review-message-method', 'call')])
 def review_message_handler(call):
     if call is not None:
-        # Get the new message from method's arguments
+        # Get the new message from the method arguments.
         message = call["args"]["message"]
 
         return message

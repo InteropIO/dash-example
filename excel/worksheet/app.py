@@ -22,7 +22,7 @@ app.layout = dash_glue.glue42(id='glue42', children=[
     # Register a method with an arbitrary name to receive data changes from MS Excel.
     dash_glue.methodRegister(id="ValidateShowGrid", definition=validate_show_grid_method_name, returns=True),
 
-    # Invoke the "T42.ExcelPad.ShowGrid" interop method which is registered by Glue42 Excel Add-in to open a new worksheet.
+    # Invoke the "T42.ExcelPad.ShowGrid" interop method which is registered by the Glue42 Excel Connector to open a new worksheet.
     dash_glue.methodInvoke(id="invoke-show-grid"),
 
     # UI
@@ -83,10 +83,10 @@ app.layout = dash_glue.glue42(id='glue42', children=[
 def open_excel(n_clicks, on_change, data):
 
     if n_clicks != 0:       
-        # Columns configs must to converted to JSON string before being sent to Excel.
+        # Column configs must be converted to a JSON string before being sent to Excel.
         columns_as_json = json.dumps(excel_columns_configs)
         
-        # Data must to converted to JSON string before being sent to the Excel.
+        # Data must be converted to a JSON string before being sent to Excel.
         data_as_json = get_data_as_json(excel_columns_configs, data)
         
         workbook = "TradesBook"
@@ -144,7 +144,7 @@ def validate_show_grid(call, quantity_range, data):
 
         has_errors = len(errors) > 0
         if has_errors:
-            # Preserve table's current data due to validation failed. Return response to Excel Add-in that changes are not valid.
+            # Preserve the current table data due to validation failed. Return response to the Excel Connector that changes are not valid.
             return [
                 data,
                 {
@@ -156,7 +156,7 @@ def validate_show_grid(call, quantity_range, data):
                 }
             ]
         else:
-            # Update table's data. Return response to Excel Add-in, that no errors found.
+            # Update the table data. Return response to the Excel Connector that no errors were found.
             return [
                 data_from_excel if (len(data_from_excel) > 0) else data, 
                 {

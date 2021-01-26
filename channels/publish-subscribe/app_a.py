@@ -7,10 +7,10 @@ from run import server
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
 
-# Dropdown option, that will be used to leave the current channel.
+# Dropdown option that will be used to leave the current Channel.
 no_channel = { "label": "No Channel", "value": "" }
 
-# To use Channels API, we need to enable channels in the config.
+# To use the Channels API, we need to enable Channels in the config.
 glue_settings = {
     'web': {
         'config': {
@@ -25,7 +25,7 @@ glue_settings = {
 }
 
 app.layout = dash_glue.glue42(id='glue42', settings=glue_settings, children = [
-    # Instantialing the channels component.
+    # Instantiating the Channels component.
     dash_glue.channels(id="glue42-channels"),
 
     html.H3('Application A (Publish and Subscribe Channels)'),
@@ -46,12 +46,12 @@ def channels_to_dpd_options(channels_info):
 
     return [no_channel]
 
-# Discovering the list of all channels.
+# Discovering the list of all Channels.
 @app.callback(Output('channels-list', 'options'), [Input('glue42-channels', 'channelsInfo')])
 def update_channels_list(channels_info):
     return channels_to_dpd_options(channels_info)
 
-# Logic whether to join a channel or leave the current one.
+# Logic whether to join a Channel or leave the current one.
 @app.callback(Output('glue42-channels', 'change'), [Input('channels-list', 'value')])
 def change_channel(channel_name):
     if channel_name is not None:
@@ -60,7 +60,7 @@ def change_channel(channel_name):
         else:
             return { 'action': 'join', 'channelName': channel_name }
 
-# Subscribe for updates of the current channel.
+# Subscribe for updates of the current Channel.
 @app.callback(
     [Output('channels-list', 'style'), Output('channel-data', 'children')],
     [Input('glue42-channels', 'channel')]

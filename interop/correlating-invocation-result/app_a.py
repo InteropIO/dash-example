@@ -10,10 +10,10 @@ from run import server
 app = dash.Dash(__name__, server=server, routes_pathname_prefix='/app-a/')
 
 app.layout = dash_glue.glue42(id='glue42', children=[
-    # A component which is responsible to invoke the "Sum" interop method.
+    # A component which is responsible for invoking the "Sum" Interop method.
     dash_glue.methodInvoke(id="invoke-sum"),
 
-    # We will use the Store to share data between the callback that triggers "Sum" invocation and the callback handling "Sum" results.
+    # We will use the Store to share data between the callback that triggers the "Sum" invocation and the callback handling the "Sum" results.
     dcc.Store('invocation-time-store', data={}),
 
     html.H3('Application A (Correlating an Invocation with a Returned Result)'),
