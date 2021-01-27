@@ -1,6 +1,6 @@
 # Overview
 
-This repository contains examples of how to use the Glue42 Dash library. For convenience, the setup is created with pure Python. Each example is individually separated in a folder and logically grouped under `/interop`, `/contexts` or `/notifications` folders.
+This repository contains examples of how to use the Glue42 Dash library. For convenience, the setup is created with pure Python. Each example is individually separated and logically grouped in a folder.
 
 # Documentation
 
@@ -31,7 +31,7 @@ pip install dash_glue-0.0.3.tar.gz
 
 # Run an Example Locally
 
-1. Activate the virtual environment:
+1. Activate the virtual environment, if not yet activated:
 
 ```sh
 # Unix
@@ -51,63 +51,10 @@ set FLASK_APP=run.py
 python -m flask run
 ```
 
-# Running the Applications
-
-1. Install globally the `concurrently` package used by the startup script:
-
-```
-npm install -g concurrently
-```
-
-2. Start the Flask servers hosting the applications:
-
-```
-npm start
-```
-
-Or if running on Windows:
-
-```
-npm run start_win
-```
-
 ## Glue42 Core 
 
-Open [http://localhost:4242](http://localhost:4242) in your browser.
+Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ## Glue42 Enterprise
 
-To run the two applications in a [**Glue42 Enterprise**](https://glue42.com/enterprise/) environment, make sure you have Glue42 3.9 (or later) installed and add the following entry to your [application configuration](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) files:
-
-```json
-[
-    {
-        "title": "Dash App 1",
-        "type": "window",
-        "name": "dash1",
-        "hidden": false,
-        "details": {
-            "url": "http://0.0.0.0:8050/",
-            "top": 25,
-            "left": 800,
-            "height": 400,
-            "width": 400
-        }
-    },
-    {
-        "title": "Dash App 2",
-        "type": "window",
-        "name": "dash2",
-        "hidden": false,
-        "details": {
-            "url": "http://0.0.0.0:8051/",
-            "top": 25,
-            "left": 0,
-            "height": 400,
-            "width": 400
-        }
-    }
-]
-```
-
-Launch the applications from the Glue42 Toolbar.
+To run the applications of an example in a [**Glue42 Enterprise**](https://glue42.com/enterprise/) environment, make sure you have Glue42 3.9 (or later) installed. Add the `apps-config.json` file located in the example folder to your [application configuration](https://docs.glue42.com/developers/configuration/application/index.html#application_configuration) files. Launch the applications from the Glue42 Toolbar.
