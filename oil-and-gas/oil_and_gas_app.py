@@ -320,7 +320,9 @@ def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
     if (n_clicks != 0) and (data is not None):
         meeting_subject = "New York Oil and Gas"
         meeting_body = format_email_body(data)
-        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+
+        contextData = contactsContext.get('data')
+        recipients = contextData["contacts"] if ("contacts" in contextData) else []
 
         # First, we need to create an item of type "meeting" in Outlook.
         call = create_outlook_meeting(meeting_subject, meeting_body, recipients)
@@ -360,7 +362,8 @@ def create_email(n_clicks, data, contactsContext):
         email_subject = "New York Oil and Gas"
         email_body = format_email_body(data)
 
-        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+        contextData = contactsContext.get('data')
+        recipients = contextData["contacts"] if ("contacts" in contextData) else []
 
         # First, we need to create an item of type "email" in Outlook.
         call = create_outlook_email(email_subject, email_body, recipients)
