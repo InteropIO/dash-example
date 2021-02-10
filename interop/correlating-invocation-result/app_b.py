@@ -35,7 +35,7 @@ def sum_handler(call):
         if validArgs == True:
             total = float(a) + float(b)
 
-            # When a method is not void, we MUST always to return the assigned invocationId.
+            # When a method is not void, we MUST always return the assigned invocationId.
             return { "invocationId": invocationId, "invocationResult": { "sum": total } }
         else:
             return { "invocationId": invocationId, "error": { "message": "Arguments must be numbers!" } }

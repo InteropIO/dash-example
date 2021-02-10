@@ -40,16 +40,16 @@ validation_types = {
 '''
 excel_columns_configs = [
     {
-        # The field name in the object(dictionary)
+        # The field name in the object (dictionary).
         "name": "tradeId",
 
-        #  A string that forms the Column header text in Excel.
+        # A string that forms the Column header text in Excel.
         "text": "Trade ID",
 
-        # A color value for the text colour of the cells in this column.
+        # A color value for the text color of the cells in this column.
         "foregroundColor": "",
 
-        # A color value for the background colour of the cells in this column.
+        # A color value for the background color of the cells in this column.
         "backgroundColor": "",
 
         # Width of the column in Excel units of 0 (zero) to 255. 
@@ -145,43 +145,43 @@ def show_grid(columns_as_json, data_as_json, workbook, worksheet):
             "columnsAsJSON": columns_as_json,
             "dataAsJSON": data_as_json,
 
-            # This value is passed back to the application that called T42.ExcelPad.ShowGrid; it may be used as a correlation Id.
+            # This value is passed back to the application that called T42.ExcelPad.ShowGrid. It may be used as a correlation ID.
             "cookie": str(uuid4()),
 
-            # Accepts - "delta" or "image". "delta" response will return only the delta change and "image" will return the current data after the change.
+            # Accepts - "delta" or "image". A "delta" response will return only the delta change and "image" will return the current data after the change.
             "response": "image",
 
             # Remove all existing rows before applying the new data.
             "clearGrid": True,
 
-            # Name of the workbook to reuse; otherwise a new temporary workbook will be created.
+            # Name of the workbook to reuse. Otherwise, a new temporary workbook will be created.
             "workbook": workbook,
 
-            # Name of the sheet to receive the data; else uses the first sheet in the workbook.
+            # Name of the sheet to receive the data. Else, uses the first sheet in the workbook.
             "dataWorksheet": worksheet,
 
-            # Name of the worksheet to display; ignored if there is no template.
+            # Name of the worksheet to display. Ignored if there is no template.
             "templateWorkbook": None,
 
             # Set to true to prevent the user from saving the temporary workbook.
             "inhibitLocalSave": None,
 
-            # An interop method, that Excel Add-in will use to return data when change is triggered.
+            # An Interop method that the Excel Connector will use to return data when a change is triggered.
             "glueMethod": validate_show_grid_method_name,
 
-            # The trigger button is placed over a range of cells
+            # The trigger button is placed over a range of cells.
             "buttonRange": "A1",
 
-            # The top-left address of the data in the dataWorksheet
+            # The top-left address of the data in the dataWorksheet.
             "topLeft": "A1",
             
-            # Trigger conditions control tell ExcelPad when to invoke the validation method; default is never to return data.
+            # Trigger conditions control to tell ExcelPad when to invoke the validation method. Default is never to return data.
             "triggers": ["row"],
 
-            # ExcelPad will create an Excel Named Range that defines the extent of the data written to the worksheet
+            # ExcelPad will create an Excel Named Range that defines the extent of the data written to the worksheet.
             "dataRangeName": None,
 
-            # The maximum number of rows of changes to send in each invocation of the Validation method
+            # The maximum number of rows of changes to send in each invocation of the Validation method.
             "chunkSize": 1000,
             "autostart": None,
             "displayName": None,
@@ -205,8 +205,8 @@ def get_data_as_json(columns, data):
     
     return json.dumps(modified_data)
 
-# Convert the rows returned from Excel to Python objects(dictionaries)
-# When response type is set to "image" then we will receive the whole data at once.
+# Convert the rows returned from Excel to Python objects (dictionaries).
+# When the response type is set to "image", then we will receive the entire data at once.
 def parse_image_response(dataAsJSON):
     data = json.loads(dataAsJSON)
     result = []

@@ -17,7 +17,7 @@ app.layout = dash_glue.glue42(id='glue42', children = [
     # A memory store to keep the list of contacts retrieved from Outlook. The store wil keep only the contacts from the latest retrieval.
     dcc.Store(id="contacts-store"),
     
-    # The Outlook Add-in will return contacts on chunks, by calling the "OnContactsList" method (a callback method).
+    # The Outlook Connector will return contacts on chunks by calling the "OnContactsList" method (a callback method).
     dash_glue.methodRegister(id="method-on-contact-list", definition = { "name": "OnContactsList" }, returns = False),
 
     dash_glue.methodInvoke(id="invoke-t42-outlook-list-items"),
@@ -34,11 +34,11 @@ def get_outlook_id(contact):
     
     return None
 
-# Transforms an T42Contact object to Dash dropdown option.
+# Transforms a T42Contact object to Dash dropdown option.
 def contact_to_dpd_option(contact):
     name = contact["name"]["firstName"] + contact["name"]["lastName"]
 
-    # In this implementation we will use the Outlook ID as an unique dropdown option's value.
+    # In this implementation we will use the Outlook ID as an unique dropdown option value.
     outlook_id = get_outlook_id(contact)
     option = {
         "label": name,
@@ -64,7 +64,7 @@ def get_contacts_by_outlook_id(ids, contacts):
     
     return result
 
-# Callback the will update the "contacts" shared context when dropdown selected values change.
+# The callback will update the "contacts" shared context when the dropdown selected values change.
 @app.callback(Output('contacts', 'update'), [Input('contacts-select', 'value')], [State('contacts-store', 'data')])
 def update_contacts_context(value, data):
     if (value is not None) and (data is not None):
@@ -136,10 +136,10 @@ def get_contacts(n_clicks):
         call = { 
             "definition": { "name": "T42.Outlook.ListItems" }, # The "T42.Outlook.ListItems" method is registered by the Glue42 Outlook Add-in.
             "argumentObj": {
-                "ListItemsId": time.time(), # Specify a correlation id.
-                "CallbackMethod": "OnContactsList", # Specify an already registered interop method, which will receive the results.
-                "ItemsPerChunk": 2, # How many items to contain each chunk.
-                "TraversalDepth": 0, # "0" traverse only the root folder. "-1" traverse the whole folder tree. Any other positive number specifies the depth of search.
+                "ListItemsId": time.time(), # Specify a correlation ID.
+                "CallbackMethod": "OnContactsList", # Specify an already registered Interop method which will receive the results.
+                "ItemsPerChunk": 2, # How many items will contain each chunk.
+                "TraversalDepth": 0, # "0" traverse only the root folder. "-1" traverse the entire folder tree. Any other positive number specifies the depth of search.
                 "FolderPath": "" # Specifies the entry point of traversing. E.g. \\stoyan.uzunov@tick42.com\Contacts\MyPrivateContactsFolder
             }
         }

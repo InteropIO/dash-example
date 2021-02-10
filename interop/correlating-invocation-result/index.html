@@ -25,19 +25,19 @@
         </p>
 
         <p>
-            On load, Application B registers a method called "Sum", which accepts parameters (two numbers), calculates
+            On load, Application B registers a method called "Sum" which accepts parameters (two numbers), calculates
             their
             total and returns the result. Click the "Sum" button in Application A to invoke this method and print the
             result
             from invocation.
         </p>
         <p>
-            When invoking the method, Application A sets a unique invocation ID and uses dcc.Store component to share
+            When invoking the method, Application A sets a unique invocation ID and uses the dcc.Store component to share
             the
-            start time of invocation with the callback that handles the returned result. When the "Sum" returns, along
+            start time of the invocation with the callback that handles the returned result. When the "Sum" returns along
             with
-            the result the handler callback also receives the invocation ID. As a result, we get the start time of
-            invocation from dcc.Store and calculate the elapsed time for execution.
+            the result, the handler callback also receives the invocation ID. As a result, we get the start time of the
+            invocation from the dcc.Store and calculate the elapsed time for execution.
         </p>
         <p>
             Checkout the source code in <code>app_a.py</code> and <code>app_b.py</code> for details.
