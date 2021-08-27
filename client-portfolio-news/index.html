@@ -5,52 +5,59 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <title>Clients Portfolio News</title>
-    <style type="text/css" media="screen">
-        iframe {
-            flex-grow: 1;
-            margin: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css">
+
+    <script src="/glue/platform.web.umd.js"></script>
+    <script src="/scripts/glue-utils.js"></script>
+    <script src="/scripts/utils.js"></script>
 </head>
 
 <body>
-    <h3>Clients Portfolio News</h3>
-    <p>
-        The example demonstrates Dash App, React App and Angular App sharing data through Glue42 Channels and Contexts.
-        The example consists of three applications:
+    <div id="example-description">
+        <h3>Clients Portfolio News</h3>
+        <p>
+            The example demonstrates a Dash App, a React App and an Angular App sharing data through Glue42 Channels and
+            Contexts.
+            The example consists of three applications:
         <ul>
             <li>
                 Clients - Dash application which displays a list of clients.
             </li>
             <li>
                 Stocks - React application which displays a list of stocks. When Stocks and Clients are on the
-                same channel and a client is clicked in Clients then Stocks displays the portfolio of the selected
+                same Channel and a client is clicked in Clients, Stocks displays the portfolio of the selected
                 client.
             </li>
             <li>
-                News - Angular application which displays a list of news. On load the application subscribes to a shared
+                News - Angular application which displays a list of news. On load, the application subscribes to a shared
                 context `SelectedClient`. The context is updated when a client is clicked in Clients. When the context
-                changes then the application displays the list of news related to the selected client.
+                changes, the application displays the list of news related to the selected client.
             </li>
         </ul>
-    </p>
-    <p>
-        Checkout the source code in <code>clients.py</code>, <code>/stocks</code> and <code>/news</code>.
-    </p>
+        </p>
+        <p>
+            Checkout the source code in <code>clients.py</code>, <code>/stocks</code> and <code>/news</code>.
+        </p>
+    </div>
 
-    <ul>
-        <li><a href="/clients" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Clients</a></li>
-        <li><a href="/stocks" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                Portfolio</a></li>
-        <li><a href="/news" onclick="window.open(this.href, '_blank', 'width=300,height=300'); return false">Open
-                News</a></li>
-    </ul>
+    <div id="main-app">
+        <div>
+            <img id="glueImg" src="assets/disconnected.svg" width="16" height="16" />
+            <h4 id="glueSpan">Main App (Web Platform)</h4>
+        </div>
 
-    <div style="display: flex">
-        <iframe src="/clients" style="height: 600px"></iframe>
-        <iframe src="/stocks" style="height: 600px"></iframe>
-        <iframe src="/news" style="height: 600px"></iframe>
+        <p>Open applications:</p>
+        <ul id="applications-list">
+            <!-- Example applications displayed dynamically -->
+        </ul>
+
+        <div style="display: flex">
+            <iframe src="/clients" class="app"></iframe>
+            <iframe src="/stocks" class="app"></iframe>
+            <iframe src="/news" class="app"></iframe>
+        </div>
+
+        <script src="/local/index.js"></script>
     </div>
 </body>
 

@@ -274,10 +274,10 @@ bh_unicode_properties.cache
 GitHub.sublime-settings
 
 # Build generated
-dash_glue/*.js
-dash_glue/*.js.*
-dash_glue/*.json
-dash_glue/*.py
+dash_glue42/*.js
+dash_glue42/*.js.*
+dash_glue42/*.json
+dash_glue42/*.py
 inst
 man
 R

@@ -1,4 +1,3 @@
-# Import required libraries
 import pickle
 import copy
 import pathlib
@@ -9,26 +8,26 @@ import pandas as pd
 from dash.dependencies import Input, Output, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_glue
+import dash_glue42
 from dash.exceptions import PreventUpdate
 from run import server
 from glue_helpers import create_outlook_meeting, show_outlook_item, create_outlook_email
 
-# Multi-dropdown options
+# Multi-dropdown options.
 from controls import COUNTIES, WELL_STATUSES, WELL_TYPES, WELL_COLORS
 
-# get relative data folder
+# Get relative data folder.
 PATH = pathlib.Path(__file__).parent
 DATA_PATH = PATH.joinpath("data").resolve()
 
 app = dash.Dash(
-    __name__, 
-    server=server, 
+    __name__,
+    server=server,
     meta_tags=[{"name": "viewport", "content": "width=device-width"}],
-    routes_pathname_prefix='/oil-and-gas/'
+    routes_pathname_prefix="/oil-and-gas/"
 )
 
-# Create controls
+# Create controls.
 county_options = [
     {"label": str(COUNTIES[county]), "value": str(county)} for county in COUNTIES
 ]
@@ -44,7 +43,7 @@ well_type_options = [
 ]
 
 
-# Load data
+# Load data.
 df = pd.read_csv(DATA_PATH.joinpath("wellspublic.csv"), low_memory=False)
 df["Date_Well_Completed"] = pd.to_datetime(df["Date_Well_Completed"])
 df = df[df["Date_Well_Completed"] > dt.datetime(1960, 1, 1)]
@@ -56,7 +55,7 @@ dataset = trim.to_dict(orient="index")
 points = pickle.load(open(DATA_PATH.joinpath("points.pkl"), "rb"))
 
 
-# Create global chart template
+# Create global chart template.
 mapbox_access_token = "pk.eyJ1IjoicGxvdGx5bWFwYm94IiwiYSI6ImNrOWJqb2F4djBnMjEzbG50amg0dnJieG4ifQ.Zme1-Uzoi75IaFbieBDl3A"
 
 layout = dict(
@@ -79,29 +78,29 @@ layout = dict(
 send_meeting_automatically = "send_meeting_automatically"
 send_email_automatically = "send_email_automatically"
 
-# Create app layout
+# Create app layout.
 app.layout = html.Div(
     [
         # Create an instance of Glue42.
-        dash_glue.glue42(id="glue42", children=[
+        dash_glue42.Glue42(id="glue42", children=[
             # Creating Outlook meetings.
-            dash_glue.methodInvoke(id="invoke-create-meeting"),
-            
+            dash_glue42.MethodInvoke(id="g42-invoke-create-meeting"),
+
             # Showing/Sending Outlook meetings.
-            dash_glue.methodInvoke(id="invoke-show-meeting"), 
-            
+            dash_glue42.MethodInvoke(id="g42-invoke-show-meeting"),
+
             # Creating Outlook emails.
-            dash_glue.methodInvoke(id="invoke-create-email"),
-            
+            dash_glue42.MethodInvoke(id="g42-invoke-create-email"),
+
             # Showing/Sending Outlook emails.
-            dash_glue.methodInvoke(id="invoke-show-email"),
+            dash_glue42.MethodInvoke(id="g42-invoke-show-email"),
 
             # A shared context named "contacts" will be used to get the meeting/email recipients.
-            dash_glue.context(id="contacts")       
+            dash_glue42.Context(id="contacts")
         ]),
 
         dcc.Store(id="aggregate_data"),
-        # empty Div to trigger javascript file for graph resizing
+        # Empty Div to trigger the JavaScript file for graph resizing.
         html.Div(id="output-clientside"),
         html.Div(
             [
@@ -155,14 +154,18 @@ app.layout = html.Div(
             dcc.Checklist(
                 id="outlook-checkbox",
                 options=[
-                    { 'label': 'Create meeting automatically', 'value': send_meeting_automatically },
-                    { 'label': 'Send email automatically', 'value': send_email_automatically }
+                    {"label": "Create meeting automatically",
+                        "value": send_meeting_automatically},
+                    {"label": "Send email automatically",
+                        "value": send_email_automatically}
                 ],
                 value=[],
-                labelStyle={'display': 'inline-block'}
+                labelStyle={"display": "inline-block"}
             ),
-            html.Button(id="create-meeting-button", n_clicks = 0, children="Create Meeting"),
-            html.Button(id="send-email-button", n_clicks = 0, children="Send Email")
+            html.Button(id="create-meeting-button",
+                        n_clicks=0, children="Create Meeting"),
+            html.Button(id="send-email-button",
+                        n_clicks=0, children="Send Email")
         ]),
         html.Div(
             [
@@ -179,7 +182,8 @@ app.layout = html.Div(
                             value=[1990, 2010],
                             className="dcc_control",
                         ),
-                        html.P("Filter by well status:", className="control_label"),
+                        html.P("Filter by well status:",
+                               className="control_label"),
                         dcc.RadioItems(
                             id="well_status_selector",
                             options=[
@@ -200,16 +204,19 @@ app.layout = html.Div(
                         ),
                         dcc.Checklist(
                             id="lock_selector",
-                            options=[{"label": "Lock camera", "value": "locked"}],
+                            options=[
+                                {"label": "Lock camera", "value": "locked"}],
                             className="dcc_control",
                             value=[],
                         ),
-                        html.P("Filter by well type:", className="control_label"),
+                        html.P("Filter by well type:",
+                               className="control_label"),
                         dcc.RadioItems(
                             id="well_type_selector",
                             options=[
                                 {"label": "All ", "value": "all"},
-                                {"label": "Productive only ", "value": "productive"},
+                                {"label": "Productive only ",
+                                    "value": "productive"},
                                 {"label": "Customize ", "value": "custom"},
                             ],
                             value="productive",
@@ -232,7 +239,8 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.Div(
-                                    [html.H6(id="well_text"), html.P("No. of Wells")],
+                                    [html.H6(id="well_text"),
+                                     html.P("No. of Wells")],
                                     id="wells",
                                     className="mini_container",
                                 ),
@@ -298,98 +306,122 @@ app.layout = html.Div(
     style={"display": "flex", "flex-direction": "column"},
 )
 
+
 def format_email_body(data):
     if data is None:
         return ""
     else:
         gas, oil, water = data
-        return f'''New York Oil and Gas (Production Overview)
+        return f"""New York Oil and Gas (Production Overview)
 
 Gas: ${gas} mcf
 Oil: ${oil} bbl
 Water: ${water} bbl
-            '''
+            """
 
-# Callback that will create a meeting in Outlook via Glue42 Outlook Add-in.
+
 @app.callback(
-    Output('invoke-create-meeting', 'call'), 
-    [Input('create-meeting-button', 'n_clicks')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    Output("g42-invoke-create-meeting", "invoke"),
+    Input("create-meeting-button", "n_clicks"),
+    State("aggregate_data", "data"),
+    State("contacts", "context"),
+    State("outlook-checkbox", "value")
 )
 def create_meeting(n_clicks, data, contactsContext, outlook_automatic):
+    """Create a meeting in Outlook via the Glue42 Outlook Connector."""
+
     if (n_clicks != 0) and (data is not None):
         meeting_subject = "New York Oil and Gas"
         meeting_body = format_email_body(data)
-        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+
+        contextData = contactsContext.get("data")
+        recipients = contextData["contacts"] if (
+            "contacts" in contextData) else []
 
         # First, we need to create an item of type "meeting" in Outlook.
-        call = create_outlook_meeting(meeting_subject, meeting_body, recipients)
+        call = create_outlook_meeting(
+            meeting_subject, meeting_body, recipients)
         return call
 
-# Callback that will show or send a meeting item created in Outlook via Glue42 Outlook Add-in.
+
 @app.callback(
-    Output('invoke-show-meeting', 'call'), 
-    [Input('invoke-create-meeting', 'result')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    Output("g42-invoke-show-meeting", "invoke"),
+    Input("g42-invoke-create-meeting", "result"),
+    State("aggregate_data", "data"),
+    State("contacts", "context"),
+    State("outlook-checkbox", "value")
 )
 def show_meeting(result, data, contactsContext, outlook_automatic):
+    """Show or send a "meeting" item created in Outlook via the Glue42 Outlook Connector."""
+
     if result is None:
         raise PreventUpdate
 
     error = result.get("error")
     has_error = error is not None
     if has_error:
-        print('An error occurred when creating a meeting.', error)
+        print("An error occurred when creating a meeting.", error)
     else:
-        # Once the "meeting" item is created, we can show the Outlook "Meeting" window or send automatically the meeting.
+        # Once the "meeting" item is created, we can show the Outlook "Meeting" window or send the meeting automatically.
         item = result["invocationResult"]["returned"]
         item_id = item.get("ItemID")
-        send_automatically = True if (send_meeting_automatically in outlook_automatic) else False
+        send_automatically = True if (
+            send_meeting_automatically in outlook_automatic) else False
 
         call = show_outlook_item(item_id, send_automatically)
         return call
 
-# Callback that will create an email in Outlook via Glue42 Outlook Add-in.
+
 @app.callback(
-    Output('invoke-create-email', 'call'), 
-    [Input('send-email-button', 'n_clicks')],
-    [State("aggregate_data", "data"), State("contacts", "incoming")]
+    Output("g42-invoke-create-email", "invoke"),
+    Input("send-email-button", "n_clicks"),
+    State("aggregate_data", "data"),
+    State("contacts", "context")
 )
 def create_email(n_clicks, data, contactsContext):
+    """Create an email in Outlook via the Glue42 Outlook Connector."""
+
     if (n_clicks != 0) and (data is not None):
         email_subject = "New York Oil and Gas"
         email_body = format_email_body(data)
 
-        recipients = contactsContext["contacts"] if (contactsContext is not None) and ("contacts" in contactsContext) else []
+        contextData = contactsContext.get("data")
+        recipients = contextData["contacts"] if (
+            "contacts" in contextData) else []
 
         # First, we need to create an item of type "email" in Outlook.
         call = create_outlook_email(email_subject, email_body, recipients)
         return call
 
-# Callback that will show or send an email item created in Outlook via Glue42 Outlook Add-in.
+
 @app.callback(
-    Output('invoke-show-email', 'call'), 
-    [Input('invoke-create-email', 'result')],
-    [State("aggregate_data", "data"), State("contacts", "incoming"), State("outlook-checkbox", "value")]
+    Output("g42-invoke-show-email", "invoke"),
+    Input("g42-invoke-create-email", "result"),
+    State("aggregate_data", "data"),
+    State("contacts", "context"),
+    State("outlook-checkbox", "value")
 )
 def show_email(result, data, contactsContext, outlook_automatic):
+    """Show or send an "email" item created in Outlook via the Glue42 Outlook Connector."""
+
     if result is None:
         raise PreventUpdate
 
     error = result.get("error")
     has_error = error is not None
     if has_error:
-        print('An error occurred when creating an email.', error)
+        print("An error occurred when creating an email.", error)
     else:
         # Once an "email" item is created, we can show the Outlook "Message" window or send it automatically.
         item = result["invocationResult"]["returned"]
         item_id = item.get("ItemID")
-        send_automatically = True if (send_email_automatically in outlook_automatic) else False
+        send_automatically = True if (
+            send_email_automatically in outlook_automatic) else False
 
         call = show_outlook_item(item_id, send_automatically)
         return call
 
-# Helper functions
+
 def human_format(num):
     if num == 0:
         return "0"
@@ -416,7 +448,8 @@ def produce_individual(api_well_num):
         return None, None, None, None
 
     index = list(
-        range(min(points[api_well_num].keys()), max(points[api_well_num].keys()) + 1)
+        range(min(points[api_well_num].keys()),
+              max(points[api_well_num].keys()) + 1)
     )
     gas = []
     oil = []
@@ -470,7 +503,7 @@ def produce_aggregate(selected, year_slider):
     return index, gas, oil, water
 
 
-# Create callbacks
+# Create callbacks.
 app.clientside_callback(
     ClientsideFunction(namespace="clientside", function_name="resize"),
     Output("output-clientside", "children"),
@@ -523,7 +556,8 @@ def update_year_slider(count_graph_selected):
     if count_graph_selected is None:
         return [1990, 2010]
 
-    nums = [int(point["pointNumber"]) for point in count_graph_selected["points"]]
+    nums = [int(point["pointNumber"])
+            for point in count_graph_selected["points"]]
     return [min(nums) + 1960, max(nums) + 1961]
 
 
@@ -583,7 +617,7 @@ def make_main_figure(
         )
         traces.append(trace)
 
-    # relayoutData is None by default, and {'autosize': True} without relayout action
+    # relayoutData is None by default, and {"autosize": True} without relayout action
     if main_graph_layout is not None and selector is not None and "locked" in selector:
         if "mapbox.center" in main_graph_layout.keys():
             lon = float(main_graph_layout["mapbox.center"]["lon"])
@@ -633,7 +667,8 @@ def make_individual_figure(main_graph_hover):
                 name="Gas Produced (mcf)",
                 x=index,
                 y=gas,
-                line=dict(shape="spline", smoothing=2, width=1, color="#fac1b7"),
+                line=dict(shape="spline", smoothing=2,
+                          width=1, color="#fac1b7"),
                 marker=dict(symbol="diamond-open"),
             ),
             dict(
@@ -642,7 +677,8 @@ def make_individual_figure(main_graph_hover):
                 name="Oil Produced (bbl)",
                 x=index,
                 y=oil,
-                line=dict(shape="spline", smoothing=2, width=1, color="#a9bb95"),
+                line=dict(shape="spline", smoothing=2,
+                          width=1, color="#a9bb95"),
                 marker=dict(symbol="diamond-open"),
             ),
             dict(
@@ -651,7 +687,8 @@ def make_individual_figure(main_graph_hover):
                 name="Water Produced (bbl)",
                 x=index,
                 y=water,
-                line=dict(shape="spline", smoothing=2, width=1, color="#92d8d8"),
+                line=dict(shape="spline", smoothing=2,
+                          width=1, color="#92d8d8"),
                 marker=dict(symbol="diamond-open"),
             ),
         ]
@@ -835,6 +872,5 @@ def make_count_figure(well_statuses, well_types, year_slider):
     return figure
 
 
-# Main
 if __name__ == "__main__":
     app.run_server(debug=True)

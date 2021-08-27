@@ -1,0 +1,22 @@
+h4#glueSpan {
+    display: inline;
+}
+
+#applications-list li {
+    margin-bottom: 0.5rem;
+}
+
+#example-description {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+#main-app {
+    padding: 0.5rem;
+}
+
+iframe.app {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+    height: 500px;
+}

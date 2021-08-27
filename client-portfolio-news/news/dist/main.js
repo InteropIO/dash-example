@@ -120,7 +120,7 @@ class Glue42Service {
         this.glueStore = glueStore;
     }
     get glueAvailable() {
-        return !this.glueStore.initError;
+        return !this.glueStore.getInitError();
     }
     subscribeToSelectedClient(handler) {
         if (typeof handler !== 'function') {
@@ -129,7 +129,7 @@ class Glue42Service {
         if (!this.glueAvailable) {
             return Promise.reject('Glue42 was not initialized.');
         }
-        this.glueStore.glue.contexts.subscribe('SelectedClient', handler);
+        this.glueStore.getGlue().contexts.subscribe('SelectedClient', handler);
     }
 }
 Glue42Service.ɵfac = function Glue42Service_Factory(t) { return new (t || Glue42Service)(_angular_core__WEBPACK_IMPORTED_MODULE_0__["ɵɵinject"](_glue42_ng__WEBPACK_IMPORTED_MODULE_1__["Glue42Store"])); };
@@ -309,9 +309,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/common/http */ "tk/3");
 /* harmony import */ var _app_component__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./app.component */ "Sy1n");
 /* harmony import */ var _glue42_web__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @glue42/web */ "sfCs");
-/* harmony import */ var _glue42_ng__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @glue42/ng */ "Di9U");
-/* harmony import */ var _glue_service__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./glue.service */ "So40");
-/* harmony import */ var _data_service__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./data.service */ "R7Hv");
+/* harmony import */ var _glue42_desktop__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @glue42/desktop */ "fadB");
+/* harmony import */ var _glue42_desktop__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_glue42_desktop__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var _glue42_ng__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @glue42/ng */ "Di9U");
+/* harmony import */ var _glue_service__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./glue.service */ "So40");
+/* harmony import */ var _data_service__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./data.service */ "R7Hv");
+
 
 
 
@@ -326,22 +329,26 @@ class AppModule {
 }
 AppModule.ɵmod = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineNgModule"]({ type: AppModule, bootstrap: [_app_component__WEBPACK_IMPORTED_MODULE_3__["AppComponent"]] });
 AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector"]({ factory: function AppModule_Factory(t) { return new (t || AppModule)(); }, providers: [
-        _glue_service__WEBPACK_IMPORTED_MODULE_6__["Glue42Service"],
-        _data_service__WEBPACK_IMPORTED_MODULE_7__["DataService"]
+        _glue_service__WEBPACK_IMPORTED_MODULE_7__["Glue42Service"],
+        _data_service__WEBPACK_IMPORTED_MODULE_8__["DataService"]
     ], imports: [[
             _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
             _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpClientModule"],
-            _glue42_ng__WEBPACK_IMPORTED_MODULE_5__["Glue42Ng"].forRoot({
-                factory: _glue42_web__WEBPACK_IMPORTED_MODULE_4__["default"],
+            _glue42_ng__WEBPACK_IMPORTED_MODULE_6__["Glue42Ng"].forRoot({
                 holdInit: true,
-                config: {
-                    appManager: 'full',
-                    application: 'app-b'
+                web: {
+                    factory: _glue42_web__WEBPACK_IMPORTED_MODULE_4__["default"]
+                },
+                desktop: {
+                    factory: _glue42_desktop__WEBPACK_IMPORTED_MODULE_5___default.a,
+                    config: {
+                        appManager: 'full'
+                    }
                 }
             })
         ]] });
 (function () { (typeof ngJitMode === "undefined" || ngJitMode) && _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵsetNgModuleScope"](AppModule, { declarations: [_app_component__WEBPACK_IMPORTED_MODULE_3__["AppComponent"]], imports: [_angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
-        _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpClientModule"], _glue42_ng__WEBPACK_IMPORTED_MODULE_5__["Glue42Ng"]] }); })();
+        _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpClientModule"], _glue42_ng__WEBPACK_IMPORTED_MODULE_6__["Glue42Ng"]] }); })();
 /*@__PURE__*/ (function () { _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵsetClassMetadata"](AppModule, [{
         type: _angular_core__WEBPACK_IMPORTED_MODULE_1__["NgModule"],
         args: [{
@@ -351,42 +358,27 @@ AppModule.ɵinj = _angular_core__WEBPACK_IMPORTED_MODULE_1__["ɵɵdefineInjector
                 imports: [
                     _angular_platform_browser__WEBPACK_IMPORTED_MODULE_0__["BrowserModule"],
                     _angular_common_http__WEBPACK_IMPORTED_MODULE_2__["HttpClientModule"],
-                    _glue42_ng__WEBPACK_IMPORTED_MODULE_5__["Glue42Ng"].forRoot({
-                        factory: _glue42_web__WEBPACK_IMPORTED_MODULE_4__["default"],
+                    _glue42_ng__WEBPACK_IMPORTED_MODULE_6__["Glue42Ng"].forRoot({
                         holdInit: true,
-                        config: {
-                            appManager: 'full',
-                            application: 'app-b'
+                        web: {
+                            factory: _glue42_web__WEBPACK_IMPORTED_MODULE_4__["default"]
+                        },
+                        desktop: {
+                            factory: _glue42_desktop__WEBPACK_IMPORTED_MODULE_5___default.a,
+                            config: {
+                                appManager: 'full'
+                            }
                         }
                     })
                 ],
                 providers: [
-                    _glue_service__WEBPACK_IMPORTED_MODULE_6__["Glue42Service"],
-                    _data_service__WEBPACK_IMPORTED_MODULE_7__["DataService"]
+                    _glue_service__WEBPACK_IMPORTED_MODULE_7__["Glue42Service"],
+                    _data_service__WEBPACK_IMPORTED_MODULE_8__["DataService"]
                 ],
                 bootstrap: [_app_component__WEBPACK_IMPORTED_MODULE_3__["AppComponent"]]
             }]
     }], null, null); })();
 
-
-/***/ }),
-
-/***/ "fStp":
-/*!********************************************!*\
-  !*** ./node_modules/@glue42/web/dist sync ***!
-  \********************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = function() { return []; };
-webpackEmptyContext.resolve = webpackEmptyContext;
-module.exports = webpackEmptyContext;
-webpackEmptyContext.id = "fStp";
 
 /***/ }),
 
