@@ -4,7 +4,7 @@ This repository contains examples of how to use the Glue42 Dash library. For con
 
 # Documentation
 
-For more information on how to use the Glue42 Dash library, see the [official documentation](https://docs.glue42.com/getting-started/how-to/glue42-enable-your-app/python-dash/index.html).
+For more information on how to use the Glue42 Dash library, see the [official documentation](https://docs.glue42.com/getting-started/how-to/glue42-enable-your-app/dash/index.html).
 
 # Quick Start
 
