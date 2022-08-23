@@ -27,6 +27,9 @@ app = dash.Dash(
     routes_pathname_prefix="/oil-and-gas/"
 )
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 # Create controls.
 county_options = [
     {"label": str(COUNTIES[county]), "value": str(county)} for county in COUNTIES

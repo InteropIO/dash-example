@@ -12,6 +12,9 @@ from dash.exceptions import PreventUpdate
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 # Use Excel column configs to generate columns for the data table component.
 table_columns = [{"name": col["text"], "id": col["name"]}
                  for col in excel_columns_configs]
@@ -70,8 +73,13 @@ app.layout = dash_glue42.Glue42(id="glue42", children=[
                 style_cell={
                     "border": "white"
                 },
-                style_cell_conditional=[
-                    {"if": {"row_index": "even"}, "backgroundColor": "#f9f9f9"}
+                style_data_conditional=[
+                    {
+                        "if": {
+                            "row_index": "even"
+                        }, 
+                        "backgroundColor": "#f9f9f9"
+                    }
                 ],
             )
         ]

@@ -16,6 +16,9 @@ def is_number(s):
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-b/")
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 app.layout = dash_glue42.Glue42(id="glue42", children=[
     # Register an interop method that returns a result.
     dash_glue42.MethodRegister(

@@ -6,6 +6,9 @@ from run import server
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-b/")
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 app.layout = dash_glue42.Glue42(id="glue42", children=[
 
     dash_glue42.MethodRegister(id="g42-register-review-message",
@@ -16,7 +19,6 @@ app.layout = dash_glue42.Glue42(id="glue42", children=[
 
     html.H4("The text below is received when a notification action button is clicked:"),
     html.Div(id="message"),
-
 ])
 
 

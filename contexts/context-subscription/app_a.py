@@ -7,6 +7,9 @@ from run import server
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/")
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 app.layout = dash_glue42.Glue42(id="glue42", children=[
     # Using the general API to set/update contexts.
     dash_glue42.Contexts(id="g42-shared-contexts"),
@@ -37,18 +40,27 @@ app.layout = dash_glue42.Glue42(id="glue42", children=[
 
 
 @app.callback(
-    Output("g42-shared-contexts", "set"),
+    [
+        Output("g42-shared-contexts", "set"),
+        Output("background-color", "value"),
+        Output("font-color", "value")
+    ],
     Input("default-styling-btn", "n_clicks"),
     prevent_initial_call=True
 )
 def set_default_app_styling(_):
-    return {
+    bgColorInputValue = "white"
+    fortColorInputValue = "black"
+    context = {
         "name": "app-styling",
         "data": {
-            "backgroundColor": "white",
-            "color": "black"
+            "backgroundColor": bgColorInputValue,
+            "color": fortColorInputValue
         }
     }
+
+
+    return [context, bgColorInputValue, fortColorInputValue]
 
 
 @app.callback(

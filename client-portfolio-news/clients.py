@@ -18,6 +18,9 @@ app = dash.Dash(__name__,
                 external_stylesheets=[dbc.themes.BOOTSTRAP]
                 )
 
+# Uncomment to enable Dash dev tools.
+# app.enable_dev_tools()
+
 # Dropdown option that will be used to leave the current Channel.
 no_channel = {"label": "No Channel", "value": ""}
 
@@ -47,11 +50,6 @@ def client_details_card():
 
 
 glue_settings = {
-    "web": {
-        "config": {
-            "channels": True
-        }
-    },
     "desktop": {
         "config": {
             "channels": True
@@ -76,7 +74,7 @@ app.layout = dash_glue42.Glue42(id="glue42", settings=glue_settings, children=[
             ]),
         ],
             style={
-            "margin-bottom": "5px",
+            "marginBottom": "5px",
         }),
 
         # Client details card.
@@ -84,7 +82,7 @@ app.layout = dash_glue42.Glue42(id="glue42", settings=glue_settings, children=[
             client_details_card(),
             id="client-collapse",
             style={
-                "margin-bottom": "5px"
+                "marginBottom": "5px"
             }
         ),
 
@@ -140,7 +138,8 @@ def update_channels_list(all_channels):
 
 @app.callback(
     Output("g42-channels", "join"),
-    Input("channels-list", "value")
+    Input("channels-list", "value"),
+    prevent_initial_call=True
 )
 def join_channel(channel_name):
     if channel_name == no_channel["value"]:
