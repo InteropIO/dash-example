@@ -1,7 +1,5 @@
-import dash
+from dash import dash, Input, Output, html
 from dash.exceptions import PreventUpdate
-from dash.dependencies import Input, Output
-import dash_html_components as html
 import dash_glue42
 from run import server
 

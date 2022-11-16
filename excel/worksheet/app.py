@@ -1,8 +1,4 @@
-import dash
-from dash.dependencies import Input, Output, State
-import dash_html_components as html
-import dash_core_components as dcc
-import dash_table
+from dash import dash, Input, Output, State, html, dcc, dash_table
 import dash_glue42
 from run import server
 import json
