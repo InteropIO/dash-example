@@ -9,8 +9,7 @@ from run import server
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
 
-# Uncomment to enable Dash dev tools.
-# app.enable_dev_tools()
+app.enable_dev_tools()
 
 # Dropdown option that will be used to leave the current Channel.
 no_channel = {"label": "No Channel", "value": ""}

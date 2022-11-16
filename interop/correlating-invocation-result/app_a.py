@@ -10,8 +10,7 @@ from run import server
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/")
 
-# Uncomment to enable Dash dev tools.
-# app.enable_dev_tools()
+app.enable_dev_tools()
 
 app.layout = dash_glue42.Glue42(id="glue42", children=[
     dash_glue42.MethodInvoke(id="g42-invoke-sum"),

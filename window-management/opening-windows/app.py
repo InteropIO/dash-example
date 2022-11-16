@@ -20,7 +20,6 @@ height_default = 350
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
 
-# Uncomment to enable Dash dev tools.
 app.enable_dev_tools()
 
 app.layout = dash_glue42.Glue42(id="glue42", children=[
