@@ -12,8 +12,7 @@ from dash.exceptions import PreventUpdate
 
 app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
 
-# Uncomment to enable Dash dev tools.
-# app.enable_dev_tools()
+app.enable_dev_tools()
 
 # Use Excel column configs to generate columns for the data table component.
 table_columns = [{"name": col["text"], "id": col["name"]}
