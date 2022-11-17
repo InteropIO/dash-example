@@ -1,15 +1,12 @@
+from dash import dash, Input, Output, State, html, dcc, ClientsideFunction
+import dash_glue42
+from dash.exceptions import PreventUpdate
 import pickle
 import copy
 import pathlib
-import dash
 import math
 import datetime as dt
 import pandas as pd
-from dash.dependencies import Input, Output, State, ClientsideFunction
-import dash_core_components as dcc
-import dash_html_components as html
-import dash_glue42
-from dash.exceptions import PreventUpdate
 from run import server
 from glue_helpers import create_outlook_meeting, show_outlook_item, create_outlook_email
 
@@ -27,8 +24,7 @@ app = dash.Dash(
     routes_pathname_prefix="/oil-and-gas/"
 )
 
-# Uncomment to enable Dash dev tools.
-# app.enable_dev_tools()
+app.enable_dev_tools()
 
 # Create controls.
 county_options = [
