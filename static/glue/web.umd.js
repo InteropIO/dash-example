@@ -44,13 +44,15 @@
     const defaultConfig = {
         logger: "info",
         gateway: { webPlatform: {} },
-        libraries: []
+        libraries: [],
+        exposeGlue: true
     };
     const parseConfig = (config) => {
-        var _a;
-        const combined = Object.assign({}, defaultConfig, config);
+        var _a, _b, _c, _d;
+        const isPlatformInternal = !!((_c = (_b = (_a = config) === null || _a === void 0 ? void 0 : _a.gateway) === null || _b === void 0 ? void 0 : _b.webPlatform) === null || _c === void 0 ? void 0 : _c.port);
+        const combined = Object.assign({}, defaultConfig, config, { isPlatformInternal });
         if (combined.systemLogger) {
-            combined.logger = (_a = combined.systemLogger.level) !== null && _a !== void 0 ? _a : "info";
+            combined.logger = (_d = combined.systemLogger.level) !== null && _d !== void 0 ? _d : "info";
         }
         return combined;
     };
@@ -68,14 +70,14 @@
     };
 
     const enterprise = (config) => {
-        var _a, _b;
+        var _a, _b, _c;
         const enterpriseConfig = {
             windows: true,
             layouts: "full",
             appManager: "full",
             channels: true,
-            libraries: config.libraries,
-            logger: (_b = (_a = config === null || config === void 0 ? void 0 : config.systemLogger) === null || _a === void 0 ? void 0 : _a.level) !== null && _b !== void 0 ? _b : "warn"
+            libraries: (_a = config === null || config === void 0 ? void 0 : config.libraries) !== null && _a !== void 0 ? _a : [],
+            logger: (_c = (_b = config === null || config === void 0 ? void 0 : config.systemLogger) === null || _b === void 0 ? void 0 : _b.level) !== null && _c !== void 0 ? _c : "warn"
         };
         return window.Glue(enterpriseConfig);
     };
@@ -875,12 +877,18 @@
 
     const nonEmptyStringDecoder = string().where((s) => s.length > 0, "Expected a non-empty string");
     const nonNegativeNumberDecoder = number().where((num) => num >= 0, "Expected a non-negative number");
-    const libDomainDecoder = oneOf(constant("system"), constant("windows"), constant("appManager"), constant("layouts"), constant("intents"), constant("notifications"), constant("channels"));
+    const libDomainDecoder = oneOf(constant("system"), constant("windows"), constant("appManager"), constant("layouts"), constant("intents"), constant("notifications"), constant("channels"), constant("extension"));
     const windowOperationTypesDecoder = oneOf(constant("openWindow"), constant("windowHello"), constant("windowAdded"), constant("windowRemoved"), constant("getBounds"), constant("getFrameBounds"), constant("getUrl"), constant("moveResize"), constant("focus"), constant("close"), constant("getTitle"), constant("setTitle"));
-    const appManagerOperationTypesDecoder = oneOf(constant("appHello"), constant("applicationAdded"), constant("applicationRemoved"), constant("applicationChanged"), constant("instanceStarted"), constant("instanceStopped"), constant("applicationStart"), constant("instanceStop"), constant("clear"));
-    const layoutsOperationTypesDecoder = oneOf(constant("layoutAdded"), constant("layoutChanged"), constant("layoutRemoved"), constant("get"), constant("getAll"), constant("export"), constant("import"), constant("remove"));
-    const notificationsOperationTypesDecoder = oneOf(constant("raiseNotification"), constant("requestPermission"), constant("notificationShow"), constant("notificationClick"));
+    const appManagerOperationTypesDecoder = oneOf(constant("appHello"), constant("appDirectoryStateChange"), constant("instanceStarted"), constant("instanceStopped"), constant("applicationStart"), constant("instanceStop"), constant("clear"));
+    const layoutsOperationTypesDecoder = oneOf(constant("layoutAdded"), constant("layoutChanged"), constant("layoutRemoved"), constant("get"), constant("getAll"), constant("export"), constant("import"), constant("remove"), constant("clientSaveRequest"), constant("getGlobalPermissionState"), constant("checkGlobalActivated"), constant("requestGlobalPermission"));
+    const notificationsOperationTypesDecoder = oneOf(constant("raiseNotification"), constant("requestPermission"), constant("notificationShow"), constant("notificationClick"), constant("getPermission"));
     const windowRelativeDirectionDecoder = oneOf(constant("top"), constant("left"), constant("right"), constant("bottom"));
+    const windowBoundsDecoder = object({
+        top: number(),
+        left: number(),
+        width: nonNegativeNumberDecoder,
+        height: nonNegativeNumberDecoder
+    });
     const windowOpenSettingsDecoder = optional(object({
         top: optional(number()),
         left: optional(number()),
@@ -971,7 +979,7 @@
         name: nonEmptyStringDecoder,
         title: optional(nonEmptyStringDecoder),
         version: optional(nonEmptyStringDecoder),
-        appId: nonEmptyStringDecoder,
+        appId: optional(nonEmptyStringDecoder),
         manifest: nonEmptyStringDecoder,
         manifestType: nonEmptyStringDecoder,
         tooltip: optional(nonEmptyStringDecoder),
@@ -990,10 +998,11 @@
         title: optional(nonEmptyStringDecoder),
         version: optional(nonEmptyStringDecoder),
         customProperties: optional(anyJson()),
-        icon: optional(nonEmptyStringDecoder),
-        caption: optional(nonEmptyStringDecoder),
+        icon: optional(string()),
+        caption: optional(string()),
         details: applicationDetailsDecoder,
-        intents: optional(array(intentDefinitionDecoder))
+        intents: optional(array(intentDefinitionDecoder)),
+        hidden: optional(boolean())
     });
     const allApplicationDefinitionsDecoder = oneOf(applicationDefinitionDecoder, fdc3AppDefinitionDecoder);
     const appsImportOperationDecoder = object({
@@ -1025,6 +1034,11 @@
         icon: optional(nonEmptyStringDecoder),
         caption: optional(nonEmptyStringDecoder)
     });
+    const appDirectoryStateChangeDecoder = object({
+        appsAdded: array(baseApplicationDataDecoder),
+        appsChanged: array(baseApplicationDataDecoder),
+        appsRemoved: array(baseApplicationDataDecoder)
+    });
     const appHelloSuccessDecoder = object({
         apps: array(applicationDataDecoder)
     });
@@ -1041,22 +1055,34 @@
         width: optional(nonNegativeNumberDecoder),
         height: optional(nonNegativeNumberDecoder),
         relativeTo: optional(nonEmptyStringDecoder),
-        relativeDirection: optional(oneOf(constant("top"), constant("left"), constant("right"), constant("bottom")))
+        relativeDirection: optional(oneOf(constant("top"), constant("left"), constant("right"), constant("bottom"))),
+        forceChromeTab: optional(boolean())
     });
     const layoutTypeDecoder = oneOf(constant("Global"), constant("Activity"), constant("ApplicationDefault"), constant("Swimlane"), constant("Workspace"));
     const componentTypeDecoder = oneOf(constant("application"), constant("activity"));
-    const windowLayoutComponentDecoder = object({
-        type: nonEmptyStringDecoder.where((s) => s === "window", "Expected a value of window"),
-        componentType: optional(componentTypeDecoder),
-        state: object({
-            name: anyJson(),
-            context: anyJson(),
-            url: nonEmptyStringDecoder,
-            bounds: anyJson(),
-            id: nonEmptyStringDecoder,
-            parentId: optional(nonEmptyStringDecoder),
-            main: boolean()
+    const windowComponentStateDecoder = object({
+        context: optional(anyJson()),
+        bounds: windowBoundsDecoder,
+        createArgs: object({
+            name: optional(nonEmptyStringDecoder),
+            url: optional(nonEmptyStringDecoder),
+            context: optional(anyJson())
+        }),
+        windowState: optional(nonEmptyStringDecoder),
+        restoreState: optional(nonEmptyStringDecoder),
+        instanceId: nonEmptyStringDecoder,
+        isCollapsed: optional(boolean()),
+        isSticky: optional(boolean()),
+        restoreSettings: object({
+            groupId: optional(nonEmptyStringDecoder),
+            groupZOrder: optional(number())
         })
+    });
+    const windowLayoutComponentDecoder = object({
+        type: constant("window"),
+        componentType: optional(componentTypeDecoder),
+        application: nonEmptyStringDecoder,
+        state: windowComponentStateDecoder
     });
     const windowLayoutItemDecoder = object({
         type: constant("window"),
@@ -1065,7 +1091,9 @@
             url: optional(nonEmptyStringDecoder),
             title: optional(string()),
             allowExtract: optional(boolean()),
-            showCloseButton: optional(boolean())
+            allowReorder: optional(boolean()),
+            showCloseButton: optional(boolean()),
+            isMaximized: optional(boolean())
         })
     });
     const groupLayoutItemDecoder = object({
@@ -1083,31 +1111,50 @@
         config: anyJson(),
         children: array(oneOf(columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder, lazy(() => rowLayoutItemDecoder)))
     });
+    const workspaceLayoutComponentStateDecoder = object({
+        config: anyJson(),
+        context: anyJson(),
+        children: array(oneOf(rowLayoutItemDecoder, columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder))
+    });
     const workspaceLayoutComponentDecoder = object({
         type: constant("Workspace"),
-        state: object({
-            config: anyJson(),
-            context: anyJson(),
-            children: array(oneOf(rowLayoutItemDecoder, columnLayoutItemDecoder, groupLayoutItemDecoder, windowLayoutItemDecoder))
-        })
+        application: optional(nonEmptyStringDecoder),
+        state: workspaceLayoutComponentStateDecoder
+    });
+    const workspaceFrameComponentStateDecoder = object({
+        bounds: windowBoundsDecoder,
+        instanceId: nonEmptyStringDecoder,
+        selectedWorkspace: nonNegativeNumberDecoder,
+        workspaces: array(workspaceLayoutComponentStateDecoder),
+        windowState: optional(nonEmptyStringDecoder),
+        restoreState: optional(nonEmptyStringDecoder)
+    });
+    const workspaceFrameComponentDecoder = object({
+        type: constant("workspaceFrame"),
+        application: nonEmptyStringDecoder,
+        componentType: optional(componentTypeDecoder),
+        state: workspaceFrameComponentStateDecoder
     });
     const glueLayoutDecoder = object({
         name: nonEmptyStringDecoder,
         type: layoutTypeDecoder,
-        components: array(oneOf(windowLayoutComponentDecoder, workspaceLayoutComponentDecoder)),
-        version: optional(nonEmptyStringDecoder),
+        components: array(oneOf(windowLayoutComponentDecoder, workspaceLayoutComponentDecoder, workspaceFrameComponentDecoder)),
         context: optional(anyJson()),
         metadata: optional(anyJson())
     });
     const newLayoutOptionsDecoder = object({
         name: nonEmptyStringDecoder,
         context: optional(anyJson()),
-        metadata: optional(anyJson())
+        metadata: optional(anyJson()),
+        instances: optional(array(nonEmptyStringDecoder)),
+        ignoreInstances: optional(array(nonEmptyStringDecoder))
     });
     const restoreOptionsDecoder = object({
         name: nonEmptyStringDecoder,
         context: optional(anyJson()),
-        closeRunningInstance: optional(boolean())
+        closeRunningInstance: optional(boolean()),
+        closeMe: optional(boolean()),
+        timeout: optional(nonNegativeNumberDecoder)
     });
     const layoutSummaryDecoder = object({
         name: nonEmptyStringDecoder,
@@ -1118,6 +1165,12 @@
     const simpleLayoutConfigDecoder = object({
         name: nonEmptyStringDecoder,
         type: layoutTypeDecoder
+    });
+    const saveLayoutConfigDecoder = object({
+        layout: newLayoutOptionsDecoder
+    });
+    const restoreLayoutConfigDecoder = object({
+        layout: restoreOptionsDecoder
     });
     const getAllLayoutsConfigDecoder = object({
         type: layoutTypeDecoder
@@ -1133,7 +1186,7 @@
     const allLayoutsSummariesResultDecoder = object({
         summaries: array(layoutSummaryDecoder)
     });
-    const simpleLayoutResult = object({
+    const simpleLayoutResultDecoder = object({
         layout: glueLayoutDecoder
     });
     const optionalSimpleLayoutResult = object({
@@ -1149,7 +1202,12 @@
         displayName: optional(string()),
         contextTypes: optional(array(nonEmptyStringDecoder)),
         instanceId: optional(string()),
-        instanceTitle: optional(string())
+        instanceTitle: optional(string()),
+        resultType: optional(string())
+    });
+    const intentResolverResponseDecoder = object({
+        intent: nonEmptyStringDecoder,
+        handler: intentHandlerDecoder
     });
     const intentDecoder = object({
         name: nonEmptyStringDecoder,
@@ -1169,7 +1227,8 @@
     });
     const intentFilterDecoder = object({
         name: optional(nonEmptyStringDecoder),
-        contextType: optional(nonEmptyStringDecoder)
+        contextType: optional(nonEmptyStringDecoder),
+        resultType: optional(nonEmptyStringDecoder)
     });
     const findFilterDecoder = oneOf(nonEmptyStringDecoder, intentFilterDecoder);
     const wrappedIntentFilterDecoder = object({
@@ -1192,7 +1251,8 @@
         contextTypes: optional(array(nonEmptyStringDecoder)),
         displayName: optional(string()),
         icon: optional(string()),
-        description: optional(string())
+        description: optional(string()),
+        resultType: optional(string())
     });
     const addIntentListenerIntentDecoder = oneOf(nonEmptyStringDecoder, addIntentListenerRequestDecoder);
     const channelNameDecoder = (channelNames) => {
@@ -1228,6 +1288,7 @@
         title: nonEmptyStringDecoder,
         clickInterop: optional(interopActionSettingsDecoder),
         actions: optional(array(glue42NotificationActionDecoder)),
+        focusPlatformOnDefaultClick: optional(boolean()),
         badge: optional(string()),
         body: optional(string()),
         data: optional(anyJson()),
@@ -1242,6 +1303,13 @@
         timestamp: optional(nonNegativeNumberDecoder),
         vibrate: optional(array(number()))
     });
+    const channelContextDecoder = object({
+        name: nonEmptyStringDecoder,
+        meta: object({
+            color: nonEmptyStringDecoder
+        }),
+        data: optional(object()),
+    });
     const raiseNotificationDecoder = object({
         settings: glue42NotificationOptionsDecoder,
         id: nonEmptyStringDecoder
@@ -1249,10 +1317,39 @@
     const permissionRequestResultDecoder = object({
         permissionGranted: boolean()
     });
+    const permissionQueryResultDecoder = object({
+        permission: oneOf(constant("default"), constant("granted"), constant("denied"))
+    });
     const notificationEventPayloadDecoder = object({
         definition: notificationDefinitionDecoder,
         action: optional(string()),
         id: optional(nonEmptyStringDecoder)
+    });
+    const platformSaveRequestConfigDecoder = object({
+        layoutType: oneOf(constant("Global"), constant("Workspace")),
+        layoutName: nonEmptyStringDecoder,
+        context: optional(anyJson())
+    });
+    const saveRequestClientResponseDecoder = object({
+        windowContext: optional(anyJson()),
+    });
+    const permissionStateResultDecoder = object({
+        state: oneOf(constant("prompt"), constant("denied"), constant("granted"))
+    });
+    const simpleAvailabilityResultDecoder = object({
+        isAvailable: boolean()
+    });
+    const simpleItemIdDecoder = object({
+        itemId: nonEmptyStringDecoder
+    });
+    const operationCheckResultDecoder = object({
+        isSupported: boolean()
+    });
+    const operationCheckConfigDecoder = object({
+        operation: nonEmptyStringDecoder
+    });
+    const workspaceFrameBoundsResultDecoder = object({
+        bounds: windowBoundsDecoder
     });
 
     const operations = {
@@ -1473,7 +1570,12 @@
         }
         focus() {
             return __awaiter(this, void 0, void 0, function* () {
-                yield this._bridge.send("windows", operations.focus, { windowId: this.id });
+                if (this.name === "Platform") {
+                    window.open(undefined, this.id);
+                }
+                else {
+                    yield this._bridge.send("windows", operations.focus, { windowId: this.id });
+                }
                 return this.me;
             });
         }
@@ -1542,8 +1644,8 @@
             return __awaiter(this, void 0, void 0, function* () {
                 this.logger = coreGlue.logger.subLogger("windows.controller.web");
                 this.logger.trace("starting the web windows controller");
-                this.publicWindowId = coreGlue.connection.transport.publicWindowId;
-                this.actualWindowId = coreGlue.interop.instance.windowId;
+                this.publicWindowId = ioc.publicWindowId;
+                this.actualWindowId = ioc.actualWindowId;
                 this.addWindowOperationExecutors();
                 this.ioc = ioc;
                 this.bridge = ioc.bridge;
@@ -1774,8 +1876,9 @@
     const GlueClientControlName = "T42.Web.Client.Control";
 
     class GlueBridge {
-        constructor(coreGlue) {
+        constructor(coreGlue, communicationId) {
             this.coreGlue = coreGlue;
+            this.communicationId = communicationId;
             this.platformMethodTimeoutMs = 10000;
         }
         get contextLib() {
@@ -1791,8 +1894,9 @@
                     this.checkWaitMethod(GlueWebPlatformControlName),
                     this.checkWaitMethod(GlueWebPlatformStreamName)
                 ]);
+                const systemId = this.communicationId;
                 const [sub] = yield Promise.all([
-                    this.coreGlue.interop.subscribe(GlueWebPlatformStreamName),
+                    this.coreGlue.interop.subscribe(GlueWebPlatformStreamName, systemId ? { target: { instance: this.communicationId } } : undefined),
                     this.coreGlue.interop.registerAsync(GlueClientControlName, (args, _, success, error) => this.passMessageController(args, success, error))
                 ]);
                 this.sub = sub;
@@ -1809,7 +1913,7 @@
                 windowId: result === null || result === void 0 ? void 0 : result.windowId
             };
         }
-        send(domain, operation, operationData) {
+        send(domain, operation, operationData, options) {
             return __awaiter(this, void 0, void 0, function* () {
                 if (operation.dataDecoder) {
                     try {
@@ -1819,12 +1923,12 @@
                         throw new Error(`Unexpected internal outgoing validation error: ${error.message}, for operation: ${operation.name} and input: ${JSON.stringify(error.input)}`);
                     }
                 }
-                let operationResult;
                 try {
-                    operationResult = yield this.transmitMessage(domain, operation, operationData);
+                    const operationResult = yield this.transmitMessage(domain, operation, operationData, options);
                     if (operation.resultDecoder) {
-                        operationResult = operation.resultDecoder.runWithException(operationResult);
+                        operation.resultDecoder.runWithException(operationResult);
                     }
+                    return operationResult;
                 }
                 catch (error) {
                     if (error.kind) {
@@ -1832,17 +1936,27 @@
                     }
                     throw new Error(error.message);
                 }
-                return operationResult;
             });
         }
         checkWaitMethod(name) {
             return PromisePlus((resolve) => {
-                const hasMethod = this.coreGlue.interop.methods().some((method) => method.name === name);
+                const hasMethod = this.coreGlue.interop.methods().some((method) => {
+                    const nameMatch = method.name === name;
+                    const serverMatch = this.communicationId ?
+                        method.getServers().some((server) => server.instance === this.communicationId) :
+                        true;
+                    return nameMatch && serverMatch;
+                });
                 if (hasMethod) {
                     return resolve();
                 }
-                const unSub = this.coreGlue.interop.methodAdded((method) => {
-                    if (method.name === name) {
+                const unSub = this.coreGlue.interop.serverMethodAdded((data) => {
+                    const method = data.method;
+                    const server = data.server;
+                    const serverMatch = this.communicationId ?
+                        server.instance === this.communicationId :
+                        true;
+                    if (method.name === name && serverMatch) {
                         unSub();
                         resolve();
                     }
@@ -1872,13 +1986,14 @@
                 console.warn(err);
             });
         }
-        transmitMessage(domain, operation, data) {
+        transmitMessage(domain, operation, data, options) {
             return __awaiter(this, void 0, void 0, function* () {
                 const messageData = { domain, data, operation: operation.name };
                 let invocationResult;
                 const baseErrorMessage = `Internal Platform Communication Error. Attempted operation: ${JSON.stringify(operation.name)} with data: ${JSON.stringify(data)}. `;
+                const systemId = this.communicationId;
                 try {
-                    invocationResult = yield this.coreGlue.interop.invoke(GlueWebPlatformControlName, messageData);
+                    invocationResult = yield this.coreGlue.interop.invoke(GlueWebPlatformControlName, messageData, systemId ? { instance: this.communicationId } : undefined, options);
                     if (!invocationResult) {
                         throw new Error("Received unsupported result from the platform - empty result");
                     }
@@ -1900,9 +2015,7 @@
 
     const operations$1 = {
         appHello: { name: "appHello", dataDecoder: windowHelloDecoder, resultDecoder: appHelloSuccessDecoder },
-        applicationAdded: { name: "applicationAdded", dataDecoder: baseApplicationDataDecoder },
-        applicationRemoved: { name: "applicationRemoved", dataDecoder: baseApplicationDataDecoder },
-        applicationChanged: { name: "applicationChanged", dataDecoder: baseApplicationDataDecoder },
+        appDirectoryStateChange: { name: "appDirectoryStateChange", dataDecoder: appDirectoryStateChangeDecoder },
         instanceStarted: { name: "instanceStarted", dataDecoder: instanceDataDecoder },
         instanceStopped: { name: "instanceStopped", dataDecoder: instanceDataDecoder },
         applicationStart: { name: "applicationStart", dataDecoder: applicationStartConfigDecoder, resultDecoder: instanceDataDecoder },
@@ -1915,6 +2028,8 @@
 
     class AppManagerController {
         constructor() {
+            this.baseApplicationsTimeoutMS = 60000;
+            this.appImportTimeoutMS = 20;
             this.registry = lib();
             this.applications = [];
             this.instances = [];
@@ -1923,8 +2038,8 @@
             return __awaiter(this, void 0, void 0, function* () {
                 this.logger = coreGlue.logger.subLogger("appManger.controller.web");
                 this.logger.trace("starting the web appManager controller");
-                this.publicWindowId = coreGlue.connection.transport.publicWindowId;
-                this.actualWindowId = coreGlue.interop.instance.windowId;
+                this.publicWindowId = ioc.publicWindowId;
+                this.actualWindowId = ioc.actualWindowId;
                 this.addOperationsExecutors();
                 this.ioc = ioc;
                 this.bridge = ioc.bridge;
@@ -1951,13 +2066,19 @@
             });
         }
         onInstanceStarted(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("onInstanceStarted requires a single argument of type function");
+            }
             return this.registry.add("instance-started", callback, this.instances);
         }
         onInstanceStopped(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("onInstanceStopped requires a single argument of type function");
+            }
             return this.registry.add("instance-stopped", callback);
         }
         startApplication(appName, context, options) {
-            var _a, _b;
+            var _a, _b, _c;
             return __awaiter(this, void 0, void 0, function* () {
                 const startOptions = {
                     name: appName,
@@ -1969,12 +2090,17 @@
                     height: options === null || options === void 0 ? void 0 : options.height,
                     relativeTo: options === null || options === void 0 ? void 0 : options.relativeTo,
                     relativeDirection: options === null || options === void 0 ? void 0 : options.relativeDirection,
-                    id: (_b = options) === null || _b === void 0 ? void 0 : _b.reuseId
+                    id: (_b = options) === null || _b === void 0 ? void 0 : _b.reuseId,
+                    forceChromeTab: (_c = options) === null || _c === void 0 ? void 0 : _c.forceTab
                 };
                 const openResult = yield this.bridge.send("appManager", operations$1.applicationStart, startOptions);
                 const app = this.applications.find((a) => a.name === openResult.applicationName);
                 return this.ioc.buildInstance(openResult, app);
             });
+        }
+        getApplication(name) {
+            const verifiedName = nonEmptyStringDecoder.runWithException(name);
+            return this.applications.find((app) => app.name === verifiedName);
         }
         toApi() {
             const api = {
@@ -1997,19 +2123,33 @@
             return api;
         }
         addOperationsExecutors() {
-            operations$1.applicationAdded.execute = this.handleApplicationAddedMessage.bind(this);
-            operations$1.applicationRemoved.execute = this.handleApplicationRemovedMessage.bind(this);
-            operations$1.applicationChanged.execute = this.handleApplicationChangedMessage.bind(this);
+            operations$1.appDirectoryStateChange.execute = this.handleAppDirectoryStateChange.bind(this);
             operations$1.instanceStarted.execute = this.handleInstanceStartedMessage.bind(this);
             operations$1.instanceStopped.execute = this.handleInstanceStoppedMessage.bind(this);
         }
+        handleAppDirectoryStateChange(data) {
+            return __awaiter(this, void 0, void 0, function* () {
+                data.appsAdded.forEach(this.handleApplicationAddedMessage.bind(this));
+                data.appsChanged.forEach(this.handleApplicationChangedMessage.bind(this));
+                data.appsRemoved.forEach(this.handleApplicationRemovedMessage.bind(this));
+            });
+        }
         onAppAdded(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("onAppAdded requires a single argument of type function");
+            }
             return this.registry.add("application-added", callback, this.applications);
         }
         onAppRemoved(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("onAppRemoved requires a single argument of type function");
+            }
             return this.registry.add("application-removed", callback);
         }
         onAppChanged(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("onAppChanged requires a single argument of type function");
+            }
             return this.registry.add("application-changed", callback);
         }
         handleApplicationAddedMessage(appData) {
@@ -2088,6 +2228,9 @@
                 if (!Array.isArray(definitions)) {
                     throw new Error("Import must be called with an array of definitions");
                 }
+                if (definitions.length > 10000) {
+                    throw new Error("Cannot import more than 10000 app definitions in Glue42 Core.");
+                }
                 const parseResult = definitions.reduce((soFar, definition) => {
                     const decodeResult = allApplicationDefinitionsDecoder.run(definition);
                     if (!decodeResult.ok) {
@@ -2098,7 +2241,8 @@
                     }
                     return soFar;
                 }, { valid: [], invalid: [] });
-                yield this.bridge.send("appManager", operations$1.import, { definitions: parseResult.valid, mode });
+                const responseTimeout = this.baseApplicationsTimeoutMS + this.appImportTimeoutMS * parseResult.valid.length;
+                yield this.bridge.send("appManager", operations$1.import, { definitions: parseResult.valid, mode }, { methodResponseTimeoutMs: responseTimeout });
                 return {
                     imported: parseResult.valid.map((valid) => valid.name),
                     errors: parseResult.invalid
@@ -2108,23 +2252,19 @@
         remove(name) {
             return __awaiter(this, void 0, void 0, function* () {
                 nonEmptyStringDecoder.runWithException(name);
-                yield this.bridge.send("appManager", operations$1.remove, { name });
+                yield this.bridge.send("appManager", operations$1.remove, { name }, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
             });
         }
         clear() {
             return __awaiter(this, void 0, void 0, function* () {
-                yield this.bridge.send("appManager", operations$1.clear, undefined);
+                yield this.bridge.send("appManager", operations$1.clear, undefined, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
             });
         }
         export() {
             return __awaiter(this, void 0, void 0, function* () {
-                const response = yield this.bridge.send("appManager", operations$1.export, undefined);
+                const response = yield this.bridge.send("appManager", operations$1.export, undefined, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
                 return response.definitions;
             });
-        }
-        getApplication(name) {
-            const verifiedName = nonEmptyStringDecoder.runWithException(name);
-            return this.applications.find((app) => app.name === verifiedName);
         }
         getApplications() {
             return this.applications.slice();
@@ -2134,7 +2274,7 @@
         }
         registerWithPlatform() {
             return __awaiter(this, void 0, void 0, function* () {
-                const result = yield this.bridge.send("appManager", operations$1.appHello, { windowId: this.actualWindowId });
+                const result = yield this.bridge.send("appManager", operations$1.appHello, { windowId: this.actualWindowId }, { methodResponseTimeoutMs: this.baseApplicationsTimeoutMS });
                 this.logger.trace("the platform responded to the hello message with a full list of apps");
                 this.applications = yield Promise.all(result.apps.map((app) => this.ioc.buildApplication(app, app.instances)));
                 this.instances = this.applications.reduce((instancesSoFar, app) => {
@@ -2212,7 +2352,7 @@
             if (typeof callback !== "function") {
                 throw new Error("OnInstanceStarted requires a single argument of type function");
             }
-            this.controller.onInstanceStarted((instance) => {
+            return this.controller.onInstanceStarted((instance) => {
                 if (instance.application.name === this.data.name) {
                     callback(instance);
                 }
@@ -2222,7 +2362,7 @@
             if (typeof callback !== "function") {
                 throw new Error("OnInstanceStarted requires a single argument of type function");
             }
-            this.controller.onInstanceStopped((instance) => {
+            return this.controller.onInstanceStopped((instance) => {
                 if (instance.application.name === this.data.name) {
                     callback(instance);
                 }
@@ -2243,11 +2383,18 @@
         getAll: { name: "getAll", dataDecoder: getAllLayoutsConfigDecoder, resultDecoder: allLayoutsSummariesResultDecoder },
         export: { name: "export", dataDecoder: getAllLayoutsConfigDecoder, resultDecoder: allLayoutsFullConfigDecoder },
         import: { name: "import", dataDecoder: layoutsImportConfigDecoder },
-        remove: { name: "remove", dataDecoder: simpleLayoutConfigDecoder }
+        remove: { name: "remove", dataDecoder: simpleLayoutConfigDecoder },
+        save: { name: "save", dataDecoder: saveLayoutConfigDecoder, resultDecoder: simpleLayoutResultDecoder },
+        restore: { name: "restore", dataDecoder: restoreLayoutConfigDecoder },
+        clientSaveRequest: { name: "clientSaveRequest", dataDecoder: platformSaveRequestConfigDecoder, resultDecoder: saveRequestClientResponseDecoder },
+        getGlobalPermissionState: { name: "getGlobalPermissionState", resultDecoder: permissionStateResultDecoder },
+        requestGlobalPermission: { name: "requestGlobalPermission", resultDecoder: simpleAvailabilityResultDecoder },
+        checkGlobalActivated: { name: "checkGlobalActivated", resultDecoder: simpleAvailabilityResultDecoder }
     };
 
     class LayoutsController {
         constructor() {
+            this.defaultLayoutRestoreTimeoutMS = 120000;
             this.registry = lib();
         }
         start(coreGlue, ioc) {
@@ -2255,6 +2402,7 @@
                 this.logger = coreGlue.logger.subLogger("layouts.controller.web");
                 this.logger.trace("starting the web layouts controller");
                 this.bridge = ioc.bridge;
+                this.windowsController = ioc.windowsController;
                 this.addOperationsExecutors();
                 const api = this.toApi();
                 this.logger.trace("no need for platform registration, attaching the layouts property to glue and returning");
@@ -2286,7 +2434,11 @@
                 remove: this.remove.bind(this),
                 onAdded: this.onAdded.bind(this),
                 onChanged: this.onChanged.bind(this),
-                onRemoved: this.onRemoved.bind(this)
+                onRemoved: this.onRemoved.bind(this),
+                onSaveRequested: this.subscribeOnSaveRequested.bind(this),
+                getMultiScreenPermissionState: this.getGlobalPermissionState.bind(this),
+                requestMultiScreenPermission: this.requestGlobalPermission.bind(this),
+                getGlobalTypeState: this.checkGlobalActivated.bind(this)
             };
             return Object.freeze(api);
         }
@@ -2294,6 +2446,7 @@
             operations$2.layoutAdded.execute = this.handleOnAdded.bind(this);
             operations$2.layoutChanged.execute = this.handleOnChanged.bind(this);
             operations$2.layoutRemoved.execute = this.handleOnRemoved.bind(this);
+            operations$2.clientSaveRequest.execute = this.handleSaveRequest.bind(this);
         }
         get(name, type) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2312,10 +2465,8 @@
         }
         export(type) {
             return __awaiter(this, void 0, void 0, function* () {
-                if (type) {
-                    layoutTypeDecoder.runWithException(type);
-                }
-                const result = yield this.bridge.send("layouts", operations$2.export, { type: "Workspace" });
+                layoutTypeDecoder.runWithException(type);
+                const result = yield this.bridge.send("layouts", operations$2.export, { type });
                 return result.layouts;
             });
         }
@@ -2324,6 +2475,9 @@
                 importModeDecoder.runWithException(mode);
                 if (!Array.isArray(layouts)) {
                     throw new Error("Import must be called with an array of layouts");
+                }
+                if (layouts.length > 1000) {
+                    throw new Error("Cannot import more than 1000 layouts at once in Glue42 Core.");
                 }
                 const parseResult = layouts.reduce((soFar, layout) => {
                     const decodeResult = glueLayoutDecoder.run(layout);
@@ -2335,19 +2489,22 @@
                     }
                     return soFar;
                 }, { valid: [] });
-                yield this.bridge.send("layouts", operations$2.import, { layouts: parseResult.valid, mode });
+                const layoutsToImport = layouts.filter((layout) => parseResult.valid.some((validLayout) => validLayout.name === layout.name));
+                yield this.bridge.send("layouts", operations$2.import, { layouts: layoutsToImport, mode });
             });
         }
         save(layout) {
             return __awaiter(this, void 0, void 0, function* () {
                 newLayoutOptionsDecoder.runWithException(layout);
-                throw new Error("Save is not supported in Core at the moment");
+                const saveResult = yield this.bridge.send("layouts", operations$2.save, { layout });
+                return saveResult.layout;
             });
         }
         restore(options) {
             return __awaiter(this, void 0, void 0, function* () {
                 restoreOptionsDecoder.runWithException(options);
-                throw new Error("Restore is not supported in Core at the moment");
+                const invocationTimeout = options.timeout ? options.timeout * 2 : this.defaultLayoutRestoreTimeoutMS;
+                yield this.bridge.send("layouts", operations$2.restore, { layout: options }, { methodResponseTimeoutMs: invocationTimeout });
             });
         }
         remove(type, name) {
@@ -2357,8 +2514,53 @@
                 yield this.bridge.send("layouts", operations$2.remove, { type, name });
             });
         }
+        handleSaveRequest(config) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const response = {};
+                if (this.saveRequestSubscription) {
+                    try {
+                        const onSaveRequestResponse = this.saveRequestSubscription(config);
+                        response.windowContext = onSaveRequestResponse === null || onSaveRequestResponse === void 0 ? void 0 : onSaveRequestResponse.windowContext;
+                    }
+                    catch (error) {
+                        this.logger.warn(`An error was thrown by the onSaveRequested callback, ignoring the callback: ${JSON.stringify(error)}`);
+                    }
+                }
+                return response;
+            });
+        }
+        getGlobalPermissionState() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const requestResult = yield this.bridge.send("layouts", operations$2.getGlobalPermissionState, undefined);
+                return requestResult;
+            });
+        }
+        requestGlobalPermission() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const currentState = (yield this.getGlobalPermissionState()).state;
+                if (currentState === "denied") {
+                    return { permissionGranted: false };
+                }
+                if (currentState === "granted") {
+                    return { permissionGranted: true };
+                }
+                const myWindow = this.windowsController.my();
+                if (myWindow.name !== "Platform") {
+                    throw new Error("Cannot request permission for multi-window placement from any app other than the Platform.");
+                }
+                const requestResult = yield this.bridge.send("layouts", operations$2.requestGlobalPermission, undefined, { methodResponseTimeoutMs: 180000 });
+                return { permissionGranted: requestResult.isAvailable };
+            });
+        }
+        checkGlobalActivated() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const requestResult = yield this.bridge.send("layouts", operations$2.checkGlobalActivated, undefined);
+                return { activated: requestResult.isAvailable };
+            });
+        }
         onAdded(callback) {
-            this.export().then((layouts) => layouts.forEach((layout) => callback(layout))).catch(() => { });
+            this.export("Global").then((layouts) => layouts.forEach((layout) => callback(layout))).catch(() => { });
+            this.export("Workspace").then((layouts) => layouts.forEach((layout) => callback(layout))).catch(() => { });
             return this.registry.add(operations$2.layoutAdded.name, callback);
         }
         onChanged(callback) {
@@ -2366,6 +2568,18 @@
         }
         onRemoved(callback) {
             return this.registry.add(operations$2.layoutRemoved.name, callback);
+        }
+        subscribeOnSaveRequested(callback) {
+            if (typeof callback !== "function") {
+                throw new Error("Cannot subscribe to onSaveRequested, because the provided argument is not a valid callback function.");
+            }
+            if (this.saveRequestSubscription) {
+                throw new Error("Cannot subscribe to onSaveRequested, because this client has already subscribed and only one subscription is supported. Consider unsubscribing from the initial one.");
+            }
+            this.saveRequestSubscription = callback;
+            return () => {
+                delete this.saveRequestSubscription;
+            };
         }
         handleOnAdded(layout) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2388,7 +2602,8 @@
         raiseNotification: { name: "raiseNotification", dataDecoder: raiseNotificationDecoder },
         requestPermission: { name: "requestPermission", resultDecoder: permissionRequestResultDecoder },
         notificationShow: { name: "notificationShow", dataDecoder: notificationEventPayloadDecoder },
-        notificationClick: { name: "notificationClick", dataDecoder: notificationEventPayloadDecoder }
+        notificationClick: { name: "notificationClick", dataDecoder: notificationEventPayloadDecoder },
+        getPermission: { name: "getPermission", resultDecoder: permissionQueryResultDecoder }
     };
 
     function createCommonjsModule(fn, basedir, module) {
@@ -2762,9 +2977,16 @@
         toApi() {
             const api = {
                 raise: this.raise.bind(this),
-                requestPermission: this.requestPermission.bind(this)
+                requestPermission: this.requestPermission.bind(this),
+                getPermission: this.getPermission.bind(this)
             };
             return Object.freeze(api);
+        }
+        getPermission() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const queryResult = yield this.bridge.send("notifications", operations$3.getPermission, undefined);
+                return queryResult.permission;
+            });
         }
         requestPermission() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2829,10 +3051,22 @@
         raiseIntent: { name: "raiseIntent", dataDecoder: intentRequestDecoder, resultDecoder: intentResultDecoder }
     };
 
+    const GLUE42_FDC3_INTENTS_METHOD_PREFIX = "Tick42.FDC3.Intents.";
+    const INTENTS_RESOLVER_INTEROP_PREFIX = "T42.Intents.Resolver.Control";
+    const INTENTS_RESOLVER_WIDTH = 400;
+    const INTENTS_RESOLVER_HEIGHT = 440;
+    const INTENTS_RESOLVER_APP_NAME = "intentsResolver";
+
+    const systemOperations = {
+        operationCheck: { name: "operationCheck", dataDecoder: operationCheckConfigDecoder, resultDecoder: operationCheckResultDecoder },
+        getWorkspaceWindowFrameBounds: { name: "getWorkspaceWindowFrameBounds", resultDecoder: workspaceFrameBoundsResultDecoder, dataDecoder: simpleItemIdDecoder }
+    };
+
     class IntentsController {
         constructor() {
             this.myIntents = new Set();
-            this.GlueWebIntentsPrefix = "Tick42.FDC3.Intents.";
+            this.useIntentsResolverUI = true;
+            this.intentsResolverResponsePromises = {};
         }
         start(coreGlue, ioc) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -2840,6 +3074,9 @@
                 this.logger.trace("starting the web intents controller");
                 this.bridge = ioc.bridge;
                 this.interop = coreGlue.interop;
+                this.appManager = ioc.appManagerController;
+                this.windowsManager = ioc.windowsController;
+                this.checkIfIntentsResolverIsEnabled(ioc.config);
                 const api = this.toApi();
                 this.logger.trace("no need for platform registration, attaching the intents property to glue and returning");
                 coreGlue.intents = api;
@@ -2866,21 +3103,48 @@
                 addIntentListener: this.addIntentListener.bind(this),
                 find: this.find.bind(this)
             };
-            return Object.freeze(api);
+            return api;
         }
         raise(request) {
             return __awaiter(this, void 0, void 0, function* () {
-                const requestObj = raiseRequestDecoder.runWithException(request);
-                let data;
-                if (typeof requestObj === "string") {
-                    data = {
-                        intent: requestObj
-                    };
+                let intentDecoder = raiseRequestDecoder.runWithException(request);
+                const intent = typeof intentDecoder === "string"
+                    ? { intent: intentDecoder }
+                    : intentDecoder;
+                if (intent.target) {
+                    this.logger.trace(`Intents Resolver won't be used. Target is provided in Intent Request - ${JSON.stringify(intent)}`);
+                    return this.raiseIntent(intent);
                 }
-                else {
-                    data = requestObj;
+                if (!this.useIntentsResolverUI) {
+                    this.logger.trace(`Intent Resolver is disabled. Raising intent to first found handler`);
+                    return this.raiseIntent(intent);
                 }
-                const result = yield this.bridge.send("intents", operations$4.raiseIntent, data);
+                const intentsResolverApp = this.appManager.getApplication(this.intentsResolverAppName);
+                if (!intentsResolverApp) {
+                    this.logger.trace(`Intent Resolver Application with name ${this.intentsResolverAppName} not found. Intents Resolver won't be used for handling raised intents`);
+                    return this.raiseIntent(intent);
+                }
+                const hasOneHandler = (yield this.find(intent.intent))[0].handlers.length === 1;
+                if (hasOneHandler) {
+                    this.logger.trace(`Intents Resolver won't be used - intent has only one handler.`);
+                    return this.raiseIntent(intent);
+                }
+                const registeredMethod = yield this.registerIntentResolverMethod();
+                this.logger.trace(`Registered interop method ${registeredMethod}`);
+                const resolverInstance = yield this.openIntentResolverApplication(intent, registeredMethod);
+                const { handler } = yield this.intentsResolverResponsePromises[resolverInstance.id].promise;
+                this.stopIntensResolverInstance(resolverInstance.id);
+                const target = handler.type === "app"
+                    ? { app: handler.applicationName }
+                    : { instance: handler.instanceId };
+                this.logger.trace(`Intent handler chosen by the user: ${JSON.stringify(target)}`);
+                const data = Object.assign(Object.assign({}, intent), { target });
+                return this.raiseIntent(data);
+            });
+        }
+        raiseIntent(requestObj) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const result = this.bridge.send("intents", operations$4.raiseIntent, requestObj);
                 return result;
             });
         }
@@ -2895,9 +3159,9 @@
             if (typeof handler !== "function") {
                 throw new Error("Cannot add intent listener, because the provided handler is not a function!");
             }
-            let subscribed = true;
+            let registerPromise;
             const intentName = typeof intent === "string" ? intent : intent.intent;
-            const methodName = `${this.GlueWebIntentsPrefix}${intentName}`;
+            const methodName = `${GLUE42_FDC3_INTENTS_METHOD_PREFIX}${intentName}`;
             const alreadyRegistered = this.myIntents.has(intentName);
             if (alreadyRegistered) {
                 throw new Error(`Intent listener for intent ${intentName} already registered!`);
@@ -2905,14 +3169,10 @@
             this.myIntents.add(intentName);
             const result = {
                 unsubscribe: () => {
-                    subscribed = false;
-                    try {
-                        this.interop.unregister(methodName);
-                        this.myIntents.delete(intentName);
-                    }
-                    catch (error) {
-                        this.logger.trace(`Unsubscribed intent listener, but ${methodName} unregistration failed!`);
-                    }
+                    this.myIntents.delete(intentName);
+                    registerPromise
+                        .then(() => this.interop.unregister(methodName))
+                        .catch((err) => this.logger.trace(`Unregistration of a method with name ${methodName} failed with reason: ${err}`));
                 }
             };
             let intentFlag = {};
@@ -2920,10 +3180,14 @@
                 const rest = __rest(intent, ["intent"]);
                 intentFlag = rest;
             }
-            this.interop.register({ name: methodName, flags: { intent: intentFlag } }, (args) => {
-                if (subscribed) {
+            registerPromise = this.interop.register({ name: methodName, flags: { intent: intentFlag } }, (args) => {
+                if (this.myIntents.has(intentName)) {
                     return handler(args);
                 }
+            });
+            registerPromise.catch(err => {
+                this.myIntents.delete(intentName);
+                this.logger.warn(`Registration of a method with name ${methodName} failed with reason: ${err}`);
             });
             return result;
         }
@@ -2949,7 +3213,149 @@
                 return result.intents;
             });
         }
+        createResponsePromise(intent, instanceId, methodName) {
+            let resolve = () => { };
+            let reject = () => { };
+            const promise = new Promise((res, rej) => {
+                resolve = res;
+                reject = rej;
+            });
+            this.intentsResolverResponsePromises[instanceId] = { intent, resolve, reject, promise, methodName };
+        }
+        resolverResponseHandler(args, callerId) {
+            const response = intentResolverResponseDecoder.run(args);
+            const instanceId = callerId.instance;
+            if (!response.ok) {
+                this.logger.trace(`Intent Resolver sent invalid response. Error: ${response.error}`);
+                this.intentsResolverResponsePromises[instanceId].reject(response.error.message);
+                this.stopIntensResolverInstance(instanceId);
+                return;
+            }
+            this.intentsResolverResponsePromises[instanceId].resolve(response.result);
+        }
+        stopIntensResolverInstance(instanceId) {
+            const appInstances = this.appManager.getApplication(this.intentsResolverAppName).instances;
+            const searchedInstance = appInstances.find((inst) => inst.id === instanceId);
+            if (!searchedInstance) {
+                return;
+            }
+            searchedInstance.stop().catch(err => this.logger.error(err));
+        }
+        registerIntentResolverMethod() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const methodName = INTENTS_RESOLVER_INTEROP_PREFIX + shortid();
+                yield this.interop.register(methodName, this.resolverResponseHandler.bind(this));
+                return methodName;
+            });
+        }
+        openIntentResolverApplication(requestObj, methodName) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const startContext = {
+                    intent: requestObj.intent,
+                    callerId: this.interop.instance.instance,
+                    methodName
+                };
+                const startOptions = yield this.composeStartOptions();
+                const instance = yield this.appManager.getApplication(this.intentsResolverAppName).start(startContext, startOptions);
+                this.subscribeOnInstanceStopped(instance);
+                this.createResponsePromise(requestObj.intent, instance.id, methodName);
+                return instance;
+            });
+        }
+        cleanUpIntentResolverPromise(instanceId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const intentPromise = this.intentsResolverResponsePromises[instanceId];
+                if (!intentPromise) {
+                    return;
+                }
+                const unregisterPromise = this.interop.unregister(intentPromise.methodName);
+                unregisterPromise.catch((error) => this.logger.warn(error));
+                delete this.intentsResolverResponsePromises[instanceId];
+            });
+        }
+        composeStartOptions() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const bounds = yield this.getTargetBounds();
+                return {
+                    top: (bounds.height - INTENTS_RESOLVER_HEIGHT) / 2 + bounds.top,
+                    left: (bounds.width - INTENTS_RESOLVER_WIDTH) / 2 + bounds.left,
+                    width: INTENTS_RESOLVER_WIDTH,
+                    height: INTENTS_RESOLVER_HEIGHT
+                };
+            });
+        }
+        getTargetBounds() {
+            return __awaiter(this, void 0, void 0, function* () {
+                let bounds;
+                try {
+                    bounds = yield this.windowsManager.my().getBounds();
+                    this.logger.trace(`Opening the resolver UI relative to my window bounds: ${JSON.stringify(bounds)}`);
+                    return bounds;
+                }
+                catch (error) {
+                    this.logger.trace(`Failure to get my window bounds: ${JSON.stringify(error)}`);
+                }
+                try {
+                    yield this.bridge.send("workspaces", systemOperations.operationCheck, { operation: "getWorkspaceWindowFrameBounds" });
+                    const bridgeResponse = yield this.bridge.send("workspaces", systemOperations.getWorkspaceWindowFrameBounds, { itemId: this.windowsManager.my().id });
+                    bounds = bridgeResponse.bounds;
+                    this.logger.trace(`Opening the resolver UI relative to my workspace frame window bounds: ${JSON.stringify(bounds)}`);
+                    return bounds;
+                }
+                catch (error) {
+                    this.logger.trace(`Failure to get my workspace frame window bounds: ${JSON.stringify(error)}`);
+                }
+                bounds = {
+                    top: window.screen.availTop || 0,
+                    left: window.screen.availLeft || 0,
+                    width: window.screen.width,
+                    height: window.screen.height
+                };
+                this.logger.trace(`Opening the resolver UI relative to my screen bounds: ${JSON.stringify(bounds)}`);
+                return bounds;
+            });
+        }
+        subscribeOnInstanceStopped(instance) {
+            const { application } = instance;
+            const unsub = application.onInstanceStopped((inst) => {
+                if (inst.id !== instance.id) {
+                    return;
+                }
+                const intentPromise = this.intentsResolverResponsePromises[inst.id];
+                if (!intentPromise) {
+                    return unsub();
+                }
+                intentPromise.reject(`Cannot resolve raise intent ${intentPromise.intent} - User closed ${this.intentsResolverAppName} app without choosing an intent handler`);
+                this.cleanUpIntentResolverPromise(inst.id);
+                unsub();
+            });
+        }
+        checkIfIntentsResolverIsEnabled(options) {
+            var _a, _b, _c;
+            this.useIntentsResolverUI = typeof ((_a = options.intents) === null || _a === void 0 ? void 0 : _a.enableIntentsResolverUI) === "boolean"
+                ? options.intents.enableIntentsResolverUI
+                : true;
+            this.intentsResolverAppName = (_c = (_b = options.intents) === null || _b === void 0 ? void 0 : _b.intentsResolverAppName) !== null && _c !== void 0 ? _c : INTENTS_RESOLVER_APP_NAME;
+        }
     }
+
+    const Glue42CoreMessageTypes = {
+        platformUnload: { name: "platformUnload" },
+        transportSwitchRequest: { name: "transportSwitchRequest" },
+        transportSwitchResponse: { name: "transportSwitchResponse" },
+        getCurrentTransport: { name: "getCurrentTransport" },
+        getCurrentTransportResponse: { name: "getCurrentTransportResponse" },
+        checkPreferredLogic: { name: "checkPreferredLogic" },
+        checkPreferredConnection: { name: "checkPreferredConnection" },
+        checkPreferredLogicResponse: { name: "checkPreferredLogicResponse" },
+        checkPreferredConnectionResponse: { name: "checkPreferredConnectionResponse" }
+    };
+    const webPlatformTransportName = "web-platform";
+    const latestFDC3Type = "latest_fdc3_type";
+
+    const operations$5 = {
+        addChannel: { name: "addChannel", dataDecoder: channelContextDecoder },
+    };
 
     class ChannelsController {
         constructor() {
@@ -2957,12 +3363,30 @@
             this.GlueWebChannelsPrefix = "___channel___";
             this.SubsKey = "subs";
             this.ChangedKey = "changed";
+            this.replaySubscribe = (callback, channelId) => {
+                this.get(channelId)
+                    .then((channelContext) => {
+                    if (typeof channelContext.data === "object" && Object.keys(channelContext.data).length) {
+                        const contextName = this.createContextName(channelContext.name);
+                        return this.contexts.subscribe(contextName, (context, _, __, ___, extraData) => {
+                            callback(context.data, context, extraData === null || extraData === void 0 ? void 0 : extraData.updaterId);
+                        });
+                    }
+                })
+                    .then((un) => {
+                    if (un && typeof un === "function") {
+                        un();
+                    }
+                })
+                    .catch(err => this.logger.trace(err));
+            };
         }
-        start(coreGlue) {
+        start(coreGlue, ioc) {
             return __awaiter(this, void 0, void 0, function* () {
                 this.logger = coreGlue.logger.subLogger("channels.controller.web");
                 this.logger.trace("starting the web channels controller");
                 this.contexts = coreGlue.contexts;
+                this.bridge = ioc.bridge;
                 this.logger.trace("no need for platform registration, attaching the channels property to glue and returning");
                 const api = this.toApi();
                 coreGlue.channels = api;
@@ -2970,6 +3394,31 @@
         }
         handleBridgeMessage() {
             return __awaiter(this, void 0, void 0, function* () {
+            });
+        }
+        list() {
+            return __awaiter(this, void 0, void 0, function* () {
+                const channelNames = this.getAllChannelNames();
+                const channelContexts = yield Promise.all(channelNames.map((channelName) => this.get(channelName)));
+                return channelContexts;
+            });
+        }
+        my() {
+            return this.current();
+        }
+        join(name) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const channelNames = this.getAllChannelNames();
+                channelNameDecoder(channelNames).runWithException(name);
+                yield this.switchToChannel(name);
+            });
+        }
+        onChanged(callback) {
+            return this.changed(callback);
+        }
+        leave() {
+            return __awaiter(this, void 0, void 0, function* () {
+                yield this.switchToChannel();
             });
         }
         toApi() {
@@ -3021,6 +3470,7 @@
         updateData(name, data) {
             return __awaiter(this, void 0, void 0, function* () {
                 const contextName = this.createContextName(name);
+                const fdc3Type = this.getFDC3Type(data);
                 if (this.contexts.setPathSupported) {
                     const pathValues = Object.keys(data).map((key) => {
                         return {
@@ -3028,16 +3478,36 @@
                             value: data[key]
                         };
                     });
+                    if (fdc3Type) {
+                        pathValues.push({ path: latestFDC3Type, value: fdc3Type });
+                    }
                     yield this.contexts.setPaths(contextName, pathValues);
                 }
                 else {
+                    if (fdc3Type) {
+                        data[latestFDC3Type] = fdc3Type;
+                    }
                     yield this.contexts.update(contextName, { data });
                 }
             });
         }
+        getFDC3Type(data) {
+            const fdc3PropsArr = Object.keys(data).filter((key) => key.indexOf("fdc3_") === 0);
+            if (fdc3PropsArr.length === 0) {
+                return;
+            }
+            if (fdc3PropsArr.length > 1) {
+                throw new Error("FDC3 does not support updating of multiple context keys");
+            }
+            return fdc3PropsArr[0].split("_").slice(1).join("_");
+        }
         subscribe(callback) {
             if (typeof callback !== "function") {
                 throw new Error("Cannot subscribe to channels, because the provided callback is not a function!");
+            }
+            const currentChannel = this.current();
+            if (currentChannel) {
+                this.replaySubscribe(callback, currentChannel);
             }
             return this.registry.add(this.SubsKey, callback);
         }
@@ -3074,36 +3544,21 @@
                 return channelNames;
             });
         }
-        list() {
-            return __awaiter(this, void 0, void 0, function* () {
-                const channelNames = this.getAllChannelNames();
-                const channelContexts = yield Promise.all(channelNames.map((channelName) => this.get(channelName)));
-                return channelContexts;
-            });
-        }
         get(name) {
-            const channelNames = this.getAllChannelNames();
-            channelNameDecoder(channelNames).runWithException(name);
-            const contextName = this.createContextName(name);
-            return this.contexts.get(contextName);
-        }
-        join(name) {
             return __awaiter(this, void 0, void 0, function* () {
                 const channelNames = this.getAllChannelNames();
                 channelNameDecoder(channelNames).runWithException(name);
-                yield this.switchToChannel(name);
-            });
-        }
-        leave() {
-            return __awaiter(this, void 0, void 0, function* () {
-                yield this.switchToChannel();
+                const contextName = this.createContextName(name);
+                const channelContext = yield this.contexts.get(contextName);
+                if (channelContext.latest_fdc3_type) {
+                    const rest = __rest(channelContext, ["latest_fdc3_type"]);
+                    return Object.assign({}, rest);
+                }
+                return channelContext;
             });
         }
         current() {
             return this.currentChannelName;
-        }
-        my() {
-            return this.current();
         }
         changed(callback) {
             if (typeof callback !== "function") {
@@ -3111,15 +3566,20 @@
             }
             return this.registry.add(this.ChangedKey, callback);
         }
-        onChanged(callback) {
-            return this.changed(callback);
-        }
         add(info) {
-            throw new Error("Method `add()` isn't implemented.");
+            return __awaiter(this, void 0, void 0, function* () {
+                const channelContext = channelContextDecoder.runWithException(info);
+                const channelWithSuchNameExists = this.getAllChannelNames().includes(channelContext.name);
+                if (channelWithSuchNameExists) {
+                    throw new Error("There's an already existing channel with such name");
+                }
+                yield this.bridge.send("channels", operations$5.addChannel, channelContext);
+                return channelContext;
+            });
         }
     }
 
-    const operations$5 = {
+    const operations$6 = {
         getEnvironment: { name: "getEnvironment", resultDecoder: anyDecoder },
         getBase: { name: "getBase", resultDecoder: anyDecoder }
     };
@@ -3137,8 +3597,8 @@
         }
         setEnvironment() {
             return __awaiter(this, void 0, void 0, function* () {
-                const environment = yield this.bridge.send("system", operations$5.getEnvironment, undefined);
-                const base = yield this.bridge.send("system", operations$5.getBase, undefined);
+                const environment = yield this.bridge.send("system", operations$6.getEnvironment, undefined);
+                const base = yield this.bridge.send("system", operations$6.getBase, undefined);
                 const glue42core = Object.assign({}, window.glue42core, base, { environment });
                 window.glue42core = Object.freeze(glue42core);
             });
@@ -3165,9 +3625,338 @@
         }
     }
 
-    class IoC {
+    const extensionOperationTypesDecoder = oneOf(constant("clientHello"));
+    const extensionConfigDecoder = object({
+        widget: object({
+            inject: boolean()
+        })
+    });
+
+    const operations$7 = {
+        clientHello: { name: "clientHello", resultDecoder: extensionConfigDecoder }
+    };
+
+    class ExtController {
+        constructor() {
+            this.channels = [];
+            this.contentCommands = {
+                widgetVisualizationPermission: { name: "widgetVisualizationPermission", handle: this.handleWidgetVisualizationPermission.bind(this) },
+                changeChannel: { name: "changeChannel", handle: this.handleChangeChannel.bind(this) }
+            };
+        }
+        start(coreGlue, ioc) {
+            return __awaiter(this, void 0, void 0, function* () {
+                this.logger = coreGlue.logger.subLogger("extension.controller.web");
+                this.windowId = ioc.publicWindowId;
+                this.logger.trace("starting the extension web controller");
+                this.bridge = ioc.bridge;
+                this.channelsController = ioc.channelsController;
+                this.eventsDispatcher = ioc.eventsDispatcher;
+                try {
+                    yield this.registerWithPlatform();
+                }
+                catch (error) {
+                    return;
+                }
+                this.channels = yield this.channelsController.list();
+                this.eventsDispatcher.onContentMessage(this.handleContentMessage.bind(this));
+                this.channelsController.onChanged((channel) => {
+                    this.eventsDispatcher.sendContentMessage({ command: "channelChange", newChannel: channel });
+                });
+            });
+        }
+        handleBridgeMessage(_) {
+            return __awaiter(this, void 0, void 0, function* () {
+            });
+        }
+        handleContentMessage(message) {
+            if (!message || typeof message.command !== "string") {
+                return;
+            }
+            const foundHandler = this.contentCommands[message.command];
+            if (!foundHandler) {
+                return;
+            }
+            foundHandler.handle(message);
+        }
+        registerWithPlatform() {
+            return __awaiter(this, void 0, void 0, function* () {
+                this.logger.trace("registering with the platform");
+                this.config = yield this.bridge.send("extension", operations$7.clientHello, { windowId: this.windowId });
+                this.logger.trace("the platform responded to the hello message with a valid extension config");
+            });
+        }
+        handleWidgetVisualizationPermission() {
+            var _a;
+            return __awaiter(this, void 0, void 0, function* () {
+                if (!((_a = this.config) === null || _a === void 0 ? void 0 : _a.widget.inject)) {
+                    return this.eventsDispatcher.sendContentMessage({ command: "permissionResponse", allowed: false });
+                }
+                const currentChannel = this.channels.find((channel) => channel.name === this.channelsController.my());
+                this.eventsDispatcher.sendContentMessage({ command: "permissionResponse", allowed: true, channels: this.channels, currentChannel });
+            });
+        }
+        handleChangeChannel(message) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (message.name === "no-channel") {
+                    yield this.channelsController.leave();
+                    return;
+                }
+                yield this.channelsController.join(message.name);
+            });
+        }
+    }
+
+    class EventsDispatcher {
+        constructor(config) {
+            this.config = config;
+            this.registry = lib();
+            this.glue42EventName = "Glue42";
+            this.events = {
+                notifyStarted: { name: "notifyStarted", handle: this.handleNotifyStarted.bind(this) },
+                contentInc: { name: "contentInc", handle: this.handleContentInc.bind(this) },
+                requestGlue: { name: "requestGlue", handle: this.handleRequestGlue.bind(this) }
+            };
+        }
+        start(glue) {
+            this.glue = glue;
+            this.wireCustomEventListener();
+            this.announceStarted();
+        }
+        sendContentMessage(message) {
+            this.send("contentOut", "glue42core", message);
+        }
+        onContentMessage(callback) {
+            return this.registry.add("content-inc", callback);
+        }
+        wireCustomEventListener() {
+            window.addEventListener(this.glue42EventName, (event) => {
+                var _a;
+                const data = event.detail;
+                const namespace = (_a = data === null || data === void 0 ? void 0 : data.glue42) !== null && _a !== void 0 ? _a : data === null || data === void 0 ? void 0 : data.glue42core;
+                if (!namespace) {
+                    return;
+                }
+                const glue42Event = namespace.event;
+                const foundHandler = this.events[glue42Event];
+                if (!foundHandler) {
+                    return;
+                }
+                foundHandler.handle(namespace.message);
+            });
+        }
+        announceStarted() {
+            this.send("start", "glue42");
+        }
+        handleRequestGlue() {
+            if (!this.config.exposeGlue) {
+                this.send("requestGlueResponse", "glue42", { error: "Will not give access to the underlying Glue API, because it was explicitly denied upon initialization." });
+                return;
+            }
+            this.send("requestGlueResponse", "glue42", { glue: this.glue });
+        }
+        handleNotifyStarted() {
+            this.announceStarted();
+        }
+        handleContentInc(message) {
+            this.registry.execute("content-inc", message);
+        }
+        send(eventName, namespace, message) {
+            const payload = {};
+            payload[namespace] = { event: eventName, message };
+            const event = new CustomEvent(this.glue42EventName, { detail: payload });
+            window.dispatchEvent(event);
+        }
+    }
+
+    class PreferredConnectionController {
         constructor(coreGlue) {
             this.coreGlue = coreGlue;
+            this.transactionTimeout = 15000;
+            this.transactionLocks = {};
+            this.reconnectCounter = 0;
+            this.logger = this.coreGlue.logger.subLogger("web.preferred.connection.controller");
+        }
+        start(coreConfig) {
+            return __awaiter(this, void 0, void 0, function* () {
+                if (coreConfig.isPlatformInternal) {
+                    this.logger.trace("This is an internal client to the platform, skipping all client preferred communication logic.");
+                    return;
+                }
+                const isConnectedToPlatform = this.coreGlue.connection.transport.name() === webPlatformTransportName;
+                if (!isConnectedToPlatform) {
+                    throw new Error("Cannot initiate the Glue Web Bridge, because the initial connection was not handled by a Web Platform transport.");
+                }
+                if (!this.coreGlue.connection.transport.isPreferredActivated) {
+                    this.logger.trace("The platform of this client was configured without a preferred connection, skipping the rest of the initialization.");
+                    return;
+                }
+                this.webPlatformTransport = this.coreGlue.connection.transport;
+                this.webPlatformMessagesUnsubscribe = this.webPlatformTransport.onMessage(this.handleWebPlatformMessage.bind(this));
+                const transportState = yield this.getCurrentPlatformTransportState();
+                yield this.checkSwitchTransport(transportState);
+            });
+        }
+        handleWebPlatformMessage(msg) {
+            if (typeof msg === "string") {
+                return;
+            }
+            const isConnectedToPlatform = this.coreGlue.connection.transport.name() === webPlatformTransportName;
+            const type = msg.type;
+            const args = msg.args;
+            const transactionId = msg.transactionId;
+            if (type === Glue42CoreMessageTypes.transportSwitchRequest.name) {
+                return this.handleTransportSwitchRequest(args, transactionId);
+            }
+            if (type === Glue42CoreMessageTypes.platformUnload.name && !isConnectedToPlatform) {
+                return this.handlePlatformUnload();
+            }
+            if (type === Glue42CoreMessageTypes.getCurrentTransportResponse.name) {
+                return this.handleGetCurrentTransportResponse(args, transactionId);
+            }
+            if (type === Glue42CoreMessageTypes.checkPreferredLogic.name) {
+                return this.handleCheckPreferredLogic(transactionId);
+            }
+            if (type === Glue42CoreMessageTypes.checkPreferredConnection.name) {
+                return this.handleCheckPreferredConnection(args, transactionId);
+            }
+        }
+        reEstablishPlatformPort() {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    yield this.webPlatformTransport.connect();
+                }
+                catch (error) {
+                    this.logger.trace(`Error when re-establishing port connection to the platform: ${JSON.stringify(error)}`);
+                    --this.reconnectCounter;
+                    if (this.reconnectCounter > 0) {
+                        return this.reEstablishPlatformPort();
+                    }
+                    this.logger.warn("This client lost connection to the platform while connected to a preferred GW and was not able to re-connect to the platform.");
+                }
+                this.logger.trace("The connection to the platform was re-established, closing the connection to the web gateway.");
+                this.reconnectCounter = 0;
+                this.webPlatformTransport.close();
+                const transportState = yield this.getCurrentPlatformTransportState();
+                yield this.checkSwitchTransport(transportState);
+            });
+        }
+        checkSwitchTransport(config) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const myCurrentTransportName = this.coreGlue.connection.transport.name();
+                if (myCurrentTransportName === config.transportName) {
+                    this.logger.trace("A check switch was requested, but the platform transport and my transport are identical, no switch is necessary");
+                    return;
+                }
+                this.logger.trace(`A check switch was requested and a transport switch is necessary, because this client is now on ${myCurrentTransportName}, but it should reconnect to ${JSON.stringify(config)}`);
+                const result = yield this.coreGlue.connection.switchTransport(config);
+                this.setConnected();
+                this.logger.trace(`The transport switch was completed with result: ${JSON.stringify(result)}`);
+            });
+        }
+        getCurrentPlatformTransportState() {
+            return __awaiter(this, void 0, void 0, function* () {
+                this.logger.trace("Requesting the current transport state of the platform.");
+                const transaction = this.setTransaction(Glue42CoreMessageTypes.getCurrentTransport.name);
+                this.sendPlatformMessage(Glue42CoreMessageTypes.getCurrentTransport.name, transaction.id);
+                const transportState = yield transaction.lock;
+                this.logger.trace(`The platform responded with transport state: ${JSON.stringify(transportState)}`);
+                return transportState;
+            });
+        }
+        setTransaction(operation) {
+            const transaction = {};
+            const transactionId = shortid.generate();
+            const transactionLock = new Promise((resolve, reject) => {
+                let transactionLive = true;
+                transaction.lift = (args) => {
+                    transactionLive = false;
+                    delete this.transactionLocks[transactionId];
+                    resolve(args);
+                };
+                transaction.fail = (reason) => {
+                    transactionLive = false;
+                    delete this.transactionLocks[transactionId];
+                    reject(reason);
+                };
+                setTimeout(() => {
+                    if (!transactionLive) {
+                        return;
+                    }
+                    transactionLive = false;
+                    this.logger.warn(`Transaction for operation: ${operation} timed out.`);
+                    delete this.transactionLocks[transactionId];
+                    reject(`Transaction for operation: ${operation} timed out.`);
+                }, this.transactionTimeout);
+            });
+            transaction.lock = transactionLock;
+            transaction.id = transactionId;
+            this.transactionLocks[transactionId] = transaction;
+            return transaction;
+        }
+        sendPlatformMessage(type, transactionId, args) {
+            this.logger.trace(`Sending a platform message of type: ${type}, id: ${transactionId} and args: ${JSON.stringify(args)}`);
+            this.webPlatformTransport.sendObject({
+                glue42core: { type, args, transactionId }
+            });
+        }
+        handleTransportSwitchRequest(args, transactionId) {
+            this.logger.trace(`Received a transport switch request with id: ${transactionId} and data: ${JSON.stringify(args)}`);
+            this.coreGlue.connection.switchTransport(args.switchSettings)
+                .then((result) => {
+                this.logger.trace(`The transport switch was completed with result: ${JSON.stringify(result)}`);
+                this.setConnected();
+                this.sendPlatformMessage(Glue42CoreMessageTypes.transportSwitchResponse.name, transactionId, { success: result.success });
+            })
+                .catch((error) => {
+                this.logger.error(error);
+                this.sendPlatformMessage(Glue42CoreMessageTypes.transportSwitchResponse.name, transactionId, { success: false });
+            });
+        }
+        handlePlatformUnload() {
+            this.reconnectCounter = 5;
+            this.logger.trace("The platform was unloaded while I am connected to a preferred connection, re-establishing the port connection.");
+            this.reEstablishPlatformPort();
+        }
+        handleGetCurrentTransportResponse(args, transactionId) {
+            this.logger.trace(`Got a current transport response from the platform with id: ${transactionId} and data: ${JSON.stringify(args)}`);
+            const transportState = args.transportState;
+            const transaction = this.transactionLocks[transactionId];
+            transaction === null || transaction === void 0 ? void 0 : transaction.lift(transportState);
+        }
+        handleCheckPreferredLogic(transactionId) {
+            setTimeout(() => this.sendPlatformMessage(Glue42CoreMessageTypes.checkPreferredLogicResponse.name, transactionId), 0);
+        }
+        handleCheckPreferredConnection(args, transactionId) {
+            const url = args.url;
+            this.logger.trace(`Testing the possible connection to: ${url}`);
+            this.checkPreferredConnection(url)
+                .then((result) => {
+                this.logger.trace(`The connection to ${url} is possible`);
+                this.sendPlatformMessage(Glue42CoreMessageTypes.checkPreferredConnectionResponse.name, transactionId, result);
+            })
+                .catch((error) => {
+                this.logger.trace(`The connection to ${url} is not possible`);
+                this.sendPlatformMessage(Glue42CoreMessageTypes.checkPreferredConnectionResponse.name, transactionId, { error });
+            });
+        }
+        checkPreferredConnection(url) {
+            return new Promise((resolve) => {
+                const ws = new WebSocket(url);
+                ws.onerror = () => resolve({ live: false });
+                ws.onopen = () => {
+                    ws.close();
+                    resolve({ live: true });
+                };
+            });
+        }
+        setConnected() {
+            this.webPlatformTransport.manualSetReadyState();
+        }
+    }
+
+    class IoC {
+        constructor() {
             this.controllers = {
                 windows: this.windowsController,
                 appManager: this.appManagerController,
@@ -3175,8 +3964,21 @@
                 notifications: this.notificationsController,
                 intents: this.intentsController,
                 channels: this.channelsController,
-                system: this.systemController
+                system: this.systemController,
+                extension: this.extensionController
             };
+        }
+        get communicationId() {
+            return this._communicationId;
+        }
+        get publicWindowId() {
+            if (!this._publicWindowId) {
+                throw new Error("Accessing undefined public window id.");
+            }
+            return this._publicWindowId;
+        }
+        get actualWindowId() {
+            return this._actualWindowId;
         }
         get windowsController() {
             if (!this._windowsControllerInstance) {
@@ -3220,14 +4022,38 @@
             }
             return this._channelsControllerInstance;
         }
+        get extensionController() {
+            if (!this._extensionController) {
+                this._extensionController = new ExtController();
+            }
+            return this._extensionController;
+        }
+        get eventsDispatcher() {
+            if (!this._eventsDispatcher) {
+                this._eventsDispatcher = new EventsDispatcher(this.config);
+            }
+            return this._eventsDispatcher;
+        }
         get bridge() {
             if (!this._bridgeInstance) {
-                this._bridgeInstance = new GlueBridge(this.coreGlue);
+                this._bridgeInstance = new GlueBridge(this._coreGlue, this.communicationId);
             }
             return this._bridgeInstance;
         }
+        get preferredConnectionController() {
+            if (!this._preferredConnectionController) {
+                this._preferredConnectionController = new PreferredConnectionController(this._coreGlue);
+            }
+            return this._preferredConnectionController;
+        }
         get config() {
             return this._webConfig;
+        }
+        defineGlue(coreGlue) {
+            this._coreGlue = coreGlue;
+            this._publicWindowId = coreGlue.connection.transport.publicWindowId;
+            this._actualWindowId = coreGlue.interop.instance.windowId;
+            this._communicationId = coreGlue.connection.transport.communicationId || window.glue42core.communicationId;
         }
         defineConfig(config) {
             this._webConfig = config;
@@ -3255,25 +4081,29 @@
         }
     }
 
-    var version$1 = "2.2.4";
+    var version$1 = "2.10.1";
 
     const createFactoryFunction = (coreFactoryFunction) => {
         return (userConfig) => __awaiter(void 0, void 0, void 0, function* () {
-            const config = parseConfig(userConfig);
             if (window.glue42gd) {
-                return enterprise(config);
+                return enterprise(userConfig);
             }
+            const ioc = new IoC();
+            const config = parseConfig(userConfig);
             checkSingleton();
             const glue = yield PromiseWrap(() => coreFactoryFunction(config, { version: version$1 }), 30000, "Glue Web initialization timed out, because core didn't resolve");
             const logger = glue.logger.subLogger("web.main.controller");
-            const ioc = new IoC(glue);
+            ioc.defineGlue(glue);
+            yield ioc.preferredConnectionController.start(config);
             yield ioc.bridge.start(ioc.controllers);
             ioc.defineConfig(config);
             logger.trace("the bridge has been started, initializing all controllers");
             yield Promise.all(Object.values(ioc.controllers).map((controller) => controller.start(glue, ioc)));
             logger.trace("all controllers reported started, starting all additional libraries");
             yield Promise.all(config.libraries.map((lib) => lib(glue, config)));
-            logger.trace("all libraries were started, glue is ready, returning it");
+            logger.trace("all libraries were started");
+            ioc.eventsDispatcher.start(glue);
+            logger.trace("start event dispatched, glue is ready, returning it");
             return glue;
         });
     };
@@ -4007,15 +4837,17 @@
             if (useClickStream && typeof document !== "undefined") {
                 var clickStream_1 = rootSystem.subSystem("ClickStream");
                 var documentClickHandler = function (e) {
+                    var _a;
                     if (!e.target) {
                         return;
                     }
                     var target = e.target;
+                    var className = target ? (_a = target.getAttribute("class")) !== null && _a !== void 0 ? _a : "" : "";
                     clickStream_1.objectMetric("LastBrowserEvent", {
                         type: "click",
                         timestamp: new Date(),
                         target: {
-                            className: e.target ? target.className : "",
+                            className: className,
                             id: target.id,
                             type: "<" + target.tagName.toLowerCase() + ">",
                             href: target.href || "",
@@ -4330,6 +5162,7 @@
         };
         InProcTransport.prototype.onConnectedChanged = function (callback) {
             callback(true);
+            return function () { };
         };
         InProcTransport.prototype.close = function () {
             return Promise.resolve();
@@ -4378,6 +5211,7 @@
         };
         SharedWorkerTransport.prototype.onConnectedChanged = function (callback) {
             callback(true);
+            return function () { };
         };
         SharedWorkerTransport.prototype.close = function () {
             return Promise.resolve();
@@ -4560,7 +5394,7 @@
             return this._registry.add("onConnectedChanged", callback);
         };
         WS.prototype.name = function () {
-            return "ws " + this.settings.ws;
+            return this.settings.ws;
         };
         WS.prototype.reconnect = function () {
             var _a;
@@ -4598,6 +5432,9 @@
                             this.startupTimer.mark("opening-socket");
                             if (retryInterval === undefined) {
                                 retryInterval = this.settings.reconnectInterval;
+                            }
+                            if (typeof retriesLeft === "undefined") {
+                                retriesLeft = this.settings.reconnectAttempts;
                             }
                             if (retriesLeft !== undefined) {
                                 if (retriesLeft === 0) {
@@ -5053,7 +5890,12 @@
                 domain: "global",
             };
             tryReconnecting = false;
-            return send(leaveMsg).then(function () {
+            return send(leaveMsg)
+                .then(function () {
+                isJoined = false;
+                callbacks.execute("onLeft");
+            })
+                .catch(function () {
                 isJoined = false;
                 callbacks.execute("onLeft");
             });
@@ -5332,6 +6174,10 @@
                                 authentication.method = "secret";
                                 authentication.login = config.username;
                                 authentication.secret = config.password;
+                            }
+                            else if (config.provider) {
+                                authentication.provider = config.provider;
+                                authentication.providerContext = config.providerContext;
                             }
                             else {
                                 throw new Error("invalid auth message" + JSON.stringify(config));
@@ -5614,12 +6460,17 @@
             this.settings = settings;
             this.logger = logger;
             this.identity = identity;
-            this.parentReady = false;
             this.iAmConnected = false;
+            this.parentReady = false;
             this.rejected = false;
             this.children = [];
-            this.parentPingTimeout = 3000;
-            this.connectionRequestTimeout = 5000;
+            this.extContentAvailable = false;
+            this.extContentConnecting = false;
+            this.extContentConnected = false;
+            this.parentInExtMode = false;
+            this.webNamespace = "g42_core_web";
+            this.parentPingTimeout = 5000;
+            this.connectionRequestTimeout = 7000;
             this.defaultTargetString = "*";
             this.registry = lib$2();
             this.messages = {
@@ -5629,19 +6480,28 @@
                 parentReady: { name: "parentReady", handle: this.handleParentReady.bind(this) },
                 parentPing: { name: "parentPing", handle: this.handleParentPing.bind(this) },
                 platformPing: { name: "platformPing", handle: this.handlePlatformPing.bind(this) },
-                platformUnload: { name: "platformUnload", handle: this.handlePlatformUnload.bind(this) },
                 platformReady: { name: "platformReady", handle: this.handlePlatformReady.bind(this) },
                 clientUnload: { name: "clientUnload", handle: this.handleClientUnload.bind(this) },
-                manualUnload: { name: "manualUnload", handle: this.handleManualUnload.bind(this) }
+                manualUnload: { name: "manualUnload", handle: this.handleManualUnload.bind(this) },
+                extConnectionResponse: { name: "extConnectionResponse", handle: this.handleExtConnectionResponse.bind(this) },
+                extSetupRequest: { name: "extSetupRequest", handle: this.handleExtSetupRequest.bind(this) },
+                gatewayDisconnect: { name: "gatewayDisconnect", handle: this.handleGatewayDisconnect.bind(this) },
+                gatewayInternalConnect: { name: "gatewayInternalConnect", handle: this.handleGatewayInternalConnect.bind(this) }
             };
+            this.extContentAvailable = !!window.glue42ext;
             this.setUpMessageListener();
             this.setUpUnload();
+            this.setupPlatformUnloadListener();
             if (!this.settings.port) {
                 this.parent = window.opener || window.top;
                 this.parentType = window.opener ? "opener" :
                     window.name.indexOf("#wsp") !== -1 ? "workspace" : "top";
             }
         }
+        WebPlatformTransport.prototype.manualSetReadyState = function () {
+            this.iAmConnected = true;
+            this.parentReady = true;
+        };
         Object.defineProperty(WebPlatformTransport.prototype, "transportWindowId", {
             get: function () {
                 return this.publicWindowId;
@@ -5649,9 +6509,19 @@
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(WebPlatformTransport.prototype, "communicationId", {
+            get: function () {
+                return this._communicationId;
+            },
+            enumerable: true,
+            configurable: true
+        });
         WebPlatformTransport.prototype.sendObject = function (msg) {
             return __awaiter$1(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
+                    if (this.extContentConnected) {
+                        return [2, window.postMessage({ glue42ExtOut: msg }, this.defaultTargetString)];
+                    }
                     if (!this.port) {
                         throw new Error("Cannot send message, because the port was not opened yet");
                     }
@@ -5692,44 +6562,62 @@
             });
         };
         WebPlatformTransport.prototype.close = function () {
+            var _a, _b;
+            var message = {
+                glue42core: {
+                    type: this.messages.gatewayDisconnect.name,
+                    data: {
+                        clientId: this.myClientId,
+                        ownWindowId: (_a = this.identity) === null || _a === void 0 ? void 0 : _a.windowId
+                    }
+                }
+            };
+            (_b = this.port) === null || _b === void 0 ? void 0 : _b.postMessage(message);
+            this.parentReady = false;
+            this.notifyStatusChanged(false, "manual reconnection");
             return Promise.resolve();
         };
         WebPlatformTransport.prototype.name = function () {
             return "web-platform";
         };
         WebPlatformTransport.prototype.reconnect = function () {
-            return Promise.resolve();
+            return __awaiter$1(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4, this.close()];
+                        case 1:
+                            _a.sent();
+                            return [2, Promise.resolve()];
+                    }
+                });
+            });
         };
         WebPlatformTransport.prototype.connect = function () {
             return __awaiter$1(this, void 0, void 0, function () {
-                var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            if (this.parentReady) {
-                                this.logger.debug("cancelling connection attempt, because this client's parent has already given a ready signal");
-                                return [2];
-                            }
-                            if (this.settings.port) {
-                                this.logger.debug("opening an internal web platform connection");
-                                this.port = this.settings.port;
-                                this.publicWindowId = this.settings.windowId;
-                                if (this.identity) {
-                                    this.identity.windowId = this.publicWindowId;
-                                }
-                                this.port.onmessage = function (event) { return _this.registry.execute("onMessage", event.data); };
-                                this.logger.debug("internal web platform connection completed");
-                                return [2];
-                            }
+                            if (!this.settings.port) return [3, 2];
+                            return [4, this.initiateInternalConnection()];
+                        case 1:
+                            _a.sent();
+                            this.logger.debug("internal web platform connection completed");
+                            return [2];
+                        case 2:
                             if (!this.parentType || !this.parent) {
                                 throw new Error("Cannot initiate a connection, because there is no opener, no top and no port.");
                             }
                             this.logger.debug("opening a " + (this.parentType === "opener" ? "child" : "grandchild") + " client web platform connection");
                             return [4, this.waitParent(this.parent, this.parentType)];
-                        case 1:
+                        case 3:
                             _a.sent();
-                            return [4, this.initiateRemoteConnection(this.parent, this.parentType)];
-                        case 2:
+                            if (!this.parentInExtMode) return [3, 5];
+                            return [4, this.requestConnectionPermissionFromExt()];
+                        case 4:
+                            _a.sent();
+                            _a.label = 5;
+                        case 5: return [4, this.initiateRemoteConnection(this.parent, this.parentType)];
+                        case 6:
                             _a.sent();
                             this.logger.debug("the " + (this.parentType === "opener" ? "child" : "grandchild") + " client is connected");
                             return [2];
@@ -5737,12 +6625,51 @@
                 });
             });
         };
+        WebPlatformTransport.prototype.initiateInternalConnection = function () {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this.logger.debug("opening an internal web platform connection");
+                _this.port = _this.settings.port;
+                if (_this.iAmConnected) {
+                    _this.logger.warn("cannot open a new connection, because this client is currently connected");
+                    return;
+                }
+                _this.port.onmessage = function (event) {
+                    var _a, _b;
+                    if (_this.iAmConnected && !((_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42core)) {
+                        _this.registry.execute("onMessage", event.data);
+                        return;
+                    }
+                    var data = (_b = event.data) === null || _b === void 0 ? void 0 : _b.glue42core;
+                    if (!data) {
+                        return;
+                    }
+                    if (data.type === _this.messages.gatewayInternalConnect.name && data.success) {
+                        _this.publicWindowId = _this.settings.windowId;
+                        if (_this.identity && _this.publicWindowId) {
+                            _this.identity.windowId = _this.publicWindowId;
+                            _this.identity.instance = _this.publicWindowId;
+                        }
+                        resolve();
+                    }
+                    if (data.type === _this.messages.gatewayInternalConnect.name && data.error) {
+                        reject(data.error);
+                    }
+                };
+                _this.port.postMessage({
+                    glue42core: {
+                        type: _this.messages.gatewayInternalConnect.name
+                    }
+                });
+            });
+        };
         WebPlatformTransport.prototype.initiateRemoteConnection = function (target, parentType) {
             var _this = this;
             return PromisePlus$1(function (resolve, reject) {
+                var _a;
                 _this.connectionResolve = resolve;
                 _this.connectionReject = reject;
-                _this.myClientId = shortid$1();
+                _this.myClientId = (_a = _this.myClientId) !== null && _a !== void 0 ? _a : shortid$1();
                 var bridgeInstanceId = _this.parentType === "workspace" ? window.name.substring(0, window.name.indexOf("#wsp")) : window.name;
                 var request = {
                     glue42core: {
@@ -5753,21 +6680,66 @@
                     }
                 };
                 _this.logger.debug("sending connection request to " + parentType);
+                if (_this.extContentConnecting) {
+                    request.glue42core.clientType = "child";
+                    request.glue42core.bridgeInstanceId = _this.myClientId;
+                    request.glue42core.parentWindowId = _this.parentWindowId;
+                    return window.postMessage(request, _this.defaultTargetString);
+                }
                 target.postMessage(request, _this.defaultTargetString);
             }, this.connectionRequestTimeout, "The connection to the opener/top window timed out");
         };
         WebPlatformTransport.prototype.waitParent = function (target, parentType) {
-            var _this = this;
-            return PromisePlus$1(function (resolve) {
-                _this.parentPingResolve = resolve;
-                var message = {
-                    glue42core: {
-                        type: parentType === "opener" ? _this.messages.platformPing.name : _this.messages.parentPing.name
+            return __awaiter$1(this, void 0, void 0, function () {
+                var connectionNotPossibleMsg, parentCheck, error_1;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            connectionNotPossibleMsg = "Cannot initiate glue, because this window was not opened or created by a glue client";
+                            parentCheck = PromisePlus$1(function (resolve, reject) {
+                                var isIframe = window.self !== window.top;
+                                if (parentType === "top" && !isIframe) {
+                                    return reject(connectionNotPossibleMsg);
+                                }
+                                _this.parentPingResolve = resolve;
+                                var message = {
+                                    glue42core: {
+                                        type: parentType === "opener" ? _this.messages.platformPing.name : _this.messages.parentPing.name
+                                    }
+                                };
+                                _this.logger.debug("checking for " + parentType + " window availability");
+                                _this.parentPingInterval = setInterval(function () {
+                                    target.postMessage(message, _this.defaultTargetString);
+                                }, 1000);
+                            }, this.parentPingTimeout, connectionNotPossibleMsg);
+                            parentCheck.catch(function () {
+                                if (_this.parentPingInterval) {
+                                    clearInterval(_this.parentPingInterval);
+                                    delete _this.parentPingInterval;
+                                }
+                            });
+                            if (!this.extContentAvailable) {
+                                return [2, parentCheck];
+                            }
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 3, , 5]);
+                            return [4, parentCheck];
+                        case 2:
+                            _a.sent();
+                            return [2];
+                        case 3:
+                            error_1 = _a.sent();
+                            this.logger.debug("the parent check failed, but there is an associated extension content script, requesting permission...");
+                            return [4, this.requestConnectionPermissionFromExt()];
+                        case 4:
+                            _a.sent();
+                            return [3, 5];
+                        case 5: return [2];
                     }
-                };
-                _this.logger.debug("checking for " + parentType + " window availability");
-                target.postMessage(message, _this.defaultTargetString);
-            }, this.parentPingTimeout, "Cannot initiate glue, because this window was not opened or created by a glue client");
+                });
+            });
         };
         WebPlatformTransport.prototype.setUpMessageListener = function () {
             var _this = this;
@@ -5798,6 +6770,9 @@
             }
             window.addEventListener("beforeunload", function () {
                 var _a, _b;
+                if (_this.extContentConnected) {
+                    return;
+                }
                 var message = {
                     glue42core: {
                         type: _this.messages.clientUnload.name,
@@ -5813,15 +6788,24 @@
                 (_b = _this.port) === null || _b === void 0 ? void 0 : _b.postMessage(message);
             });
         };
-        WebPlatformTransport.prototype.handleParentReady = function () {
+        WebPlatformTransport.prototype.handleParentReady = function (event) {
+            var _a;
             this.logger.debug("handling the ready signal from the parent, by resoling the pending promise.");
             this.parentReady = true;
+            var data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42core;
+            if (data && data.extMode) {
+                this.logger.debug("my parent is connected to its content script, fetching windowId and proceeding with content script connection");
+                this.parentWindowId = data.extMode.windowId;
+                this.parentInExtMode = true;
+            }
             if (this.parentPingResolve) {
                 this.parentPingResolve();
                 delete this.parentPingResolve;
-                return;
             }
-            this.logger.debug("silently handling the ready signal from the top parent, because there is no defined promise");
+            if (this.parentPingInterval) {
+                clearInterval(this.parentPingInterval);
+                delete this.parentPingInterval;
+            }
         };
         WebPlatformTransport.prototype.handlePlatformReady = function () {
             this.logger.debug("the web platform gave the ready signal");
@@ -5829,9 +6813,11 @@
             if (this.parentPingResolve) {
                 this.parentPingResolve();
                 delete this.parentPingResolve;
-                return;
             }
-            this.logger.debug("silently handling the ready signal from the top parent, because there is no defined promise");
+            if (this.parentPingInterval) {
+                clearInterval(this.parentPingInterval);
+                delete this.parentPingInterval;
+            }
         };
         WebPlatformTransport.prototype.handleConnectionAccepted = function (event) {
             var _a;
@@ -5843,7 +6829,12 @@
         };
         WebPlatformTransport.prototype.handleAcceptanceOfMyRequest = function (data) {
             var _this = this;
+            var _a, _b, _c;
             this.logger.debug("handling a connection accepted signal targeted at me.");
+            this.isPreferredActivated = data.isPreferredActivated;
+            if (this.extContentConnecting) {
+                return this.processExtContentConnection(data);
+            }
             if (!data.port) {
                 this.logger.error("cannot set up my connection, because I was not provided with a port");
                 return;
@@ -5852,12 +6843,17 @@
                 this.parentType === "top" ? data.parentWindowId :
                     window.name.substring(0, window.name.indexOf("#wsp"));
             if (this.identity && this.parentType !== "top") {
-                this.identity.windowId = this.publicWindowId;
+                this.identity.windowId = (_a = this.identity.windowId) !== null && _a !== void 0 ? _a : this.publicWindowId;
+                this.identity.instance = (_b = this.identity.instance) !== null && _b !== void 0 ? _b : this.publicWindowId;
+            }
+            if (this.identity && this.parentType === "top") {
+                this.identity.instance = (_c = this.identity.instance) !== null && _c !== void 0 ? _c : shortid$1();
             }
             if (this.identity && data.appName) {
                 this.identity.application = data.appName;
                 this.identity.applicationName = data.appName;
             }
+            this._communicationId = data.communicationId;
             this.port = data.port;
             this.port.onmessage = function (e) { return _this.registry.execute("onMessage", e.data); };
             if (this.connectionResolve) {
@@ -5868,7 +6864,39 @@
             }
             this.logger.error("unable to call the connection resolve, because no connection promise was found");
         };
+        WebPlatformTransport.prototype.processExtContentConnection = function (data) {
+            var _this = this;
+            this.logger.debug("handling a connection accepted signal targeted at me for extension content connection.");
+            this.extContentConnecting = false;
+            this.extContentConnected = true;
+            this.publicWindowId = this.parentWindowId || this.myClientId;
+            if (this.extContentConnecting && this.identity) {
+                this.identity.windowId = this.publicWindowId;
+            }
+            if (this.identity && data.appName) {
+                this.identity.application = data.appName;
+                this.identity.applicationName = data.appName;
+            }
+            window.addEventListener("message", function (event) {
+                var _a;
+                var extData = (_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42ExtInc;
+                if (!extData) {
+                    return;
+                }
+                _this.registry.execute("onMessage", extData);
+            });
+            if (this.connectionResolve) {
+                this.logger.debug("my connection is set up, calling the connection resolve.");
+                this.connectionResolve();
+                delete this.connectionResolve;
+                return;
+            }
+        };
         WebPlatformTransport.prototype.handleAcceptanceOfGrandChildRequest = function (data, event) {
+            if (this.extContentConnecting || this.extContentConnected) {
+                this.logger.debug("cannot process acceptance of a grandchild, because I am connected to a content script");
+                return;
+            }
             this.logger.debug("handling a connection accepted signal targeted at a grandchild: " + data.clientId);
             var child = this.children.find(function (c) { return c.grandChildId === data.clientId; });
             if (!child) {
@@ -5889,6 +6917,10 @@
             }
         };
         WebPlatformTransport.prototype.handleConnectionRequest = function (event) {
+            if (this.extContentConnecting) {
+                this.logger.debug("This connection request event is targeted at the extension content");
+                return;
+            }
             var source = event.source;
             var data = event.data.glue42core;
             if (!data.clientType || data.clientType !== "grandChild") {
@@ -5919,18 +6951,22 @@
                     type: this.messages.parentReady.name
                 }
             };
+            if (this.extContentConnected) {
+                message.glue42core.extMode = { windowId: this.myClientId };
+            }
             var source = event.source;
             this.logger.debug("responding to a parent ping with a ready message");
             source.postMessage(message, event.origin);
         };
-        WebPlatformTransport.prototype.handlePlatformUnload = function (event) {
-            this.logger.debug("detected a web platform unload");
-            this.parentReady = false;
-            if (this.children.length) {
-                this.logger.debug("forwarding the platform unload to all known children and starting platform discovery polling");
-                this.children.forEach(function (child) { return child.source.postMessage(event.data, child.origin); });
-            }
-            this.notifyStatusChanged(false, "Gateway unloaded");
+        WebPlatformTransport.prototype.setupPlatformUnloadListener = function () {
+            var _this = this;
+            this.onMessage(function (msg) {
+                if (msg.type === "platformUnload") {
+                    _this.logger.debug("detected a web platform unload");
+                    _this.parentReady = false;
+                    _this.notifyStatusChanged(false, "Gateway unloaded");
+                }
+            });
         };
         WebPlatformTransport.prototype.handleManualUnload = function () {
             var _a, _b;
@@ -5943,8 +6979,8 @@
                     }
                 }
             };
-            if (this.parent) {
-                this.parent.postMessage(message, this.defaultTargetString);
+            if (this.extContentConnected) {
+                return window.postMessage({ glue42ExtOut: message }, this.defaultTargetString);
             }
             (_b = this.port) === null || _b === void 0 ? void 0 : _b.postMessage(message);
         };
@@ -5983,7 +7019,128 @@
             };
             source.postMessage(rejection, origin);
         };
+        WebPlatformTransport.prototype.requestConnectionPermissionFromExt = function () {
+            var _this = this;
+            return this.waitForContentScript()
+                .then(function () { return PromisePlus$1(function (resolve, reject) {
+                _this.extConnectionResolve = resolve;
+                _this.extConnectionReject = reject;
+                var message = {
+                    glue42core: {
+                        type: "extSetupRequest"
+                    }
+                };
+                _this.logger.debug("permission request to the extension content script was sent");
+                window.postMessage(message, _this.defaultTargetString);
+            }, _this.parentPingTimeout, "Cannot initialize glue, because this app was not opened or created by a Glue Client and the request for extension connection timed out"); });
+        };
+        WebPlatformTransport.prototype.handleExtConnectionResponse = function (event) {
+            var _a;
+            var data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.glue42core;
+            if (!data.approved && this.extConnectionReject) {
+                return this.extConnectionReject("Cannot initialize glue, because this app was not opened or created by a Glue Client and the request for extension connection was rejected");
+            }
+            if (this.extConnectionResolve) {
+                this.extContentConnecting = true;
+                this.logger.debug("The extension connection was approved, proceeding.");
+                this.extConnectionResolve();
+                delete this.extConnectionResolve;
+            }
+        };
+        WebPlatformTransport.prototype.handleExtSetupRequest = function () {
+            return;
+        };
+        WebPlatformTransport.prototype.handleGatewayDisconnect = function () {
+            return;
+        };
+        WebPlatformTransport.prototype.handleGatewayInternalConnect = function () {
+            return;
+        };
+        WebPlatformTransport.prototype.waitForContentScript = function () {
+            var _a;
+            var contentReady = !!((_a = window.glue42ext) === null || _a === void 0 ? void 0 : _a.content);
+            if (contentReady) {
+                return Promise.resolve();
+            }
+            return PromisePlus$1(function (resolve) {
+                window.addEventListener("Glue42EXTReady", function () {
+                    resolve();
+                });
+            }, this.connectionRequestTimeout, "The content script was available, but was never heard to be ready");
+        };
         return WebPlatformTransport;
+    }());
+
+    var waitForInvocations = function (invocations, callback) {
+        var left = invocations;
+        return function () {
+            left--;
+            if (left === 0) {
+                callback();
+            }
+        };
+    };
+
+    var AsyncSequelizer = (function () {
+        function AsyncSequelizer(minSequenceInterval) {
+            if (minSequenceInterval === void 0) { minSequenceInterval = 0; }
+            this.minSequenceInterval = minSequenceInterval;
+            this.queue = [];
+            this.isExecutingQueue = false;
+        }
+        AsyncSequelizer.prototype.enqueue = function (action) {
+            var _this = this;
+            return new Promise(function (resolve, reject) {
+                _this.queue.push({ action: action, resolve: resolve, reject: reject });
+                _this.executeQueue();
+            });
+        };
+        AsyncSequelizer.prototype.executeQueue = function () {
+            return __awaiter$1(this, void 0, void 0, function () {
+                var operation, actionResult, error_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (this.isExecutingQueue) {
+                                return [2];
+                            }
+                            this.isExecutingQueue = true;
+                            _a.label = 1;
+                        case 1:
+                            if (!this.queue.length) return [3, 7];
+                            operation = this.queue.shift();
+                            if (!operation) {
+                                this.isExecutingQueue = false;
+                                return [2];
+                            }
+                            _a.label = 2;
+                        case 2:
+                            _a.trys.push([2, 4, , 5]);
+                            return [4, operation.action()];
+                        case 3:
+                            actionResult = _a.sent();
+                            operation.resolve(actionResult);
+                            return [3, 5];
+                        case 4:
+                            error_1 = _a.sent();
+                            operation.reject(error_1);
+                            return [3, 5];
+                        case 5: return [4, this.intervalBreak()];
+                        case 6:
+                            _a.sent();
+                            return [3, 1];
+                        case 7:
+                            this.isExecutingQueue = false;
+                            return [2];
+                    }
+                });
+            });
+        };
+        AsyncSequelizer.prototype.intervalBreak = function () {
+            var _this = this;
+            return new Promise(function (res) { return setTimeout(res, _this.minSequenceInterval); });
+        };
+        return AsyncSequelizer;
     }());
 
     var Connection = (function () {
@@ -5995,6 +7152,10 @@
             this.registry = lib$2();
             this._connected = false;
             this.isTrace = false;
+            this._swapTransport = false;
+            this._switchInProgress = false;
+            this._transportSubscriptions = [];
+            this._sequelizer = new AsyncSequelizer();
             settings = settings || {};
             settings.reconnectAttempts = settings.reconnectAttempts || 10;
             settings.reconnectInterval = settings.reconnectInterval || 1000;
@@ -6016,12 +7177,11 @@
             this.isTrace = logger.canPublish("trace");
             logger.debug("starting with " + this.transport.name() + " transport");
             this.protocol = new GW3ProtocolImpl(this, settings, logger.subLogger("protocol"));
-            this.transport.onConnectedChanged(this.handleConnectionChanged.bind(this));
-            this.transport.onMessage(this.handleTransportMessage.bind(this));
-            if (settings.replaySpecs && settings.replaySpecs.length) {
-                this.replayer = new MessageReplayerImpl(settings.replaySpecs);
-                this.replayer.init(this);
-            }
+            var unsubConnectionChanged = this.transport.onConnectedChanged(this.handleConnectionChanged.bind(this));
+            var unsubOnMessage = this.transport.onMessage(this.handleTransportMessage.bind(this));
+            this._transportSubscriptions.push(unsubConnectionChanged);
+            this._transportSubscriptions.push(unsubOnMessage);
+            this._defaultTransport = this.transport;
         }
         Object.defineProperty(Connection.prototype, "protocolVersion", {
             get: function () {
@@ -6031,6 +7191,61 @@
             enumerable: true,
             configurable: true
         });
+        Connection.prototype.switchTransport = function (settings) {
+            return __awaiter$1(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2, this._sequelizer.enqueue(function () { return __awaiter$1(_this, void 0, void 0, function () {
+                            var switchTargetTransport, verifyPromise, isSwitchSuccess, error_1;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        if (!settings || typeof settings !== "object") {
+                                            throw new Error("Cannot switch transports, because the settings are missing or invalid.");
+                                        }
+                                        if (typeof settings.type === "undefined") {
+                                            throw new Error("Cannot switch the transport, because the type is not defined");
+                                        }
+                                        this.logger.trace("Starting transport switch with settings: " + JSON.stringify(settings));
+                                        switchTargetTransport = settings.type === "secondary" ? this.getNewSecondaryTransport(settings) : this._defaultTransport;
+                                        this._targetTransport = switchTargetTransport;
+                                        this._targetAuth = settings.type === "secondary" ? this.getNewSecondaryAuth(settings) : this._defaultAuth;
+                                        verifyPromise = this.verifyConnection();
+                                        this._swapTransport = true;
+                                        this._switchInProgress = true;
+                                        this.logger.trace("The new transport has been set, closing the current transport");
+                                        return [4, this.transport.close()];
+                                    case 1:
+                                        _a.sent();
+                                        _a.label = 2;
+                                    case 2:
+                                        _a.trys.push([2, 4, , 5]);
+                                        return [4, verifyPromise];
+                                    case 3:
+                                        _a.sent();
+                                        isSwitchSuccess = this.transport === switchTargetTransport;
+                                        this.logger.info("The reconnection after the switch was completed. Was the switch a success: " + isSwitchSuccess);
+                                        this._switchInProgress = false;
+                                        return [2, { success: isSwitchSuccess }];
+                                    case 4:
+                                        error_1 = _a.sent();
+                                        this.logger.info("The reconnection after the switch timed out, reverting back to the default transport.");
+                                        this.switchTransport({ type: "default" });
+                                        this._switchInProgress = false;
+                                        return [2, { success: false }];
+                                    case 5: return [2];
+                                }
+                            });
+                        }); })];
+                });
+            });
+        };
+        Connection.prototype.onLibReAnnounced = function (callback) {
+            return this.registry.add("libReAnnounced", callback);
+        };
+        Connection.prototype.setLibReAnnounced = function (lib) {
+            this.registry.execute("libReAnnounced", lib);
+        };
         Connection.prototype.send = function (message, options) {
             if (this.transport.sendObject &&
                 this.transport.isObjectBasedTransport) {
@@ -6073,7 +7288,8 @@
         Connection.prototype.connected = function (callback) {
             var _this = this;
             return this.protocol.loggedIn(function () {
-                callback(_this.settings.ws || _this.settings.sharedWorker || "");
+                var currentServer = _this.transport.name();
+                callback(currentServer);
             });
         };
         Connection.prototype.disconnected = function (callback) {
@@ -6081,16 +7297,41 @@
         };
         Connection.prototype.login = function (authRequest, reconnect) {
             return __awaiter$1(this, void 0, void 0, function () {
-                var identity;
+                var newAuth, identity, error_2;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4, this.transport.open()];
+                        case 0:
+                            if (!this._defaultAuth) {
+                                this._defaultAuth = authRequest;
+                            }
+                            if (this._swapTransport) {
+                                this.logger.trace("Detected a transport swap, swapping transports");
+                                newAuth = this.transportSwap();
+                                authRequest = newAuth !== null && newAuth !== void 0 ? newAuth : authRequest;
+                            }
+                            this.logger.trace("Starting login for transport: " + this.transport.name() + " and auth " + JSON.stringify(authRequest));
+                            _a.label = 1;
                         case 1:
+                            _a.trys.push([1, 4, , 5]);
+                            return [4, this.transport.open()];
+                        case 2:
                             _a.sent();
+                            this.logger.trace("Transport: " + this.transport.name() + " opened, logging in");
                             timer("connection").mark("transport-opened");
-                            identity = this.protocol.login(authRequest, reconnect);
+                            return [4, this.protocol.login(authRequest, reconnect)];
+                        case 3:
+                            identity = _a.sent();
+                            this.logger.trace("Logged in with identity: " + JSON.stringify(identity));
                             timer("connection").mark("protocol-logged-in");
                             return [2, identity];
+                        case 4:
+                            error_2 = _a.sent();
+                            if (this._switchInProgress) {
+                                this.logger.trace("An error while logging in after a transport swap, preparing a default swap.");
+                                this.prepareDefaultSwap();
+                            }
+                            throw new Error(error_2);
+                        case 5: return [2];
                     }
                 });
             });
@@ -6150,6 +7391,10 @@
             }
             this._connected = connected;
             if (connected) {
+                if (this.settings.replaySpecs && this.settings.replaySpecs.length) {
+                    this.replayer = new MessageReplayerImpl(this.settings.replaySpecs);
+                    this.replayer.init(this);
+                }
                 this.registry.execute("connected");
             }
             else {
@@ -6168,6 +7413,64 @@
                 this.logger.trace("<< " + JSON.stringify(msgObj));
             }
             this.distributeMessage(msgObj.msg, msgObj.msgType);
+        };
+        Connection.prototype.verifyConnection = function () {
+            var _this = this;
+            return PromisePlus$1(function (resolve) {
+                var unsub;
+                var ready = waitForInvocations(2, function () {
+                    if (unsub) {
+                        unsub();
+                    }
+                    resolve();
+                });
+                unsub = _this.onLibReAnnounced(function (lib) {
+                    if (lib.name === "interop") {
+                        return ready();
+                    }
+                    if (lib.name === "contexts") {
+                        return ready();
+                    }
+                });
+            }, 10000, "Transport switch timed out waiting for all libraries to be re-announced");
+        };
+        Connection.prototype.getNewSecondaryTransport = function (settings) {
+            var _a;
+            if (!((_a = settings.transportConfig) === null || _a === void 0 ? void 0 : _a.url)) {
+                throw new Error("Missing secondary transport URL.");
+            }
+            return new WS(Object.assign({}, this.settings, { ws: settings.transportConfig.url, reconnectAttempts: 1 }), this.logger.subLogger("ws-secondary"));
+        };
+        Connection.prototype.getNewSecondaryAuth = function (settings) {
+            var _a;
+            if (!((_a = settings.transportConfig) === null || _a === void 0 ? void 0 : _a.auth)) {
+                throw new Error("Missing secondary transport auth information.");
+            }
+            return settings.transportConfig.auth;
+        };
+        Connection.prototype.transportSwap = function () {
+            this._swapTransport = false;
+            if (!this._targetTransport || !this._targetAuth) {
+                this.logger.warn("Error while switching transports - either the target transport or auth is not defined: transport defined -> " + !!this._defaultTransport + ", auth defined -> " + !!this._targetAuth + ". Staying on the current one.");
+                return;
+            }
+            this._transportSubscriptions.forEach(function (unsub) { return unsub(); });
+            this._transportSubscriptions = [];
+            this.transport = this._targetTransport;
+            var unsubConnectionChanged = this.transport.onConnectedChanged(this.handleConnectionChanged.bind(this));
+            var unsubOnMessage = this.transport.onMessage(this.handleTransportMessage.bind(this));
+            this._transportSubscriptions.push(unsubConnectionChanged);
+            this._transportSubscriptions.push(unsubOnMessage);
+            return this._targetAuth;
+        };
+        Connection.prototype.prepareDefaultSwap = function () {
+            var _this = this;
+            this._transportSubscriptions.forEach(function (unsub) { return unsub(); });
+            this._transportSubscriptions = [];
+            this.transport.close().catch(function (error) { return _this.logger.warn("Error closing the " + _this.transport.name() + " transport after a failed connection attempt: " + JSON.stringify(error)); });
+            this._targetTransport = this._defaultTransport;
+            this._targetAuth = this._defaultAuth;
+            this._swapTransport = true;
         };
         return Connection;
     }());
@@ -6350,10 +7653,10 @@
         }
     };
 
-    var version$2 = "5.4.11";
+    var version$2 = "5.7.8";
 
     function prepareConfig (configuration, ext, glue42gd) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d;
         var nodeStartingContext;
         if (Utils.isNode()) {
             var startingContextString = process.env._GD_STARTING_CONTEXT_;
@@ -6361,12 +7664,12 @@
                 try {
                     nodeStartingContext = JSON.parse(startingContextString);
                 }
-                catch (_f) {
+                catch (_e) {
                 }
             }
         }
         function getConnection() {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c, _d, _e, _f;
             var gwConfig = configuration.gateway;
             var protocolVersion = (_a = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.protocolVersion) !== null && _a !== void 0 ? _a : 3;
             var reconnectInterval = gwConfig === null || gwConfig === void 0 ? void 0 : gwConfig.reconnectInterval;
@@ -6410,19 +7713,31 @@
                     instanceId = nodeStartingContext.instanceId;
                 }
             }
-            var replaySpecs = (_e = (_d = configuration.gateway) === null || _d === void 0 ? void 0 : _d.replaySpecs) !== null && _e !== void 0 ? _e : [];
+            else if (typeof (window === null || window === void 0 ? void 0 : window.glue42electron) !== "undefined") {
+                windowId = window === null || window === void 0 ? void 0 : window.glue42electron.instanceId;
+                pid = window === null || window === void 0 ? void 0 : window.glue42electron.pid;
+                environment = window === null || window === void 0 ? void 0 : window.glue42electron.env;
+                region = window === null || window === void 0 ? void 0 : window.glue42electron.region;
+                uniqueAppName = (_d = window === null || window === void 0 ? void 0 : window.glue42electron.application) !== null && _d !== void 0 ? _d : "glue-app";
+                instanceId = window === null || window === void 0 ? void 0 : window.glue42electron.instanceId;
+            }
+            var replaySpecs = (_f = (_e = configuration.gateway) === null || _e === void 0 ? void 0 : _e.replaySpecs) !== null && _f !== void 0 ? _f : [];
             replaySpecs.push(ContextMessageReplaySpec);
+            var identity = {
+                application: uniqueAppName,
+                applicationName: appName,
+                windowId: windowId,
+                instance: instanceId,
+                process: pid,
+                region: region,
+                environment: environment,
+                api: ext.version || version$2
+            };
+            if (configuration.identity) {
+                identity = Object.assign(identity, configuration.identity);
+            }
             return {
-                identity: {
-                    application: uniqueAppName,
-                    applicationName: appName,
-                    windowId: windowId,
-                    instance: instanceId,
-                    process: pid,
-                    region: region,
-                    environment: environment,
-                    api: ext.version || version$2
-                },
+                identity: identity,
                 reconnectInterval: reconnectInterval,
                 ws: ws,
                 sharedWorker: sharedWorker,
@@ -6433,12 +7748,27 @@
                 replaySpecs: replaySpecs,
             };
         }
+        function getContexts() {
+            if (typeof configuration.contexts === "undefined") {
+                return { reAnnounceKnownContexts: true };
+            }
+            if (typeof configuration.contexts === "boolean" && configuration.contexts) {
+                return { reAnnounceKnownContexts: true };
+            }
+            if (typeof configuration.contexts === "object") {
+                return Object.assign({}, { reAnnounceKnownContexts: true }, configuration.contexts);
+            }
+            return false;
+        }
         function getApplication() {
             if (configuration.application) {
                 return configuration.application;
             }
             if (glue42gd) {
                 return glue42gd.applicationName;
+            }
+            if (typeof window !== "undefined" && typeof window.glue42electron !== "undefined") {
+                return window.glue42electron.application;
             }
             var uid = shortid$1();
             if (Utils.isNode()) {
@@ -6509,9 +7839,9 @@
             logger: getLogger(),
             connection: connection,
             metrics: (_c = configuration.metrics) !== null && _c !== void 0 ? _c : true,
-            contexts: (_d = configuration.contexts) !== null && _d !== void 0 ? _d : true,
+            contexts: getContexts(),
             version: ext.version || version$2,
-            libs: (_e = ext.libs) !== null && _e !== void 0 ? _e : [],
+            libs: (_d = ext.libs) !== null && _d !== void 0 ? _d : [],
             customLogger: configuration.customLogger
         };
     }
@@ -6716,14 +8046,28 @@
             this._contextNameToId = {};
             this._contextIdToName = {};
             this._protocolVersion = undefined;
+            this._contextsTempCache = {};
+            this._contextsSubscriptionsCache = [];
             this._connection = config.connection;
             this._logger = config.logger;
+            this._trackAllContexts = config.trackAllContexts;
+            this._reAnnounceKnownContexts = config.reAnnounceKnownContexts;
             this._gw3Session = this._connection.domain("global", [
                 GW_MESSAGE_CONTEXT_CREATED,
                 GW_MESSAGE_SUBSCRIBED_CONTEXT,
                 GW_MESSAGE_CONTEXT_DESTROYED,
                 GW_MESSAGE_CONTEXT_UPDATED,
             ]);
+            this._gw3Session.disconnected(this.resetState.bind(this));
+            this._gw3Session.onJoined(function (wasReconnect) {
+                if (!wasReconnect) {
+                    return;
+                }
+                if (!_this._reAnnounceKnownContexts) {
+                    return _this._connection.setLibReAnnounced({ name: "contexts" });
+                }
+                _this.reInitiateState().then(function () { return _this._connection.setLibReAnnounced({ name: "contexts" }); });
+            });
             this.subscribeToContextCreatedMessages();
             this.subscribeToContextUpdatedMessages();
             this.subscribeToContextDestroyedMessages();
@@ -6796,7 +8140,8 @@
                 contextData.isAnnounced = true;
                 contextData.name = name;
                 contextData.contextId = createContextMsg.context_id;
-                contextData.context = data;
+                contextData.context = createContextMsg.data || data;
+                contextData.hasReceivedSnapshot = true;
                 _this._contextNameToData[name] = contextData;
                 return createContextMsg.context_id;
             });
@@ -6915,24 +8260,26 @@
             if (!contextData || !contextData.isAnnounced) {
                 return Promise.resolve({});
             }
-            if (contextData && !contextData.hasCallbacks()) {
-                return new Promise(function (resolve, _) { return __awaiter$1(_this, void 0, void 0, function () {
-                    var _this = this;
-                    return __generator(this, function (_a) {
-                        this.subscribe(name, function (data, _d, _r, un) {
-                            _this.unsubscribe(un);
-                            resolve(data);
-                        });
-                        return [2];
+            if (contextData && (!contextData.hasCallbacks() || !contextData.hasReceivedSnapshot)) {
+                return new Promise(function (resolve) {
+                    _this.subscribe(name, function (data, _d, _r, un) {
+                        _this.unsubscribe(un);
+                        resolve(data);
                     });
-                }); });
+                });
             }
             var context = (_a = contextData === null || contextData === void 0 ? void 0 : contextData.context) !== null && _a !== void 0 ? _a : {};
             return Promise.resolve(context);
         };
-        GW3Bridge.prototype.subscribe = function (name, callback) {
-            var thisCallbackSubscriptionNumber = this._nextCallbackSubscriptionNumber;
-            this._nextCallbackSubscriptionNumber += 1;
+        GW3Bridge.prototype.subscribe = function (name, callback, subscriptionKey) {
+            var _this = this;
+            var thisCallbackSubscriptionNumber = typeof subscriptionKey === "undefined" ? this._nextCallbackSubscriptionNumber : subscriptionKey;
+            if (typeof subscriptionKey === "undefined") {
+                this._nextCallbackSubscriptionNumber += 1;
+            }
+            if (this._contextsSubscriptionsCache.every(function (subscription) { return subscription.subKey !== _this._nextCallbackSubscriptionNumber; })) {
+                this._contextsSubscriptionsCache.push({ contextName: name, subKey: thisCallbackSubscriptionNumber, callback: callback });
+            }
             var contextData = this._contextNameToData[name];
             if (!contextData ||
                 !contextData.isAnnounced) {
@@ -6946,29 +8293,35 @@
             if (!hadCallbacks) {
                 if (!contextData.joinedActivity) {
                     if (contextData.context && contextData.sentExplicitSubscription) {
-                        var clone = deepClone(contextData.context);
-                        callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                        if (contextData.hasReceivedSnapshot) {
+                            var clone = deepClone(contextData.context);
+                            callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                        }
                         return Promise.resolve(thisCallbackSubscriptionNumber);
                     }
                     return this.sendSubscribe(contextData)
                         .then(function () { return thisCallbackSubscriptionNumber; });
                 }
                 else {
-                    var clone = deepClone(contextData.context);
-                    callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                    if (contextData.hasReceivedSnapshot) {
+                        var clone = deepClone(contextData.context);
+                        callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                    }
                     return Promise.resolve(thisCallbackSubscriptionNumber);
                 }
             }
             else {
-                var clone = deepClone(contextData.context);
-                callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                if (contextData.hasReceivedSnapshot) {
+                    var clone = deepClone(contextData.context);
+                    callback(clone, clone, [], thisCallbackSubscriptionNumber);
+                }
                 return Promise.resolve(thisCallbackSubscriptionNumber);
             }
         };
         GW3Bridge.prototype.unsubscribe = function (subscriptionKey) {
+            this._contextsSubscriptionsCache = this._contextsSubscriptionsCache.filter(function (subscription) { return subscription.subKey !== subscriptionKey; });
             for (var _i = 0, _a = Object.keys(this._contextNameToData); _i < _a.length; _i++) {
                 var name_1 = _a[_i];
-                var contextId = this._contextNameToId[name_1];
                 var contextData = this._contextNameToData[name_1];
                 if (!contextData) {
                     return;
@@ -7002,6 +8355,7 @@
         GW3Bridge.prototype.handleUpdated = function (contextData, delta, extraData) {
             var oldContext = contextData.context;
             contextData.context = applyContextDelta(contextData.context, delta, this._logger);
+            contextData.hasReceivedSnapshot = true;
             if (this._contextNameToData[contextData.name] === contextData &&
                 !deepEqual(oldContext, contextData.context)) {
                 this.invokeUpdateCallbacks(contextData, delta, extraData);
@@ -7020,6 +8374,7 @@
             }
         };
         GW3Bridge.prototype.handleContextCreatedMessage = function (contextCreatedMsg) {
+            var _this = this;
             var createdMessageType = contextCreatedMsg.type;
             if (createdMessageType === GW_MESSAGE_ACTIVITY_CREATED) {
                 this._contextNameToId[contextCreatedMsg.activity_id] = contextCreatedMsg.context_id;
@@ -7056,6 +8411,9 @@
             else {
                 this._contextNameToData[name] = contextData =
                     new GW3ContextData(contextCreatedMsg.context_id, name, true, contextCreatedMsg.activity_id);
+                if (this._trackAllContexts) {
+                    this.subscribe(name, function () { }).then(function (subKey) { return _this._systemContextsSubKey = subKey; });
+                }
             }
         };
         GW3Bridge.prototype.subscribeToContextUpdatedMessages = function () {
@@ -7105,6 +8463,7 @@
                 }
             }
             var oldContext = contextData.context;
+            contextData.hasReceivedSnapshot = true;
             if (updatedMessageType === GW_MESSAGE_SUBSCRIBED_CONTEXT) {
                 contextData.context = contextUpdatedMsg.data || {};
             }
@@ -7252,6 +8611,97 @@
                 }
             }
             return delta;
+        };
+        GW3Bridge.prototype.resetState = function () {
+            var _this = this;
+            for (var _i = 0, _a = this._gw3Subscriptions; _i < _a.length; _i++) {
+                var sub = _a[_i];
+                this._connection.off(sub);
+            }
+            if (this._systemContextsSubKey) {
+                this.unsubscribe(this._systemContextsSubKey);
+                delete this._systemContextsSubKey;
+            }
+            this._gw3Subscriptions = [];
+            this._contextNameToId = {};
+            this._contextIdToName = {};
+            delete this._protocolVersion;
+            this._contextsTempCache = Object.keys(this._contextNameToData).reduce(function (cacheSoFar, ctxName) {
+                cacheSoFar[ctxName] = _this._contextNameToData[ctxName].context;
+                return cacheSoFar;
+            }, {});
+            this._contextNameToData = {};
+        };
+        GW3Bridge.prototype.reInitiateState = function () {
+            var _a;
+            return __awaiter$1(this, void 0, void 0, function () {
+                var _b, _c, _i, ctxName, lastKnownData;
+                var _this = this;
+                return __generator(this, function (_e) {
+                    switch (_e.label) {
+                        case 0:
+                            this.subscribeToContextCreatedMessages();
+                            this.subscribeToContextUpdatedMessages();
+                            this.subscribeToContextDestroyedMessages();
+                            (_a = this._connection.replayer) === null || _a === void 0 ? void 0 : _a.drain(ContextMessageReplaySpec.name, function (message) {
+                                var type = message.type;
+                                if (!type) {
+                                    return;
+                                }
+                                if (type === GW_MESSAGE_CONTEXT_CREATED ||
+                                    type === GW_MESSAGE_CONTEXT_ADDED ||
+                                    type === GW_MESSAGE_ACTIVITY_CREATED) {
+                                    _this.handleContextCreatedMessage(message);
+                                }
+                                else if (type === GW_MESSAGE_SUBSCRIBED_CONTEXT ||
+                                    type === GW_MESSAGE_CONTEXT_UPDATED ||
+                                    type === GW_MESSAGE_JOINED_ACTIVITY) {
+                                    _this.handleContextUpdatedMessage(message);
+                                }
+                                else if (type === GW_MESSAGE_CONTEXT_DESTROYED ||
+                                    type === GW_MESSAGE_ACTIVITY_DESTROYED) {
+                                    _this.handleContextDestroyedMessage(message);
+                                }
+                            });
+                            return [4, Promise.all(this._contextsSubscriptionsCache.map(function (subscription) { return _this.subscribe(subscription.contextName, subscription.callback, subscription.subKey); }))];
+                        case 1:
+                            _e.sent();
+                            return [4, this.flushQueue()];
+                        case 2:
+                            _e.sent();
+                            _b = [];
+                            for (_c in this._contextsTempCache)
+                                _b.push(_c);
+                            _i = 0;
+                            _e.label = 3;
+                        case 3:
+                            if (!(_i < _b.length)) return [3, 7];
+                            ctxName = _b[_i];
+                            if (typeof this._contextsTempCache[ctxName] !== "object" || Object.keys(this._contextsTempCache[ctxName]).length === 0) {
+                                return [3, 6];
+                            }
+                            lastKnownData = this._contextsTempCache[ctxName];
+                            this._logger.info("Re-announcing known context: " + ctxName);
+                            return [4, this.flushQueue()];
+                        case 4:
+                            _e.sent();
+                            return [4, this.update(ctxName, lastKnownData)];
+                        case 5:
+                            _e.sent();
+                            _e.label = 6;
+                        case 6:
+                            _i++;
+                            return [3, 3];
+                        case 7:
+                            this._contextsTempCache = {};
+                            this._logger.info("Contexts are re-announced");
+                            return [2];
+                    }
+                });
+            });
+        };
+        GW3Bridge.prototype.flushQueue = function () {
+            return new Promise(function (resolve) { return setTimeout(function () { return resolve(); }, 0); });
         };
         return GW3Bridge;
     }());
@@ -7742,6 +9192,7 @@
             var filterProps = Object.keys(filter)
                 .filter(function (prop) {
                 return filter[prop] !== undefined
+                    && filter[prop] !== null
                     && typeof filter[prop] !== "function"
                     && prop !== "object_types"
                     && prop !== "display_name"
@@ -8371,7 +9822,11 @@
             this.refreshWrappedObject(instance);
         };
         InstanceWrapper.prototype.refreshWrappedObject = function (resolvedIdentity) {
-            var _a, _b, _c;
+            var _this = this;
+            var _a, _b, _c, _d;
+            Object.keys(resolvedIdentity).forEach(function (key) {
+                _this.wrapped[key] = resolvedIdentity[key];
+            });
             this.wrapped.user = resolvedIdentity.user;
             this.wrapped.instance = resolvedIdentity.instance;
             this.wrapped.application = (_a = resolvedIdentity.application) !== null && _a !== void 0 ? _a : shortid$1();
@@ -8381,7 +9836,7 @@
             this.wrapped.environment = resolvedIdentity.environment;
             this.wrapped.region = resolvedIdentity.region;
             this.wrapped.windowId = resolvedIdentity.windowId;
-            this.wrapped.isLocal = true;
+            this.wrapped.isLocal = (_d = resolvedIdentity.isLocal) !== null && _d !== void 0 ? _d : true;
             this.wrapped.api = resolvedIdentity.api;
             this.wrapped.service = resolvedIdentity.service;
             this.wrapped.peerId = resolvedIdentity.peerId;
@@ -8557,8 +10012,9 @@
             this.methodsCount = {};
         };
         ClientRepository.prototype.createMethodIdentifier = function (methodInfo) {
-            var accepts = methodInfo.input_signature !== undefined ? methodInfo.input_signature : "";
-            var returns = methodInfo.result_signature !== undefined ? methodInfo.result_signature : "";
+            var _a, _b;
+            var accepts = (_a = methodInfo.input_signature) !== null && _a !== void 0 ? _a : "";
+            var returns = (_b = methodInfo.result_signature) !== null && _b !== void 0 ? _b : "";
             return (methodInfo.name + accepts + returns).toLowerCase();
         };
         ClientRepository.prototype.getServersByMethod = function (identifier) {
@@ -9118,6 +10574,35 @@
         return UserSubscription;
     }());
 
+    var TimedCache = (function () {
+        function TimedCache(config) {
+            this.config = config;
+            this.cache = [];
+            this.timeoutIds = [];
+        }
+        TimedCache.prototype.add = function (element) {
+            var _this = this;
+            var id = shortid$1();
+            this.cache.push({ id: id, element: element });
+            var timeoutId = setTimeout(function () {
+                var elementIdx = _this.cache.findIndex(function (entry) { return entry.id === id; });
+                if (elementIdx < 0) {
+                    return;
+                }
+                _this.cache.splice(elementIdx, 1);
+            }, this.config.ELEMENT_TTL_MS);
+            this.timeoutIds.push(timeoutId);
+        };
+        TimedCache.prototype.flush = function () {
+            var elements = this.cache.map(function (entry) { return entry.element; });
+            this.timeoutIds.forEach(function (id) { return clearInterval(id); });
+            this.cache = [];
+            this.timeoutIds = [];
+            return elements;
+        };
+        return TimedCache;
+    }());
+
     var STATUS_AWAITING_ACCEPT = "awaitingAccept";
     var STATUS_SUBSCRIBED = "subscribed";
     var ERR_MSG_SUB_FAILED = "Subscription failed.";
@@ -9131,6 +10616,7 @@
             this.repository = repository;
             this.logger = logger;
             this.subscriptionsList = {};
+            this.timedCache = new TimedCache({ ELEMENT_TTL_MS: 10000 });
             this.subscriptionIdToLocalKeyMap = {};
             this.nextSubLocalKey = 0;
             this.handleErrorSubscribing = function (errorResponse) {
@@ -9267,6 +10753,7 @@
                     return;
                 }
                 if (subscription.trackedServers.length <= 0) {
+                    _this.timedCache.add(subscription);
                     clearTimeout(subscription.timeoutId);
                     _this.callOnClosedHandlers(subscription);
                     delete _this.subscriptionsList[subLocalKey];
@@ -9324,6 +10811,9 @@
             this.subscriptionsList = {};
             this.subscriptionIdToLocalKeyMap = {};
             return existing;
+        };
+        ClientStreaming.prototype.drainSubscriptionsCache = function () {
+            return this.timedCache.flush();
         };
         ClientStreaming.prototype.getNextSubscriptionLocalKey = function () {
             var current = this.nextSubLocalKey;
@@ -9468,6 +10958,9 @@
         ClientProtocol.prototype.drainSubscriptions = function () {
             return this.streaming.drainSubscriptions();
         };
+        ClientProtocol.prototype.drainSubscriptionsCache = function () {
+            return this.streaming.drainSubscriptionsCache();
+        };
         ClientProtocol.prototype.handlePeerAdded = function (msg) {
             var newPeerId = msg.new_peer_id;
             var remoteId = msg.identity;
@@ -9566,31 +11059,58 @@
         var server = new ServerProtocol(session, clientRepository, serverRepository, logger.subLogger("server"));
         var client = new ClientProtocol(session, clientRepository, logger.subLogger("client"));
         function handleReconnect() {
-            logger.info("reconnected - will replay registered methods and subscriptions");
-            var existingSubscriptions = client.drainSubscriptions();
-            for (var _i = 0, existingSubscriptions_1 = existingSubscriptions; _i < existingSubscriptions_1.length; _i++) {
-                var sub = existingSubscriptions_1[_i];
-                var methodInfo = sub.method;
-                var params = Object.assign({}, sub.params);
-                logger.info("trying to re-subscribe to method " + methodInfo.name);
-                interop.client.subscribe(methodInfo, params, undefined, undefined, sub);
-            }
-            var registeredMethods = serverRepository.getList();
-            serverRepository.reset();
-            for (var _a = 0, registeredMethods_1 = registeredMethods; _a < registeredMethods_1.length; _a++) {
-                var method = registeredMethods_1[_a];
-                var def = method.definition;
-                logger.info("re-publishing method " + def.name);
-                if (method.stream) {
-                    interop.server.createStream(def, method.streamCallbacks, undefined, undefined, method.stream);
-                }
-                else if (method.theFunction && method.theFunction.userCallback) {
-                    interop.register(def, method.theFunction.userCallback);
-                }
-                else if (method.theFunction && method.theFunction.userCallbackAsync) {
-                    interop.registerAsync(def, method.theFunction.userCallbackAsync);
-                }
-            }
+            return __awaiter$1(this, void 0, void 0, function () {
+                var reconnectionPromises, existingSubscriptions, _loop_1, _i, existingSubscriptions_1, sub, registeredMethods, _loop_2, _a, registeredMethods_1, method;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            logger.info("reconnected - will replay registered methods and subscriptions");
+                            client.drainSubscriptionsCache().forEach(function (sub) {
+                                var methodInfo = sub.method;
+                                var params = Object.assign({}, sub.params);
+                                logger.info("trying to soft-re-subscribe to method " + methodInfo.name + ", with params: " + JSON.stringify(params));
+                                interop.client.subscribe(methodInfo, params, undefined, undefined, sub).then(function () { return logger.info("soft-subscribing to method " + methodInfo.name + " DONE"); }).catch(function (error) { return logger.warn("subscribing to method " + methodInfo.name + " failed: " + JSON.stringify(error) + "}"); });
+                            });
+                            reconnectionPromises = [];
+                            existingSubscriptions = client.drainSubscriptions();
+                            _loop_1 = function (sub) {
+                                var methodInfo = sub.method;
+                                var params = Object.assign({}, sub.params);
+                                logger.info("trying to re-subscribe to method " + methodInfo.name + ", with params: " + JSON.stringify(params));
+                                reconnectionPromises.push(interop.client.subscribe(methodInfo, params, undefined, undefined, sub).then(function () { return logger.info("subscribing to method " + methodInfo.name + " DONE"); }));
+                            };
+                            for (_i = 0, existingSubscriptions_1 = existingSubscriptions; _i < existingSubscriptions_1.length; _i++) {
+                                sub = existingSubscriptions_1[_i];
+                                _loop_1(sub);
+                            }
+                            registeredMethods = serverRepository.getList();
+                            serverRepository.reset();
+                            _loop_2 = function (method) {
+                                var def = method.definition;
+                                logger.info("re-publishing method " + def.name);
+                                if (method.stream) {
+                                    reconnectionPromises.push(interop.server.createStream(def, method.streamCallbacks, undefined, undefined, method.stream).then(function () { return logger.info("subscribing to method " + def.name + " DONE"); }));
+                                }
+                                else if (method.theFunction && method.theFunction.userCallback) {
+                                    reconnectionPromises.push(interop.register(def, method.theFunction.userCallback).then(function () { return logger.info("subscribing to method " + def.name + " DONE"); }));
+                                }
+                                else if (method.theFunction && method.theFunction.userCallbackAsync) {
+                                    reconnectionPromises.push(interop.registerAsync(def, method.theFunction.userCallbackAsync).then(function () { return logger.info("subscribing to method " + def.name + " DONE"); }));
+                                }
+                                logger.info("re-publishing method " + def.name + " DONE");
+                            };
+                            for (_a = 0, registeredMethods_1 = registeredMethods; _a < registeredMethods_1.length; _a++) {
+                                method = registeredMethods_1[_a];
+                                _loop_2(method);
+                            }
+                            return [4, Promise.all(reconnectionPromises)];
+                        case 1:
+                            _b.sent();
+                            logger.info("Interop is re-announced");
+                            return [2];
+                    }
+                });
+            });
         }
         function handleInitialJoin() {
             if (resolveReadyPromise) {
@@ -9604,7 +11124,7 @@
         session.onJoined(function (reconnect) {
             clientRepository.addServer(instance, connection.peerId);
             if (reconnect) {
-                handleReconnect();
+                handleReconnect().then(function () { return connection.setLibReAnnounced({ name: "interop" }); }).catch(function (error) { return logger.warn("Error while re-announcing interop: " + JSON.stringify(error)); });
             }
             else {
                 handleInitialJoin();
@@ -9873,6 +11393,13 @@
                         };
                     });
                 }
+                else if (typeof window !== "undefined" && (window === null || window === void 0 ? void 0 : window.glue42electron)) {
+                    if (typeof window.glue42electron.gwToken === "string") {
+                        authPromise = Promise.resolve({
+                            gatewayToken: window.glue42electron.gwToken
+                        });
+                    }
+                }
                 else {
                     authPromise = Promise.reject("You need to provide auth information");
                 }
@@ -9951,7 +11478,9 @@
                 var initTimer = timer("contexts");
                 _contexts = new ContextsModule({
                     connection: _connection,
-                    logger: _logger.subLogger("contexts")
+                    logger: _logger.subLogger("contexts"),
+                    trackAllContexts: typeof internalConfig.contexts === "object" ? internalConfig.contexts.trackAllContexts : false,
+                    reAnnounceKnownContexts: typeof internalConfig.contexts === "object" ? internalConfig.contexts.reAnnounceKnownContexts : false
                 });
                 registerLib("contexts", _contexts, initTimer);
                 return _contexts;
@@ -10094,11 +11623,39 @@
             }
             return glue;
         }
+        function registerInstanceIfNeeded() {
+            return __awaiter$1(this, void 0, void 0, function () {
+                var RegisterInstanceMethodName, isMethodAvailable, error_1, typedError;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            RegisterInstanceMethodName = "T42.ACS.RegisterInstance";
+                            if (!(Utils.isNode() && typeof process.env._GD_STARTING_CONTEXT_ === "undefined" && typeof (userConfig === null || userConfig === void 0 ? void 0 : userConfig.application) !== "undefined")) return [3, 4];
+                            isMethodAvailable = _interop.methods({ name: RegisterInstanceMethodName }).length > 0;
+                            if (!isMethodAvailable) return [3, 4];
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 3, , 4]);
+                            return [4, _interop.invoke(RegisterInstanceMethodName, { appName: userConfig === null || userConfig === void 0 ? void 0 : userConfig.application, pid: process.pid })];
+                        case 2:
+                            _a.sent();
+                            return [3, 4];
+                        case 3:
+                            error_1 = _a.sent();
+                            typedError = error_1;
+                            _logger.error("Cannot register as an instance: " + JSON.stringify(typedError.message));
+                            return [3, 4];
+                        case 4: return [2];
+                    }
+                });
+            });
+        }
         return preloadPromise
             .then(setupLogger)
             .then(setupConnection)
             .then(function () { return Promise.all([setupMetrics(), setupInterop(), setupContexts(), setupBus()]); })
             .then(function () { return _interop.readyPromise; })
+            .then(function () { return registerInstanceIfNeeded(); })
             .then(function () {
             return setupExternalLibs(internalConfig.libs || []);
         })

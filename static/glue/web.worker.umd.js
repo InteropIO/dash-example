@@ -32,6 +32,8 @@
     const serviceWorkerBroadcastChannelName = "glue42-core-worker";
     const platformPingTimeoutMS = 3000;
     const platformOpenTimeoutMS = 60000;
+    const dbName = "glue42core";
+    const dbVersion = 2;
 
     /**
      * Wraps values in an `Ok` type.
@@ -833,7 +835,7 @@
     });
     const webWorkerConfigDecoder = object({
         platform: optional(object({
-            url: nonEmptyStringDecoder,
+            url: optional(nonEmptyStringDecoder),
             openIfMissing: optional(boolean())
         })),
         notifications: optional(object({
@@ -1176,6 +1178,288 @@
 
     var shortid = lib.exports;
 
+    const instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
+
+    let idbProxyableTypes;
+    let cursorAdvanceMethods;
+    // This is a function to prevent it throwing up in node environments.
+    function getIdbProxyableTypes() {
+        return (idbProxyableTypes ||
+            (idbProxyableTypes = [
+                IDBDatabase,
+                IDBObjectStore,
+                IDBIndex,
+                IDBCursor,
+                IDBTransaction,
+            ]));
+    }
+    // This is a function to prevent it throwing up in node environments.
+    function getCursorAdvanceMethods() {
+        return (cursorAdvanceMethods ||
+            (cursorAdvanceMethods = [
+                IDBCursor.prototype.advance,
+                IDBCursor.prototype.continue,
+                IDBCursor.prototype.continuePrimaryKey,
+            ]));
+    }
+    const cursorRequestMap = new WeakMap();
+    const transactionDoneMap = new WeakMap();
+    const transactionStoreNamesMap = new WeakMap();
+    const transformCache = new WeakMap();
+    const reverseTransformCache = new WeakMap();
+    function promisifyRequest(request) {
+        const promise = new Promise((resolve, reject) => {
+            const unlisten = () => {
+                request.removeEventListener('success', success);
+                request.removeEventListener('error', error);
+            };
+            const success = () => {
+                resolve(wrap(request.result));
+                unlisten();
+            };
+            const error = () => {
+                reject(request.error);
+                unlisten();
+            };
+            request.addEventListener('success', success);
+            request.addEventListener('error', error);
+        });
+        promise
+            .then((value) => {
+            // Since cursoring reuses the IDBRequest (*sigh*), we cache it for later retrieval
+            // (see wrapFunction).
+            if (value instanceof IDBCursor) {
+                cursorRequestMap.set(value, request);
+            }
+            // Catching to avoid "Uncaught Promise exceptions"
+        })
+            .catch(() => { });
+        // This mapping exists in reverseTransformCache but doesn't doesn't exist in transformCache. This
+        // is because we create many promises from a single IDBRequest.
+        reverseTransformCache.set(promise, request);
+        return promise;
+    }
+    function cacheDonePromiseForTransaction(tx) {
+        // Early bail if we've already created a done promise for this transaction.
+        if (transactionDoneMap.has(tx))
+            return;
+        const done = new Promise((resolve, reject) => {
+            const unlisten = () => {
+                tx.removeEventListener('complete', complete);
+                tx.removeEventListener('error', error);
+                tx.removeEventListener('abort', error);
+            };
+            const complete = () => {
+                resolve();
+                unlisten();
+            };
+            const error = () => {
+                reject(tx.error || new DOMException('AbortError', 'AbortError'));
+                unlisten();
+            };
+            tx.addEventListener('complete', complete);
+            tx.addEventListener('error', error);
+            tx.addEventListener('abort', error);
+        });
+        // Cache it for later retrieval.
+        transactionDoneMap.set(tx, done);
+    }
+    let idbProxyTraps = {
+        get(target, prop, receiver) {
+            if (target instanceof IDBTransaction) {
+                // Special handling for transaction.done.
+                if (prop === 'done')
+                    return transactionDoneMap.get(target);
+                // Polyfill for objectStoreNames because of Edge.
+                if (prop === 'objectStoreNames') {
+                    return target.objectStoreNames || transactionStoreNamesMap.get(target);
+                }
+                // Make tx.store return the only store in the transaction, or undefined if there are many.
+                if (prop === 'store') {
+                    return receiver.objectStoreNames[1]
+                        ? undefined
+                        : receiver.objectStore(receiver.objectStoreNames[0]);
+                }
+            }
+            // Else transform whatever we get back.
+            return wrap(target[prop]);
+        },
+        set(target, prop, value) {
+            target[prop] = value;
+            return true;
+        },
+        has(target, prop) {
+            if (target instanceof IDBTransaction &&
+                (prop === 'done' || prop === 'store')) {
+                return true;
+            }
+            return prop in target;
+        },
+    };
+    function replaceTraps(callback) {
+        idbProxyTraps = callback(idbProxyTraps);
+    }
+    function wrapFunction(func) {
+        // Due to expected object equality (which is enforced by the caching in `wrap`), we
+        // only create one new func per func.
+        // Edge doesn't support objectStoreNames (booo), so we polyfill it here.
+        if (func === IDBDatabase.prototype.transaction &&
+            !('objectStoreNames' in IDBTransaction.prototype)) {
+            return function (storeNames, ...args) {
+                const tx = func.call(unwrap(this), storeNames, ...args);
+                transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.sort() : [storeNames]);
+                return wrap(tx);
+            };
+        }
+        // Cursor methods are special, as the behaviour is a little more different to standard IDB. In
+        // IDB, you advance the cursor and wait for a new 'success' on the IDBRequest that gave you the
+        // cursor. It's kinda like a promise that can resolve with many values. That doesn't make sense
+        // with real promises, so each advance methods returns a new promise for the cursor object, or
+        // undefined if the end of the cursor has been reached.
+        if (getCursorAdvanceMethods().includes(func)) {
+            return function (...args) {
+                // Calling the original function with the proxy as 'this' causes ILLEGAL INVOCATION, so we use
+                // the original object.
+                func.apply(unwrap(this), args);
+                return wrap(cursorRequestMap.get(this));
+            };
+        }
+        return function (...args) {
+            // Calling the original function with the proxy as 'this' causes ILLEGAL INVOCATION, so we use
+            // the original object.
+            return wrap(func.apply(unwrap(this), args));
+        };
+    }
+    function transformCachableValue(value) {
+        if (typeof value === 'function')
+            return wrapFunction(value);
+        // This doesn't return, it just creates a 'done' promise for the transaction,
+        // which is later returned for transaction.done (see idbObjectHandler).
+        if (value instanceof IDBTransaction)
+            cacheDonePromiseForTransaction(value);
+        if (instanceOfAny(value, getIdbProxyableTypes()))
+            return new Proxy(value, idbProxyTraps);
+        // Return the same value back if we're not going to transform it.
+        return value;
+    }
+    function wrap(value) {
+        // We sometimes generate multiple promises from a single IDBRequest (eg when cursoring), because
+        // IDB is weird and a single IDBRequest can yield many responses, so these can't be cached.
+        if (value instanceof IDBRequest)
+            return promisifyRequest(value);
+        // If we've already transformed this value before, reuse the transformed value.
+        // This is faster, but it also provides object equality.
+        if (transformCache.has(value))
+            return transformCache.get(value);
+        const newValue = transformCachableValue(value);
+        // Not all types are transformed.
+        // These may be primitive types, so they can't be WeakMap keys.
+        if (newValue !== value) {
+            transformCache.set(value, newValue);
+            reverseTransformCache.set(newValue, value);
+        }
+        return newValue;
+    }
+    const unwrap = (value) => reverseTransformCache.get(value);
+
+    /**
+     * Open a database.
+     *
+     * @param name Name of the database.
+     * @param version Schema version.
+     * @param callbacks Additional callbacks.
+     */
+    function openDB(name, version, { blocked, upgrade, blocking, terminated } = {}) {
+        const request = indexedDB.open(name, version);
+        const openPromise = wrap(request);
+        if (upgrade) {
+            request.addEventListener('upgradeneeded', (event) => {
+                upgrade(wrap(request.result), event.oldVersion, event.newVersion, wrap(request.transaction));
+            });
+        }
+        if (blocked)
+            request.addEventListener('blocked', () => blocked());
+        openPromise
+            .then((db) => {
+            if (terminated)
+                db.addEventListener('close', () => terminated());
+            if (blocking)
+                db.addEventListener('versionchange', () => blocking());
+        })
+            .catch(() => { });
+        return openPromise;
+    }
+
+    const readMethods = ['get', 'getKey', 'getAll', 'getAllKeys', 'count'];
+    const writeMethods = ['put', 'add', 'delete', 'clear'];
+    const cachedMethods = new Map();
+    function getMethod(target, prop) {
+        if (!(target instanceof IDBDatabase &&
+            !(prop in target) &&
+            typeof prop === 'string')) {
+            return;
+        }
+        if (cachedMethods.get(prop))
+            return cachedMethods.get(prop);
+        const targetFuncName = prop.replace(/FromIndex$/, '');
+        const useIndex = prop !== targetFuncName;
+        const isWrite = writeMethods.includes(targetFuncName);
+        if (
+        // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
+        !(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) ||
+            !(isWrite || readMethods.includes(targetFuncName))) {
+            return;
+        }
+        const method = async function (storeName, ...args) {
+            // isWrite ? 'readwrite' : undefined gzipps better, but fails in Edge :(
+            const tx = this.transaction(storeName, isWrite ? 'readwrite' : 'readonly');
+            let target = tx.store;
+            if (useIndex)
+                target = target.index(args.shift());
+            // Must reject if op rejects.
+            // If it's a write operation, must reject if tx.done rejects.
+            // Must reject with op rejection first.
+            // Must resolve with op value.
+            // Must handle both promises (no unhandled rejections)
+            return (await Promise.all([
+                target[targetFuncName](...args),
+                isWrite && tx.done,
+            ]))[0];
+        };
+        cachedMethods.set(prop, method);
+        return method;
+    }
+    replaceTraps((oldTraps) => ({
+        ...oldTraps,
+        get: (target, prop, receiver) => getMethod(target, prop) || oldTraps.get(target, prop, receiver),
+        has: (target, prop) => !!getMethod(target, prop) || oldTraps.has(target, prop),
+    }));
+
+    let openDbPromise;
+    const trimUrlQueryHashAndTrailingSlash = (url) => {
+        const trimmedQueryHash = url.split("?")[0].split("#")[0];
+        const trimmedTrailingSlash = trimmedQueryHash.replace(/\/$/, "");
+        return trimmedTrailingSlash;
+    };
+    const startDb = () => {
+        if (openDbPromise) {
+            return openDbPromise;
+        }
+        openDbPromise = openDB(dbName, dbVersion, {
+            upgrade: (db) => {
+                if (!db.objectStoreNames.contains("workspaceLayouts")) {
+                    db.createObjectStore("workspaceLayouts");
+                }
+                if (!db.objectStoreNames.contains("globalLayouts")) {
+                    db.createObjectStore("globalLayouts");
+                }
+                if (!db.objectStoreNames.contains("serviceWorker")) {
+                    db.createObjectStore("serviceWorker");
+                }
+            }
+        });
+        return openDbPromise;
+    };
     const checkPlatformOpen = () => {
         const checkPromise = new Promise((resolve) => {
             const channel = new BroadcastChannel(serviceWorkerBroadcastChannelName);
@@ -1192,14 +1476,35 @@
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), platformPingTimeoutMS));
         return Promise.race([checkPromise, timeoutPromise]);
     };
+    const getPlatformUrl = (config) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
+        if ((_a = config.platform) === null || _a === void 0 ? void 0 : _a.url) {
+            const url = config.platform.url.split("?")[0].split("#")[0];
+            console.debug(`getting url from config: ${url}`);
+            return trimUrlQueryHashAndTrailingSlash(url);
+        }
+        console.debug("starting the db");
+        const db = yield startDb();
+        if (!db.objectStoreNames.contains("serviceWorker")) {
+            console.warn("there is no service worker store");
+            return;
+        }
+        const workerData = yield db.get("serviceWorker", "workerData");
+        const url = (_b = workerData === null || workerData === void 0 ? void 0 : workerData.platformUrl) === null || _b === void 0 ? void 0 : _b.split("?")[0].split("#")[0];
+        return trimUrlQueryHashAndTrailingSlash(url);
+    });
     const validateConfig = (config = {}) => {
+        var _a;
         const validated = webWorkerConfigDecoder.runWithException(config);
+        if ((_a = validated.platform) === null || _a === void 0 ? void 0 : _a.url) {
+            validated.platform.url = validated.platform.url.replace(/\/$/, "");
+        }
         return validated;
     };
     const raiseGlueNotification = (settings) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
+        var _c;
         const options = Object.assign({}, settings, { title: undefined, clickInterop: undefined, actions: undefined });
-        options.actions = (_a = settings.actions) === null || _a === void 0 ? void 0 : _a.map((action) => {
+        options.actions = (_c = settings.actions) === null || _c === void 0 ? void 0 : _c.map((action) => {
             return {
                 action: action.action,
                 title: action.title,
@@ -1237,31 +1542,62 @@
             setTimeout(() => reject(`Timed out waiting for the platform to open and send a ready signal: ${platformOpenTimeoutMS} MS`), platformOpenTimeoutMS);
         });
     };
+    const focusCorePlatform = (url) => __awaiter(void 0, void 0, void 0, function* () {
+        if (!url) {
+            console.warn("Cannot open the platform, because a url was not provided");
+            return;
+        }
+        const allWindows = yield self.clients.matchAll({ type: "window" });
+        for (const client of allWindows) {
+            const urlStrippedQueryHash = client.url.split("?")[0].split("#")[0];
+            const urlStrippedTrailingSlash = urlStrippedQueryHash.replace(/\/$/, "");
+            if (urlStrippedTrailingSlash === url) {
+                yield client.focus();
+                return;
+            }
+        }
+    });
     const setupCore = (config) => {
         const verifiedConfig = validateConfig(config);
         self.addEventListener("notificationclick", (event) => {
             let isPlatformOpen;
             const channel = new BroadcastChannel(serviceWorkerBroadcastChannelName);
+            console.debug("Received a notification, checking if the platform is open");
             const executionPromise = checkPlatformOpen()
                 .then((platformExists) => {
                 var _a, _b, _c;
                 isPlatformOpen = platformExists;
+                console.debug(`The platform is: ${isPlatformOpen ? "open" : "not open"}`);
                 const action = event.action;
                 if (!action && ((_a = verifiedConfig.notifications) === null || _a === void 0 ? void 0 : _a.defaultClick)) {
+                    console.debug("Calling a defined default click handler");
                     return verifiedConfig.notifications.defaultClick(event, isPlatformOpen);
                 }
                 if (action && ((_c = (_b = verifiedConfig.notifications) === null || _b === void 0 ? void 0 : _b.actionClicks) === null || _c === void 0 ? void 0 : _c.some((actionDef) => actionDef.action === action))) {
                     const foundHandler = verifiedConfig.notifications.actionClicks.find((actionDef) => actionDef.action === action).handler;
+                    console.debug(`Calling a defined action click handler for action: ${action}`);
                     return foundHandler(event, isPlatformOpen);
                 }
             })
                 .then(() => {
-                var _a;
+                console.debug("Getting the platform url");
+                return getPlatformUrl(verifiedConfig);
+            })
+                .then((url) => {
+                var _a, _b, _c;
+                console.debug(`Found platform url: ${url}`);
                 if (!isPlatformOpen && ((_a = verifiedConfig.platform) === null || _a === void 0 ? void 0 : _a.openIfMissing)) {
-                    return openCorePlatform(verifiedConfig.platform.url);
+                    console.debug("Opening the platform");
+                    return openCorePlatform(url);
+                }
+                const focusOnClick = (_c = (_b = event.notification.data) === null || _b === void 0 ? void 0 : _b.glueData) === null || _c === void 0 ? void 0 : _c.focusPlatformOnDefaultClick;
+                if (isPlatformOpen && focusOnClick) {
+                    console.debug("Focusing the platform");
+                    return focusCorePlatform(url);
                 }
             })
                 .then(() => {
+                console.log("The platform is prepared, posting the click message");
                 const messageType = "notificationClick";
                 const action = event.action;
                 const glueData = event.notification.data.glueData;
@@ -1281,10 +1617,6 @@
                     vibrate: event.notification.vibrate
                 };
                 channel.postMessage({ messageType, action, glueData, definition });
-            })
-                .then(() => {
-                var _a, _b;
-                (_b = (_a = event.notification.data) === null || _a === void 0 ? void 0 : _a.glueData) === null || _b === void 0 ? void 0 : _b.focusPlatformOnDefaultClick;
             })
                 .catch((error) => {
                 const stringError = typeof error === "string" ? error : JSON.stringify(error.message);

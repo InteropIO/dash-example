@@ -1,17 +1,12 @@
-import dash
-from dash.dependencies import Input, Output, State
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import dash, Input, Output, State, html, dcc
 import dash_glue42
 import time
-
 from run import server
 
 app = dash.Dash(__name__, server=server,
                 routes_pathname_prefix="/outlook-contacts/")
 
-# Uncomment to enable Dash dev tools.
-# app.enable_dev_tools()
+app.enable_dev_tools()
 
 app.layout = dash_glue42.Glue42(id="glue42", children=[
 
