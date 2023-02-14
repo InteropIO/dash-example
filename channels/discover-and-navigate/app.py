@@ -59,7 +59,7 @@ def update_channels_list(all_channels):
     prevent_initial_call=True
 )
 def join_channel(channel_name):
-    if channel_name != no_channel["value"]:
+    if channel_name != None and channel_name != no_channel["value"]:
         return {
             "name": channel_name
         }
