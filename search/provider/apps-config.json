@@ -1,0 +1,19 @@
+[
+    {
+        "title": "Dash Search Provider",
+        "name": "dash-search-provider",
+        "type": "window",
+        "service": true,
+        "details": {
+            "url": "http://localhost:8050"
+        }
+    },
+    {
+        "title": "Dash Search Client",
+        "name": "dash-search-client",
+        "type": "window",
+        "details": {
+            "url": "http://localhost:8050/client.html"
+        }
+    }
+]

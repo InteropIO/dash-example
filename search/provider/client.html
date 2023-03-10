@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Client</title>
+    <script src="https://cdn.glue42.com/desktop@5.19.1/dist/desktop.browser.js"></script>
+    <script src="https://cdn.glue42.com/search-api@1.1.0/dist/search-api.umd.js"></script>
+    <style>
+        html {
+            height: 100vh;
+        }
+
+        table#results {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table#results th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #error-message {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div class="search" style="margin-bottom: 5px;">
+            <input type="text" id="search-input" />
+            <button id="search-btn" onclick="createQuery()">Search</button>
+            <button disabled id="cancel-btn" onclick="cancelQuery()">Cancel</button>
+        </div>
+        <span id="error-message"></span>
+        <table id="results" style="margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Search Type</th>
+                    <th>Display Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody id="results-body">
+            </tbody>
+        </table>
+    </main>
+
+    <script>
+        let query;
+        const searchBtnEl = document.getElementById('search-btn');
+        const cancelBtnEl = document.getElementById('cancel-btn');
+        const resultsTBodyEl = document.getElementById('results-body');
+        const errorMessageEl = document.getElementById('error-message');
+
+        const setSearchActive = () => {
+            searchBtnEl.disabled = true;
+            cancelBtnEl.disabled = false;
+        }
+
+        const setSearchInactive = () => {
+            searchBtnEl.disabled = false;
+            cancelBtnEl.disabled = true;
+        }
+
+        const cancelQuery = async () => {
+            if (!query) {
+                return;
+            }
+
+            await query.cancel();
+            setSearchInactive();
+            console.log('Query cancelled.');
+        }
+
+        const renderResults = (results) => {
+            const appendRow = (...values) => {
+                const rowEl = document.createElement('tr');
+                values.forEach(val => {
+                    const tdEl = document.createElement('td');
+                    tdEl.textContent = val;
+                    rowEl.appendChild(tdEl);
+                });
+                document.getElementById('results-body').appendChild(rowEl);
+            }
+
+            for (const queryResult of results) {
+                const { id, type, displayName, description } = queryResult;
+                appendRow(id, type.displayName ?? type.name, displayName, description)
+            }
+        };
+
+        const clearView = () => {
+            resultsTBodyEl.innerHTML = '';
+            errorMessageEl.innerHTML = '';
+        }
+
+        const createQuery = async () => {
+            const inputEl = document.getElementById('search-input');
+            if (!inputEl || inputEl.value === '') {
+                return;
+            }
+
+            clearView();
+
+            const inputValue = inputEl.value;
+
+            query = await glue.search.query({ search: inputValue });
+            console.log(`Query created, searching for "${inputValue}"`);
+
+            setSearchActive();
+
+            query.onResults(({ results, provider }) => {
+                console.log(`Query received results from provider "${provider.name}"`, results);
+                renderResults(results);
+            })
+
+            query.onCompleted(() => {
+                console.log('Query completed.');
+                setSearchInactive();
+            });
+
+            query.onError(({ error, provider }) => {
+                const errorMsg = `Query received an error from provider "${provider?.name}". Error: "${error}"`;
+                console.warn(errorMsg);
+                errorMessageEl.textContent = errorMsg;
+            });
+        };
+
+        (async function main() {
+            const config = {
+                libraries: [
+                    window.GlueSearch // Enabling Search API.
+                ]
+            };
+            window.glue = await window.Glue(config);
+            console.log('Glue42 is initialized.');
+        })()
+    </script>
+</body>
+
+</html>
