@@ -32,7 +32,7 @@
         const abortControllersMap = new Map();
 
         const dataProvider = {
-            getQueryResult: async (queryId, searchTerm) => {
+            getQueryResults: async (queryId, searchTerm) => {
                 const controller = new AbortController();
                 const url = `/api/query-results?queryId=${queryId}&search=${searchTerm}`;
                 const options = {
@@ -51,11 +51,13 @@
                 }
             },
             cancelQuery: async (queryId) => {
-                const controller = abortControllersMap.get(queryId);
-                if (controller) {
-                    controller.abort()
-                    abortControllersMap.delete(queryId);
+                if (!abortControllersMap.has(queryId)) {
+                    return;
                 }
+
+                const controller = abortControllersMap.get(queryId);
+                abortControllersMap.delete(queryId);
+                controller.abort()
             }
         };
 
@@ -84,20 +86,23 @@
         activeQueriesSet.add(queryId);
 
         try {
-            const results = await dataSource.getQueryResult(queryId, query.search);
+            const results = await dataSource.getQueryResults(queryId, query.search);
 
-            if (activeQueriesSet.has(queryId) === false) {
+            if (!activeQueriesSet.has(queryId)) {
                 return;
             }
 
             activeQueriesSet.delete(queryId);
             sendBackResults(query, results);
         } catch (error) {
+            if (!activeQueriesSet.has(queryId)) {
+                return;
+            }
+
             const errorMessage = typeof error === 'string'
                 ? error
                 : typeof error.message === 'string' ? error.message : 'Cannot send the query to the data source.';
 
-            activeQueriesSet.delete(queryId);
             query.error(errorMessage);
         }
     });

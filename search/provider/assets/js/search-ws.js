@@ -93,6 +93,10 @@
         try {
             await dataSource.newQuery(queryId, query.search);
         } catch (error) {
+            if (!activeQueriesMap.has(queryId)) {
+                return;
+            }
+
             const errorMessage = typeof error === 'string'
                 ? error
                 : typeof error.message === 'string' ? error.message : 'Cannot send the query to the data source.';
@@ -103,15 +107,23 @@
     });
 
     searchProvider.onQueryCancel(({ id: queryId }) => {
+        if (!activeQueriesMap.has(queryId)) {
+            return;
+        }
+
         activeQueriesMap.delete(queryId);
-        dataSource.cancelQuery(queryId);
+        dataSource.cancelQuery(queryId)
+            .catch((error) => {
+                console.error('Failed to cancel query in the data source. Error: ', error);
+            });
     });
 
     dataSource.onQueryResults = async (queryId, results, isLast) => {
-        const query = activeQueriesMap.get(queryId);
-        if (query == null) {
+        if (!activeQueriesMap.has(queryId)) {
             return;
         }
+
+        const query = activeQueriesMap.get(queryId);
 
         for (const result of results) {
             try {
@@ -121,6 +133,7 @@
             }
         }
 
+        // No more results are expected from the data source.
         if (isLast) {
             activeQueriesMap.delete(queryId);
             query.done();
@@ -128,16 +141,17 @@
     }
 
     dataSource.onQueryError = async (queryId, error) => {
-        const query = activeQueriesMap.get(queryId);
-        if (query == null) {
+        if (!activeQueriesMap.has(queryId)) {
             return;
         }
 
+        const query = activeQueriesMap.get(queryId);
         activeQueriesMap.delete(queryId);
         query.error(error);
     }
 
     dataSource.onDisconnected = () => {
+        // Complete all queries.
         Array.from(activeQueriesMap.keys())
             .forEach(function errorQuery(queryId) {
                 const query = activeQueriesMap.get(queryId);
