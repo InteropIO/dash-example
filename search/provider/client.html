@@ -44,6 +44,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Search Type</th>
+                    <th>Provider Name</th>
                     <th>Display Name</th>
                     <th>Description</th>
                 </tr>
@@ -80,7 +81,7 @@
             console.log('Query cancelled.');
         }
 
-        const renderResults = (results) => {
+        const renderResults = (results, providerName) => {
             const appendRow = (...values) => {
                 const rowEl = document.createElement('tr');
                 values.forEach(val => {
@@ -93,7 +94,16 @@
 
             for (const queryResult of results) {
                 const { id, type, displayName, description } = queryResult;
-                appendRow(id, type.displayName ?? type.name, displayName, description)
+
+                const searchType = type.displayName ?? type.name
+                const rowValues = [
+                    id,
+                    searchType,
+                    providerName,
+                    displayName,
+                    description
+                ];
+                appendRow(...rowValues)
             }
         };
 
@@ -118,8 +128,10 @@
             setSearchActive();
 
             query.onResults(({ results, provider }) => {
-                console.log(`Query received results from provider "${provider ? provider?.name : ''}"`, results);
-                renderResults(results);
+                const providerName = provider?.name;
+
+                console.log(`Query received results from provider "${providerName ?? ''}"`, results);
+                renderResults(results, providerName);
             })
 
             query.onCompleted(() => {
