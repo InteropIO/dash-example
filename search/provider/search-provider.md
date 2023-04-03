@@ -5,8 +5,8 @@ Provides mock *clients* and *instruments* search results through the [Glue42 Sea
 
 # How to run
 
-1. [Setup](''./../../../README.md#setup)
-2. [Activate the virtual environment]('./../../../README.md#virtual-environment-activation') 
+1. [Setup](./../../../README.md#setup)
+2. [Activate the virtual environment](./../../../README.md#virtual-environment-activation) 
 3. Run `python app.py`
 4. Paste the *apps-config.json* to your local store (usually *%LocalAppData%\Tick42\GlueDesktop\config\apps*)
 5. Restart Glue42 Enterprise
