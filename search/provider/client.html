@@ -118,7 +118,7 @@
             setSearchActive();
 
             query.onResults(({ results, provider }) => {
-                console.log(`Query received results from provider "${provider.name}"`, results);
+                console.log(`Query received results from provider "${provider ? provider?.name : ''}"`, results);
                 renderResults(results);
             })
 
