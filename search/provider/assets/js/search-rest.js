@@ -103,6 +103,7 @@
                 ? error
                 : typeof error.message === 'string' ? error.message : 'Cannot send the query to the data source.';
 
+            activeQueriesSet.delete(queryId);
             query.error(errorMessage);
         }
     });

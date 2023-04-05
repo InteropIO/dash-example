@@ -64,7 +64,7 @@ def io_send_query_result(sid, query_id, search):
     args = {
         "id": query_id,
         "results": results,
-        "isLast": True
+        "isLast": True # Indicate whether more results will be send back to the client. 
     }
     io.emit("query-results", args, to=sid)
 

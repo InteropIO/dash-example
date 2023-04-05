@@ -140,6 +140,7 @@
         }
     }
 
+    // Data source can return an error. query.error() terminates te query, so the data source should not send more data.
     dataSource.onQueryError = async (queryId, error) => {
         if (!activeQueriesMap.has(queryId)) {
             return;
@@ -157,7 +158,7 @@
                 const query = activeQueriesMap.get(queryId);
                 activeQueriesMap.delete(queryId);
 
-                query?.error('Data source disconnected.'); // Instead of error, the query can be completed - query?.done()
+                query?.error('Data source disconnected.'); // Instead of error, the query can be completed - query.done()
             });
     };
 
