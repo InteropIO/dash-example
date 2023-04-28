@@ -6,7 +6,7 @@ This repository contains examples of how to use the Glue42 Dash library. For con
 
 For more information on how to use the Glue42 Dash library, see the [official documentation](https://docs.glue42.com/getting-started/how-to/glue42-enable-your-app/dash/index.html).
 
-# Quick Start
+# Setup
 
 1. Use the Python >= 3.7. You can use [pyenv](https://github.com/pyenv/pyenv) to easily manage Python versions on your machine.
 
@@ -28,9 +28,7 @@ source venv/Scripts/activate
 pip install -r requirements.txt
 ```
 
-# Run an Example Locally
-
-1. Activate the virtual environment, if not yet activated:
+# Virtual Environment activation
 
 ```sh
 # Unix
@@ -40,7 +38,11 @@ source venv/Scripts/activate
 .\venv\Scripts\activate.bat
 ```
 
-2. Start a Flask server to host the applications of an example. Each example contains one or more Dash or JavaScript applications. There is also an `index.html` to help preview the applications in [**Glue42 Core**](https://glue42.com/core/). Go to an example folder (e.g. `/interop/register-invoke-method`) and run the following:
+# Run example
+
+1. [Setup](#setup) and active the [virtual environment](#virtual-environment-activation).
+
+2. Basic examples contain one or more Dash or JavaScript applications. There is also an `index.html` to help preview the applications in [**Glue42 Core**](https://glue42.com/core/). Go to an example folder (e.g. `/interop/register-invoke-method`) and run the following:
 
 ```sh
 # Unix

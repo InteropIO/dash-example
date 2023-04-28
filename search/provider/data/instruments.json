@@ -1,0 +1,206 @@
+[
+   {
+      "id": "VOD:LN",
+      "ric": "VOD:LN",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "VODAFONE GROUP PLC",
+      "description": "VODAFONE GROUP PLC",
+      "shares": 36,
+      "price": 21.24
+   },
+   {
+      "id": "BARC:LN",
+      "ric": "BARC:LN",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "BARCLAYS PLC",
+      "description": "BARCLAYS PLC",
+      "shares": 9,
+      "price": 83
+   },
+   {
+      "id": "BMW:GR",
+      "ric": "BMW:GR",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "BAYERISCHE MOTOREN WERKE AG",
+      "description": "BAYERISCHE MOTOREN WERKE AG",
+      "shares": 43,
+      "price": 89
+   },
+   {
+      "id": "AAL:LN",
+      "ric": "AAL:LN",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "ANGLO AMERICAN PLC",
+      "description": "ANGLO AMERICAN PLC",
+      "shares": 24,
+      "price": 38.29
+   },
+   {
+      "id": "GOOGL:US",
+      "ric": "GOOGL:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "price": 1052.28,
+      "shares": 123,
+      "displayName": "Google inc",
+      "description": "Google inc"
+   },
+   {
+      "id": "MSFT:US",
+      "ric": "MSFT:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Microsoft Corporation",
+      "description": "Microsoft Corporation",
+      "price": 107.14,
+      "shares": 30
+   },
+   {
+      "id": "TEAM:US",
+      "ric": "TEAM:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Atlassian Corporation PLC",
+      "description": "Atlassian Corporation PLC",
+      "price": 74.66,
+      "shares": 40
+   },
+   {
+      "id": "CRM:US",
+      "ric": "CRM:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "salesforce.com, inc",
+      "description": "salesforce.com, inc",
+      "price": 127.54,
+      "shares": 20
+   },
+   {
+      "id": "JPM:US",
+      "ric": "JPM:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "JPMorgan Chase & Co.",
+      "description": "JPMorgan Chase & Co.",
+      "price": 109.72,
+      "shares": 100
+   },
+   {
+      "id": "FB:US",
+      "ric": "FB:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Facebook, Inc. Common Stock",
+      "description": "Facebook, Inc. Common Stock",
+      "price": 135,
+      "shares": 35
+   },
+   {
+      "id": "AMZN:US",
+      "ric": "AMZN:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Amazon.com, Inc",
+      "description": "Amazon.com, Inc",
+      "price": 1581.42,
+      "shares": 20
+   },
+   {
+      "id": "AAPL:US",
+      "ric": "AAPL:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Apple Inc.",
+      "description": "Apple Inc.",
+      "price": 174.24,
+      "shares": 15
+   },
+   {
+      "id": "BABA:US",
+      "ric": "BABA:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Alibaba Group Holding Ltd",
+      "description": "Alibaba Group Holding Ltd",
+      "price": 156.46,
+      "shares": 20
+   },
+   {
+      "id": "NTES:US",
+      "ric": "NTES:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "price": 230.33,
+      "shares": 2,
+      "displayName": "DSWE",
+      "description": "DSWE"
+   },
+   {
+      "id": "KHC:US",
+      "ric": "KHC:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "Kraft Heinz Co",
+      "description": "Kraft Heinz Co",
+      "price": 51.8,
+      "shares": 50
+   },
+   {
+      "id": "NFLX:US",
+      "ric": "NFLX:US",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "NETFLIX",
+      "description": "NETFLIX",
+      "shares": 10,
+      "price": 266.63
+   },
+   {
+      "id": "TSCO:LN",
+      "ric": "TSCO:LN",
+      "type": {
+         "name": "instrument"
+      },
+      "category": "instruments",
+      "displayName": "TESCO PLC",
+      "description": "TESCO PLC",
+      "shares": 21,
+      "price": 90.75
+   }
+]
