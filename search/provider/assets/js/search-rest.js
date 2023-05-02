@@ -22,10 +22,11 @@
         /**
          * Initialize Glue42 Search API.
          */
-        await window.GlueSearch(window.glue42dash.glueInstance);
+        const glue = await window.glue42dash.glueInstancePromise;
+        await window.GlueSearch(glue);
         console.log('Glue42 Search API initialized.');
 
-        return window.glue42dash.glueInstance;
+        return glue;
     }
 
     async function initDataSource() {
