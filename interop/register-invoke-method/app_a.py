@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 import dash_glue42
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/")
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-a/", external_stylesheets=['/assets/app-common.css'])
 
 app.enable_dev_tools()
 

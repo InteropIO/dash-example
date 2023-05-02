@@ -12,7 +12,7 @@ def is_number(s):
         return False
 
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-b/")
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app-b/", external_stylesheets=['/assets/app-common.css'])
 
 app.enable_dev_tools()
 

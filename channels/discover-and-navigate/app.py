@@ -3,7 +3,7 @@ import json
 import dash_glue42
 from run import server
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/", external_stylesheets=['/assets/app-common.css'])
 
 app.enable_dev_tools()
 

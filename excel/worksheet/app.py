@@ -6,7 +6,7 @@ from excel_helpers import excel_columns_configs, show_grid, get_data_as_json, pa
 from data import trades_data
 from dash.exceptions import PreventUpdate
 
-app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/")
+app = dash.Dash(__name__, server=server, routes_pathname_prefix="/app/", external_stylesheets=['/assets/app-common.css'])
 
 app.enable_dev_tools()
 
