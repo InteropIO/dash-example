@@ -1,0 +1,15 @@
+[
+    {
+        "title": "Application (Themes Example)",
+        "type": "window",
+        "name": "app",
+        "hidden": false,
+        "details": {
+            "url": "http://127.0.0.1:8050",
+            "top": 25,
+            "left": 800,
+            "height": 400,
+            "width": 400
+        }
+    }
+]
