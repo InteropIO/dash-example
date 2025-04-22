@@ -2,8 +2,8 @@
 
 This repository contains examples of how to use the Glue42 Dash library. For convenience, the setup is created with pure Python. Each example is individually separated and logically grouped in a folder.
 
-[!NOTE]
-The tutorial code in this repository is only to be used as an example and an educational source. It is not guaranteed to be production-ready or kept up to date with respect to vulnerabilities and out of date dependencies.
+> [!NOTE]
+> The tutorial code in this repository is only to be used as an example and an educational source. It is not guaranteed to be production-ready or kept up to date with respect to vulnerabilities and out of date dependencies.
 
 # Documentation
 
